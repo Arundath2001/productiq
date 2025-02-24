@@ -5,18 +5,18 @@ export const generatePrintedQr = async (req, res) => {
     try {
         const { productCode, voyageNumber, quantity } = req.body;
 
+        console.log(req.body);
+
         if (!productCode || !voyageNumber || !quantity) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // Find the voyage
         const voyage = await Voyage.findOne({ voyageNumber });
 
         if (!voyage) {
             return res.status(400).json({ message: "Voyage not found" });
         }
 
-        // Get last count for this specific product
         let lastCount = voyage.lastPrintedCounts.get(productCode) || 0;
         let qrList = [];
 
@@ -35,11 +35,13 @@ export const generatePrintedQr = async (req, res) => {
             qrList.push(qrData);
         }
 
-        // Update the last printed count for this product
         voyage.lastPrintedCounts.set(productCode, lastCount + quantity);
         await voyage.save();
 
         res.status(200).json({ message: "QR Data generated successfully", qrList });
+
+        console.log(qrList);
+        
 
     } catch (error) {
         console.error("Error in generatePrintedQr controller:", error.message);

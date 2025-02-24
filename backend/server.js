@@ -28,6 +28,7 @@ app.use("/api/auth", authRoutes );
 app.use("/api/voyage", voyageRoutes );
 app.use("/api/printedqr", printedQrRoutes );
 app.use("/api/savedcode", saveCodeRoutes );
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 if(process.env.NODE_ENV==='production'){
     app.use(express.static(path.join(__dirname, "../frontend/dist")))

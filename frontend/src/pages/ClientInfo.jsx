@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore.js";
 import PageHeader from "../components/PageHeader";
-import { FaEdit, FaEllipsisV, FaPlus } from 'react-icons/fa';
 import UserForm from "../components/UserForm.jsx";
-import IconButton from "../components/IconButton.jsx";
-import { FaTrash } from 'react-icons/fa';
+import { FaPen, FaPlus } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
+import ConfirmAlert from "../components/ConfirmAlert.jsx";
 
 const ClientInfo = () => {
   const { getUsersData, usersData } = useAuthStore();
-  const [ showUSerForm, setShowUserForm ] = useState(false);
+  const [showUSerForm, setShowUserForm] = useState(false);
   const { deleteUser } = useAuthStore();
   const [showPopUp, setShowPopUp] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   useEffect(() => {
     getUsersData();
@@ -21,8 +22,8 @@ const ClientInfo = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   };
@@ -32,18 +33,35 @@ const ClientInfo = () => {
     setShowUserForm(true);
   };
 
-  const handlePopUpToggle = (index) => {
-    setShowPopUp(showPopUp === index ? null : index);
+  const filteredClient = usersData?.clients
+    ? usersData.clients.filter((client) =>
+        client.username.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
+  const handleConfirm = (userId) => {
+    setSelectedUserId(userId);
+    setShowConfirm(true);
   };
 
-  const filteredClient = usersData.clients.filter((client) =>
-    client.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const confirmDelete = async () => {
+    if (selectedUserId) {
+      await deleteUser(selectedUserId, "employee");
+      setShowConfirm(false);
+      setSelectedUserId(null);
+    }
+  };
 
   return (
     <div>
-      <PageHeader mainHead="Employee List" subText={`${filteredClient.length} Employees`} searchQuery={searchQuery} setSearchQuery={setSearchQuery} showDateFilter={false} />
-
+      <PageHeader
+        mainHead="Client List"
+        subText={`${filteredClient.length} Clients`}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        showDateFilter={false}
+        placeholder='Search by client username'
+      />
 
       <div className="mt-5">
         <div className="mt-5 overflow-x-auto">
@@ -60,10 +78,10 @@ const ClientInfo = () => {
                   COMPANY CODE
                 </th>
                 <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600 ">
-                  COMPANY CODE
+                  CLIENT LOCATION
                 </th>
                 <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600 ">
-                  CLIENT LOCATION
+                  CREATED AT
                 </th>
                 <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600 ">
                   CREATED BY
@@ -72,8 +90,7 @@ const ClientInfo = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredClient &&
-              filteredClient.length > 0 ? (
+              {filteredClient && filteredClient.length > 0 ? (
                 filteredClient.map((data, index) => (
                   <tr
                     key={data._id}
@@ -95,17 +112,21 @@ const ClientInfo = () => {
                       {formatDate(data.createdAt)}
                     </td>
                     <td className="py-3 px-5 text-sm text-black ">
-                      {data.createdBy}
+                      {data.createdBy.username}
                     </td>
                     <td className="py-3 px-5 text-sm text-black relative">
-                      <FaEllipsisV className="cursor-pointer" size={15} onClick={() => handlePopUpToggle(index)} />
-                      
-                      {showPopUp === index && (
-                        <div className="fixed right-5 rounded-xl flex flex-col p-1.5 bg-gray-300 gap-0.5 z-10">
-                          <IconButton btnName='Delete' btnType="delete" icon={FaTrash} onClick={() => deleteUser(data._id, "employee")} />
-                          <IconButton btnName='Edit' icon={FaEdit} onClick={() => handleShowForm(data)}  />
-                        </div>
-                      )}
+                      <div className="flex gap-3.5">
+                        <FaTrash
+                          className="cursor-pointer"
+                          color="gray"
+                          onClick={() => handleConfirm(data._id)}
+                        />
+                        <FaPen
+                          className="cursor-pointer "
+                          color="gray"
+                          onClick={() => handleShowForm(data)}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -124,13 +145,31 @@ const ClientInfo = () => {
         </div>
       </div>
 
-      <div onClick={handleShowForm} className="bg-black p-3 bottom-10 right-10 rounded-full fixed cursor-pointer">
+      <div
+        onClick={handleShowForm}
+        className="bg-black p-3 bottom-10 right-10 rounded-full fixed cursor-pointer"
+      >
         <FaPlus size={25} color="#FFFFFF" />
       </div>
 
       {showUSerForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
-          <UserForm formTitile='ENTER CLIENT DETAILS' role='client' closeForm={setShowUserForm} userData={selectedUser} />
+          <UserForm
+            formTitile="ENTER CLIENT DETAILS"
+            role="client"
+            closeForm={setShowUserForm}
+            userData={selectedUser}
+          />
+        </div>
+      )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
+          <ConfirmAlert
+            alertInfo="You want to delete this user ?"
+            handleClose={() => setShowConfirm(false)}
+            handleSubmit={confirmDelete}
+          />
         </div>
       )}
     </div>

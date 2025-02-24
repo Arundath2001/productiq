@@ -24,32 +24,32 @@ const UserForm = ({ formTitile, role, closeForm, userData }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!formData.username) {
       toast.error("Username is required.");
       return;
     }
-
-    if (!isEditing && !formData.password) {
-      toast.error("Password is required for new users.");
+  
+    if (!isEditing && formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters long.");
       return;
     }
-
-    if (isEditing && changePassword && !formData.password) {
-      toast.error("Enter a new password or uncheck 'Change Password'.");
+  
+    if (isEditing && changePassword && formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters long.");
       return;
     }
-
+  
     if (role === "employee" && !formData.position) {
       toast.error("Position is required for employees.");
       return;
     }
-
+  
     if (role === "client" && (!formData.companyCode || !formData.location)) {
       toast.error("Company Code and Location are required for clients.");
       return;
     }
-
+  
     const userDataToSend = {
       username: formData.username,
       role: role,
@@ -61,15 +61,20 @@ const UserForm = ({ formTitile, role, closeForm, userData }) => {
         location: formData.location,
       }),
     };
-
-    if (isEditing) {
-      await useAuthStore.getState().editUser(userData._id, userDataToSend);
-    } else {
-      await createUser(userDataToSend);
+  
+    try {
+      if (isEditing) {
+        await useAuthStore.getState().editUser(userData._id, userDataToSend);
+      } else {
+        await createUser(userDataToSend);
+      }
+      toast.success(isEditing ? "User updated successfully!" : "User created successfully!");
+      closeForm(false);
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
     }
-
-    closeForm(false);
   };
+  
 
   return (
     <div className="bg-white px-5 py-4 rounded-xl w-96">

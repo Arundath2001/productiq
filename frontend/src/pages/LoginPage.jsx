@@ -34,7 +34,7 @@ const LoginPage = () => {
   return (
     <div className='flex flex-col md:flex-row min-h-screen'>
 
-        <div className='w-full md:w-4/6 flex flex-col justify-center px-8 md:px-16 py-12 md:py-0 items-center bg-black'>
+        <div className='w-full md:w-4/6 flex flex-col justify-center px-8 md:px-16 py-12 md:py-0 items-center bg-black relative overflow-hidden'>
             <div className='relative'>
                 <p className='text-white text-3xl md:text-4xl font-semibold'>Get started with</p>
                 <p className='text-5xl md:text-6xl font-bold bg-gradient-to-r from-[#6FB5FF] via-[#FFC79C] to-[#C39EF2] text-transparent bg-clip-text'>

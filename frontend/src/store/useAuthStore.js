@@ -68,19 +68,8 @@ export const useAuthStore = create((set) => ({
         try {
             const res = await axiosInstance.post("/auth/register", userData);
             
-            set((state) => ({
-                usersData: {
-                    ...state.usersData,
-                    employees: userData.role === "employee" 
-                        ? [...state.usersData.employees, res.data] 
-                        : state.usersData.employees,
-                    clients: userData.role === "client" 
-                        ? [...state.usersData.clients, res.data] 
-                        : state.usersData.clients,
-                },
-            }));
-
-            toast.success("User created successfully");
+            await useAuthStore.getState().getUsersData();
+    
             return res.data;
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to create user");
@@ -89,6 +78,7 @@ export const useAuthStore = create((set) => ({
             set({ isSigningUp: false });
         }
     },
+    
 
     deleteUser: async (userId, role) => {
         try {

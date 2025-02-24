@@ -21,5 +21,19 @@ export const useProductCodeStore = create((set, get) => ({
         }finally{
             set({ issavedProduct: false })
         }
+    },
+
+    deleteProductCode: async (codeId) => {
+        try {
+            await axiosInstance.delete(`/savedcode/${codeId}`);
+            
+            set((state) => ({
+                savedProductCodes: state.savedProductCodes.filter(code => code._id !== codeId)
+            }));
+            
+            toast.success('Product code deleted successfully');
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Error deleting Product code');
+        }
     }
 }))

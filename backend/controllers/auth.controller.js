@@ -77,6 +77,8 @@ export const login = async (req,res) => {
     try {
         const {username, password, companyCode} = req.body;
 
+        console.log(req.body);
+
         const user = await User.findOne({username});
 
         if(!user) return res.status(400).json({message : "Invalid credentials"});
@@ -89,7 +91,9 @@ export const login = async (req,res) => {
 
         if(!isPasswordCorrect) return res.status(400).json({message : "Invalid credentials"});
 
-        generateToken(user._id, res);
+        const token = generateToken(user._id, res); 
+
+        console.log("Generated Token:", token); 
 
         res.status(200).json({
             _id : user._id,
@@ -98,7 +102,9 @@ export const login = async (req,res) => {
             role: user.role,
             position : user.position,
             location : user.location,
-        })
+            token,
+        },
+    )
 
     } catch (error) {
         console.log("Error in login controller", error.message);
@@ -142,8 +148,8 @@ export const checkAuth = (req, res) => {
 
 export const getUserData = async (req, res) => {
     try {
-        const employees = await User.find({ role: "employee" }, "-password");
-        const clients = await User.find({ role: "client" }, "-password");
+        const employees = await User.find({ role: "employee" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });;
+        const clients = await User.find({ role: "client" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });;
 
         res.status(200).json({
             employees,

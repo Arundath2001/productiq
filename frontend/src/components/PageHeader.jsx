@@ -4,7 +4,7 @@ import NormalButton from "./NormalButton";
 import { FaFilter } from "react-icons/fa";
 import SearchFields from "./SearchFields";
 
-const PageHeader = ({ mainHead, subText, onCreate, onExport, searchQuery, setSearchQuery, showDateFilter, startDate, setStartDate, endDate, setEndDate }) => {
+const PageHeader = ({ mainHead, subText, onCreate, onExport, searchQuery, setSearchQuery, showDateFilter, startDate, setStartDate, endDate, setEndDate, weight = false, placeholder }) => {
   const [showFilters, setShowFilters] = useState(false);
 
   const toggleFilters = () => {
@@ -14,9 +14,15 @@ const PageHeader = ({ mainHead, subText, onCreate, onExport, searchQuery, setSea
   return (
     <div>
       <div className="flex items-center justify-between">
-        <div className="flex items-end">
+        <div className="flex items-center">
           <h1 className="text-black font-medium text-base px-1.5">{mainHead}</h1>
-          <p className="text-xs text-gray-500">{subText}</p>
+          <p className="text-xs text-blue-400">{subText}</p>
+          {weight && (
+            <>
+            <h1 className="text-black font-medium text-base px-1.5">Total Weight</h1>
+            <p className="text-xs text-blue-400">{weight} kg</p>
+            </>
+          )}
         </div>
 
         <div className="flex gap-2.5">
@@ -48,6 +54,7 @@ const PageHeader = ({ mainHead, subText, onCreate, onExport, searchQuery, setSea
               setStartDate={setStartDate}
               endDate={endDate}
               setEndDate={setEndDate}
+              placeholder={placeholder}
             />
           </motion.div>
         )}

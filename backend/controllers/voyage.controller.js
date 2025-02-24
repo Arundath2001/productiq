@@ -31,14 +31,17 @@ export const createVoyage = async (req, res) => {
 
 export const uploadVoyage = async (req, res) => {
     try {
-        const {voyageId} = req.params;
-        const {productCode, trackingNumber, clientCompany, image} = req.body
+        const {voyageNumber} = req.params;
+        const {productCode, trackingNumber, clientCompany, weight} = req.body
 
-        if(!productCode || !trackingNumber || !clientCompany || !image){
+        console.log(req.body, req.file);
+        
+
+        if(!productCode || !trackingNumber || !clientCompany || !req.file || !weight){
             return res.status(400).json({message : "All fields are required"});
         }
         
-        const voyage = await Voyage.findById(voyageId);
+        const voyage = await Voyage.findOne({ voyageNumber: String(voyageNumber) });
         if(!voyage){
             return res.status(400).json({message : "Voyage not found"})
         }
@@ -52,13 +55,14 @@ export const uploadVoyage = async (req, res) => {
             return res.status(400).json({ message: "Product code already exists in this voyage" });
         }
 
-
+        const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
         voyage.uploadedData.push({
             productCode,
             trackingNumber,
             clientCompany,
-            image,
-            uploadedBy : req.user._id
+            image: imageUrl,
+            uploadedBy : req.user._id,
+            weight
         });
 
         await voyage.save();
@@ -73,25 +77,27 @@ export const uploadVoyage = async (req, res) => {
 
 export const getVoyage = async (req, res) => {
     try {
-        const {voyageId} = req.params;
+        const { voyageId } = req.params;
 
-        const voyage = await Voyage.findById(voyageId);
+        const voyage = await Voyage.findById(voyageId)
+            .populate("createdBy", "username") 
+            .populate("uploadedData.uploadedBy", "username");
 
-        if(!voyage){
-            return res.status(400).json({message : "Voyage not found"});
+        if (!voyage) {
+            return res.status(400).json({ message: "Voyage not found" });
         }
 
         res.status(200).json(voyage);
-
     } catch (error) {
         console.log("Error in getVoyage controller", error.message);
-        res.status(500).json({message : "Inernal server error"});
+        res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 export const getVoyageNumber = async (req, res) => {
     try {
-        const voyages = await Voyage.find({}, "voyageNumber");
+        const voyages = await Voyage.find({ status: 'pending' }, "voyageNumber");
         
         const voyageNumbers = [...new Set(voyages.map(voyage => voyage.voyageNumber))];
 
@@ -115,11 +121,12 @@ export const getProductDetails = async (req, res) => {
                 status: { $ne: "completed" } 
             },
             { "uploadedData": 1 } 
-        );
+        ).populate("uploadedData.uploadedBy", "username").sort({ "uploadedData.createdAt": -1 });;
 
         if (!voyages.length) {
-            return res.status(400).json({ message: "No data found for this code" });
+            return res.status(200).json([]);
         }
+        
 
         const productDetails = voyages.flatMap(voyage =>
             voyage.uploadedData.filter(data => data.productCode.startsWith(productCode))
@@ -136,35 +143,29 @@ export const getProductDetails = async (req, res) => {
 
 export const getVoyages = async (req, res) => {
     try {
-        const voyages = await Voyage.find({ status: "pending" });
+        const voyages = await Voyage.find({ status: "pending" }).sort({ createdAt: -1 });;
 
-        if(!voyages || voyages.length === 0){
-            return res.status(400).json({message : "No voyages found"});
-        }
-
-        res.status(200).json(voyages)
+        res.status(200).json(voyages);
         
     } catch (error) {
         console.error("Error fetching getVoyages details:", error.message);
         res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 export const getCompletedVoyages = async (req, res) => {
     try {
-        const voyages = await Voyage.find({ status: "completed" });
+        const voyages = await Voyage.find({ status: "completed" }).sort({ createdAt: -1 });;
 
-        if(!voyages || voyages.length === 0){
-            return res.status(400).json({message : "No completed voyages found"});
-        }
-
-        res.status(200).json(voyages)
+        return res.status(200).json(voyages);
         
     } catch (error) {
         console.error("Error fetching getCompletedVoyages details:", error.message);
         res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 export const exportVoyageData = async (req, res) => {
     try {
@@ -234,3 +235,32 @@ export const deleteVoyageData = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const getVoyageByCompany = async (req, res) => {
+    try {
+        const { companyCode } = req.params;
+
+        const voyages = await Voyage.find({ status: "completed" })
+            .sort({ createdAt: -1 })
+            .select("uploadedData");
+
+        if (!voyages.length) {
+            return res.status(404).json({ message: "No completed voyages found" });
+        }
+
+        const filteredData = voyages.flatMap(voyage => 
+            voyage.uploadedData.filter(data => data.clientCompany === companyCode)
+        );
+
+        if (!filteredData.length) {
+            return res.status(404).json({ message: `No uploaded data found for company ${companyCode}` });
+        }
+
+        res.status(200).json({ companyCode, uploadedData: filteredData });
+    } catch (error) {
+        console.error("Error in getVoyageByCompany controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+

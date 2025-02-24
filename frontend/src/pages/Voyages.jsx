@@ -3,8 +3,9 @@ import PageHeader from "../components/PageHeader";
 import { useVoyageStore } from "../store/useVoyageStore.js";
 import CreateVoyage from "../components/CreateVoyage.jsx";
 import { useNavigate } from "react-router-dom";
-import { FaEllipsisV } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
 import ConfirmAlert from "../components/ConfirmAlert.jsx";
+import images from "../lib/images.js";
 
 const Voyages = () => {
   const { voyages, getVoyages, deleteVoyage } = useVoyageStore();
@@ -81,6 +82,7 @@ const Voyages = () => {
         setStartDate={setStartDate}
         endDate={endDate}
         setEndDate={setEndDate}
+        placeholder="Search by voyage name..."
       />
 
       <div className="mt-10">
@@ -92,7 +94,7 @@ const Voyages = () => {
                 className="flex rounded-xl items-center justify-between bg-white px-4 py-2.5 mb-2.5"
               >
                 <p className="text-black text-sm">
-                  {voyage.voyageName} | {voyage.voyageNumber}/{voyage.year}
+                  {voyage.voyageName} | VNo {voyage.voyageNumber}/{voyage.year}
                 </p>
 
                 <div className="flex gap-3 items-center">
@@ -109,16 +111,23 @@ const Voyages = () => {
                     className="cursor-pointer"
                     onClick={() => handleShowConfirm(voyage._id)}
                   >
-                    
-                    <FaEllipsisV />
+                    <FaTrash color="gray" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div>
-            <p>No voyages available.</p>
+          <div className="flex flex-col items-center justify-center text-center mt-10">
+            <img
+              src={images.file}
+              alt="No Voyages"
+              className="w-32 h-32 mb-4 opacity-75"
+            />
+            <p className="text-lg font-semibold text-gray-700">
+              No active voyages found!
+            </p>
+            <p className="text-sm text-gray-500">Try to create a new voyage.</p>
           </div>
         )}
       </div>

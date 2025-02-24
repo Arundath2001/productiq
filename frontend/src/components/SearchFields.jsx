@@ -1,7 +1,7 @@
 import React from "react";
-import { FaCalendar, FaSearch } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
 
-const SearchFields = ({ searchQuery, setSearchQuery, showDateFilter = true, startDate, setStartDate, endDate, setEndDate }) => {
+const SearchFields = ({ searchQuery, setSearchQuery, showDateFilter = true, startDate, setStartDate, endDate, setEndDate, placeholder }) => {
 
   const handleClear = () => {
     setSearchQuery("");
@@ -16,20 +16,18 @@ const SearchFields = ({ searchQuery, setSearchQuery, showDateFilter = true, star
           {showDateFilter && (
             <>
               <div className="flex items-center gap-2 border-b-2 border-gray-400 px-2.5 py-1.5 focus-within:border-black w-1/3">
-                <FaCalendar color="gray" />
                 <input
                   type="date"
-                  className="flex-1 outline-none"
+                  className="flex-1 outline-none text-gray-400"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
 
               <div className="flex items-center gap-2 border-b-2 border-gray-400 px-2.5 py-1.5 focus-within:border-black w-1/3">
-                <FaCalendar color="gray" />
                 <input
                   type="date"
-                  className="flex-1 outline-none"
+                  className="flex-1 outline-none text-gray-400"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                 />
@@ -41,7 +39,7 @@ const SearchFields = ({ searchQuery, setSearchQuery, showDateFilter = true, star
             <FaSearch color="gray" />
             <input
               className="flex-1 outline-none"
-              placeholder="Search by voyage name..."
+              placeholder={placeholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

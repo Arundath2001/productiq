@@ -11,41 +11,50 @@ export const useVoyageStore = create((set, get) => ({
     productByCode: [],
     completedVoyages: [],
 
-    getVoyages : async () => {
+    getVoyages: async () => {
         set({ isVoyagesLoading: true });
-
+    
         try {
             const res = await axiosInstance.get("/voyage/voyages");
-
+    
             set({ voyages: res.data });
-            
-            toast.success('Voyages fetched successfully')
-
+    
+            if (res.data.length === 0) {
+                toast("No active voyage found", { icon: "⚠️" });
+            } else {
+                toast.success("Voyages fetched successfully");
+            }
+    
         } catch (error) {
-            console.log("Error fething voyages", error.message);
+            console.error("Error fetching voyages", error.message);
             toast.error("Failed to fetch voyages");
-        }finally{
-            set({ isVoyagesLoading : false })
+        } finally {
+            set({ isVoyagesLoading: false });
         }
     },
+    
 
-    getCompletedVoyages : async () => {
+    getCompletedVoyages: async () => {
         set({ isVoyagesLoading: true });
-
+    
         try {
             const res = await axiosInstance.get("/voyage/completed-voyages");
-
+    
             set({ completedVoyages: res.data });
-            
-            toast.success("Completed voyages fetched successfully")
-
+    
+            if (res.data.length === 0) {
+                toast("No completed voyages available", { icon: "ℹ️" });
+            } else {
+                toast.success("Completed voyages fetched successfully");
+            }
         } catch (error) {
-            console.log("Error fething voyages", error.message);
+            console.error("Error fetching completed voyages", error.message);
             toast.error("Failed to fetch completed voyages");
-        }finally{
-            set({ isVoyagesLoading : false })
+        } finally {
+            set({ isVoyagesLoading: false });
         }
     },
+    
 
     createVoyage: async (data) => {
         set({ isCreateVoyage: true });
@@ -90,16 +99,21 @@ export const useVoyageStore = create((set, get) => ({
     getProductByCode: async (productCode) => {
         try {
             const res = await axiosInstance.get(`/voyage/getproducts/${productCode}`);
-            
-            set({ productByCode: Array.isArray(res.data) ? res.data : [] });
-
+    
+            if (res.data.length === 0) {
+                toast("No data found for this code", { icon: "ℹ️" }); 
+            }
+    
+            set({ productByCode: res.data });
+    
         } catch (error) {
             console.error("Error fetching product details:", error.message);
             toast.error(error.response?.data?.message || "Failed to fetch product details");
-
+    
             set({ productByCode: [] });
         }
     },
+    
 
     exportVoyage: async (voyageId) => {
         try {

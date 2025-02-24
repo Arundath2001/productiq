@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation, useParams } from "react-router-dom";
 import BillofLading from "../pages/BillofLading";
 import Voyages from "../pages/Voyages";
 import CompletedVoyages from "../pages/CompletedVoyages";
@@ -8,25 +9,34 @@ import ClientInfo from "../pages/ClientInfo";
 import VoyageDetails from "../pages/VoyageDetails";
 import AllCodeDetails from "../pages/AllCodeDetails";
 
-const MainContent = ({ selectedTab }) => {
+const MainContent = () => {
+  const location = useLocation();
+  const params = useParams();
+
+  const path = location.pathname;
+
   const renderContent = () => {
-    switch (selectedTab) {
-      case "bill":
+    if (path.startsWith("/voyage/")) {
+      return <VoyageDetails voyageId={params.voyageId} />;
+    }
+    if (path.startsWith("/voyages/getproducts/")) {
+      return <AllCodeDetails productCode={params.productCode} />;
+    }
+
+    switch (path) {
+      case "/bill":
         return <BillofLading />;
-      case "Voyages":
+      case "/":
+      case "/Voyages":
         return <Voyages />;
-      case "completed":
+      case "/completed":
         return <CompletedVoyages />;
-      case "productqr":
+      case "/productqr":
         return <AllProductQr />;
-      case "employee":
+      case "/employee":
         return <EmployeeList />;
-      case "client":
+      case "/client":
         return <ClientInfo />;
-      case "VoyageDetails":
-        return <VoyageDetails />;
-      case "AllCodeDetails":
-        return <AllCodeDetails />
       default:
         return <Voyages />;
     }

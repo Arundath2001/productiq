@@ -1,28 +1,24 @@
-import React, { useState } from "react";
+import React from "react";
 import { useAuthStore } from "../store/useAuthStore.js";
 import { FaFileInvoice, FaShip, FaCheckCircle, FaQrcode, FaUsers, FaBuilding, FaSignOutAlt } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Sidebar = ({ setSelectedTab }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("Voyages");
+  const location = useLocation();
+  
+  const activeTab = location.pathname.startsWith("/voyage/")
+    ? "VoyageDetails"
+    : location.pathname.startsWith("/voyages/getproducts/")
+    ? "AllCodeDetails"
+    : location.pathname.replace("/", "");
 
   const handleTabClick = (tab) => {
     setSelectedTab(tab);
-    setActiveTab(tab);
-
-    if (tab === "Voyages") {
-      navigate("/");
-    } else {
-      navigate(`/${tab}`);
-    }
+    navigate(tab === "Voyages" ? "/" : `/${tab}`);
   };
 
   const { logout } = useAuthStore();
-
-  const handleLogout = () => {
-    logout();
-  };
 
   return (
     <div className="min-h-screen p-7 bg-[rgba(255,255,255,0.5)] backdrop-blur-lg flex flex-col justify-between">
@@ -36,7 +32,7 @@ const Sidebar = ({ setSelectedTab }) => {
           <li
             onClick={() => handleTabClick("Voyages")}
             className={`flex text-base rounded-xl items-center gap-2 px-3 py-2 cursor-pointer ${
-              activeTab === "Voyages" ? "bg-black text-white" : ""
+              activeTab === "" || activeTab === "Voyages" ? "bg-black text-white" : ""
             }`}
           >
             <FaShip />
@@ -97,7 +93,7 @@ const Sidebar = ({ setSelectedTab }) => {
 
       <button
         type="submit"
-        onClick={handleLogout}
+        onClick={logout}
         className="bg-black text-white py-2 flex items-center gap-2 justify-center cursor-pointer hover:bg-gray-900 transition"
       >
         <FaSignOutAlt />

@@ -58,6 +58,10 @@ const voyageSchema = mongoose.Schema({
         uploadedDate:{
             type: Date,
             default: Date.now
+        },
+        weight:{
+            type: Number,
+            require: true
         }
     }]
 },{
