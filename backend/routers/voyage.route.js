@@ -1,5 +1,5 @@
 import express from "express";
-import { createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getCompletedVoyages, getProductDetails, getVoyage, getVoyageByCompany, getVoyageNumber, getVoyages, uploadVoyage } from "../controllers/voyage.controller.js";
+import { createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getCompletedVoyages, getPendingVoyages, getProductDetails, getVoyage, getVoyageByCompany, getVoyageNumber, getVoyages, uploadVoyage } from "../controllers/voyage.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import upload from "../lib/multer.js";
 
@@ -12,6 +12,8 @@ router.post("/:voyageNumber/upload", protectRoute, upload.single('image'), uploa
 router.get("/voyagenumber", protectRoute, getVoyageNumber);
 
 router.get("/voyages", protectRoute, getVoyages);
+
+router.get("/pending-voyages", protectRoute, getPendingVoyages);
 
 router.get("/completed-voyages", protectRoute, getCompletedVoyages);
 

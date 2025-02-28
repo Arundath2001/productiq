@@ -39,6 +39,9 @@ const userSchema = mongoose.Schema({
         required: function(){
             return this.role !== "admin";
         }
+    },
+    expoPushToken: { 
+        type: String 
     }
 },{
     timestamps: true

@@ -1,5 +1,5 @@
 import express from "express";
-import { checkAuth, createUser, deleteUser, editUser, getCompnayCode, getUserData, login, logout } from "../controllers/auth.controller.js";
+import { checkAuth, createUser, deleteUser, editUser, getCompnayCode, getUserData, login, logout, updateExpoPushToken } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -20,7 +20,7 @@ router.delete('/delete/:userId', protectRoute, deleteUser);
 
 router.put("/edit/:userId", protectRoute, editUser );
 
-
+router.post("/update-expo-token", protectRoute, updateExpoPushToken);
 
 export default router;
 

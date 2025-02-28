@@ -8,10 +8,9 @@ import saveCodeRoutes from "./routers/savedcode.route.js";
 import printedQrRoutes from "./routers/printedQr.route.js";
 import cors from "cors";
 import path from "path";
+import { app, server } from "./lib/socket.js";
 
 dotenv.config();
-
-const app = express();
 
 const port = process.env.PORT;
 
@@ -38,7 +37,7 @@ if(process.env.NODE_ENV==='production'){
     })
 }
 
-app.listen(port, () => {
+server.listen(port, () => {
     connectDb();
     console.log("Server started at http://localhost:5000");
 })

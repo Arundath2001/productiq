@@ -1,4 +1,6 @@
+import User from "../models/user.model.js";
 import Voyage from "../models/voyage.model.js";
+import axios from "axios";
 
 export const createVoyage = async (req, res) => {
     try {
@@ -172,7 +174,6 @@ export const exportVoyageData = async (req, res) => {
         const { voyageId } = req.params;
 
         const voyage = await Voyage.findById(voyageId);
-
         if (!voyage) {
             return res.status(404).json({ message: "Voyage not found" });
         }
@@ -181,7 +182,38 @@ export const exportVoyageData = async (req, res) => {
         voyage.lastPrintedCounts = new Map();
         await voyage.save();
 
-        res.status(200).json({ message: "Voyage exported successfully and QR counts reset" });
+        const companyCodes = [...new Set(voyage.uploadedData.map(data => data.clientCompany))];
+
+        console.log(companyCodes);
+        
+
+        const clients = await User.find({ role: "client", companyCode: { $in: companyCodes } });
+
+        console.log(clients);
+        
+
+        const pushTokens = clients.map(client => client.expoPushToken).filter(token => token?.startsWith("ExponentPushToken"));
+
+        if (pushTokens.length > 0) {
+            const messages = pushTokens.map(token => ({
+                to: token,
+                sound: "default",
+                title: "Voyage Completed",
+                body: `Voyage ${voyage.voyageName} has been completed.`,
+                data: { voyageId: voyage._id },
+            }));
+
+            try {
+                await axios.post("https://exp.host/--/api/v2/push/send", messages, {
+                    headers: { "Content-Type": "application/json" },
+                });
+                console.log("Push notifications sent successfully");
+            } catch (notificationError) {
+                console.error("Error sending push notifications:", notificationError.message);
+            }
+        }
+
+        res.status(200).json({ message: "Voyage exported successfully and notifications sent" });
 
     } catch (error) {
         console.error("Error in exportVoyageData controller:", error.message);
@@ -262,5 +294,20 @@ export const getVoyageByCompany = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const getPendingVoyages = async (req, res) => {
+    try {
+        const voyages = await Voyage.find({ status: "pending" })
+            .sort({ createdAt: -1 })
+            .populate("createdBy", "username") 
+            .populate("uploadedData.uploadedBy", "username"); 
+
+        res.status(200).json(voyages);
+    } catch (error) {
+        console.error("Error fetching pending voyages:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 
 

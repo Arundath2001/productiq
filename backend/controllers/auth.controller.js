@@ -78,6 +78,7 @@ export const login = async (req,res) => {
         const {username, password, companyCode} = req.body;
 
         console.log(req.body);
+        
 
         const user = await User.findOne({username});
 
@@ -193,6 +194,10 @@ export const editUser = async (req, res) => {
             return res.status(400).json({ message: "User not found" });
         }
 
+        if (!user.role === 'admin') {
+            return res.status(400).json({ message: "User not found" });
+        }
+
         if (username && username !== user.username) {
             const existingUser = await User.findOne({ username });
             if (existingUser) {
@@ -224,3 +229,14 @@ export const editUser = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 }
+
+export const updateExpoPushToken = async (req, res) => {
+    try {
+        const { userId, expoPushToken } = req.body;
+        await User.findByIdAndUpdate(userId, { expoPushToken });
+        res.status(200).json({ message: "Expo push token updated successfully" });
+    } catch (error) {
+        console.error("Error updating Expo push token:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
