@@ -101,7 +101,7 @@ const EmployeeList = () => {
                     {formatDate(data.createdAt)}
                   </td>
                   <td className="py-3 px-5 text-sm text-black">
-                    {data.createdBy.username}
+                    {data.createdBy?.username}
                   </td>
                   <td className="py-3 px-5 text-sm text-black relative">
                     <div className="flex gap-3.5">

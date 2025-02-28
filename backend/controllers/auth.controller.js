@@ -165,11 +165,19 @@ export const getUserData = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
     try {
-        const {userId} = req.params;        
+        const { userId } = req.params;
+
+        const loggedInUserId = req.user._id;
+
+        console.log(loggedInUserId);
+
+        if (userId === loggedInUserId.toString()) {
+            return res.status(400).json({ message: "You cannot delete your own account" });
+        }
 
         const user = await User.findById(userId);
 
-        if(!user){
+        if (!user) {
             return res.status(400).json({ message: "No user found with this ID" });
         }
 
@@ -181,7 +189,8 @@ export const deleteUser = async (req, res) => {
         console.log("Error in deleteUser controller", error.message);
         res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 export const editUser = async (req, res) => {
     try {
