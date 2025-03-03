@@ -8,6 +8,7 @@ import EmployeeList from "../pages/EmployeeList";
 import ClientInfo from "../pages/ClientInfo";
 import VoyageDetails from "../pages/VoyageDetails";
 import AllCodeDetails from "../pages/AllCodeDetails";
+import AllBills from "../pages/AllBills";
 
 const MainContent = () => {
   const location = useLocation();
@@ -24,9 +25,8 @@ const MainContent = () => {
     }
 
     switch (path) {
-      case "/bill":
-        return <BillofLading />;
       case "/":
+        return <Voyages />;
       case "/Voyages":
         return <Voyages />;
       case "/completed":
@@ -37,6 +37,8 @@ const MainContent = () => {
         return <EmployeeList />;
       case "/client":
         return <ClientInfo />;
+      case "/allBills":
+        return <AllBills />;
       default:
         return <Voyages />;
     }

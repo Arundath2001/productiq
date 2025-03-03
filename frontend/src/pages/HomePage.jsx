@@ -5,7 +5,7 @@ import { useParams, useLocation } from 'react-router-dom';
 
 const HomePage = () => {
   const { voyageId, productCode } = useParams();
-  const location = useLocation();  // Track route changes
+  const location = useLocation();  
   const [selectedTab, setSelectedTab] = useState('Voyages');
 
   useEffect(() => {
@@ -18,7 +18,7 @@ const HomePage = () => {
     } else {
       setSelectedTab("Voyages");
     }
-  }, [voyageId, productCode, location.pathname]);  // Listen for route changes
+  }, [voyageId, productCode, location.pathname]); 
 
   return (
     <div className='flex h-screen'>

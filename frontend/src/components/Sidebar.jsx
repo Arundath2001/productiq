@@ -80,13 +80,13 @@ const Sidebar = ({ setSelectedTab }) => {
           </li>
 
           <li
-            onClick={() => handleTabClick("bill")}
+            onClick={() => handleTabClick("allBills")}
             className={`flex text-base rounded-xl items-center gap-2 px-3 py-2 cursor-pointer ${
-              activeTab === "bill" ? "bg-black text-white" : ""
+              activeTab === "allBills" ? "bg-black text-white" : ""
             }`}
           >
             <FaFileInvoice />
-            Bill of Lading
+            All Bills
           </li>
         </ul>
       </div>

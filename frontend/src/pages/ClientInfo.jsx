@@ -60,7 +60,7 @@ const ClientInfo = () => {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         showDateFilter={false}
-        placeholder='Search by client username'
+        placeholder="Search by client username"
       />
 
       <div className="mt-5">
