@@ -17,12 +17,25 @@ const port = process.env.PORT;
 
 const __dirname = path.resolve();
 
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://aswaqforwarder.com",
+  ];
+  
+
 app.use(express.json())
 app.use(cookieParser());
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+    },
     credentials: true
-}))
+  }));
+  
 
 app.use("/api/auth", authRoutes );
 app.use("/api/voyage", voyageRoutes );
