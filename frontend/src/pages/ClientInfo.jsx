@@ -75,7 +75,7 @@ const ClientInfo = () => {
                   CLIENT USERNAME
                 </th>
                 <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600 ">
-                  COMPANY CODE
+                CUSTOMER CODE
                 </th>
                 <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600 ">
                   CLIENT LOCATION

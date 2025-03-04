@@ -85,8 +85,8 @@ const UserForm = ({ formTitile, role, closeForm, userData }) => {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
         <InputLine
           name="username"
-          label="Username"
-          placeholder="Username"
+          label={role === "client" ? "Customer Name" : "Username"}
+          placeholder={role === "client" ? "Customer Name" : "Username"}
           value={formData.username}
           onChange={handleChange}
         />
@@ -135,8 +135,8 @@ const UserForm = ({ formTitile, role, closeForm, userData }) => {
           <>
             <InputLine
               name="companyCode"
-              label="Company Code"
-              placeholder="Company Code"
+              label="Customer Code"
+              placeholder="Customer Code"
               value={formData.companyCode}
               onChange={handleChange}
             />

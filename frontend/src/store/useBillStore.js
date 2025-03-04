@@ -10,10 +10,8 @@ export const useBillStore = create((set) => ({
         try {
             let response;
             if (billData._id) {
-                // If an ID exists, update the existing Bill of Lading
                 response = await axiosInstance.put(`/billoflading/${billData._id}`, billData);
             } else {
-                // If no ID, create a new Bill of Lading
                 response = await axiosInstance.post("/billoflading", billData);
             }
             set({ billData: response.data });

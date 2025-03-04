@@ -3,6 +3,7 @@ import InputLine from "../components/InputLine";
 import BillOfLadingPDF from "./test";
 import Modal from "../components/Modal";
 import { useBillStore } from "../store/useBillStore";
+import toast from "react-hot-toast";
 
 const BillofLading = ({ bill, onClose }) => {
   const [formData, setFormData] = useState({
@@ -50,11 +51,11 @@ const BillofLading = ({ bill, onClose }) => {
   const handleSave = async () => {
     try {
       await saveBill(formData);
-      alert("Bill of Lading saved successfully!");
+      toast.success("Bill of Lading saved successfully!");
       if (onClose) onClose();
     } catch (error) {
       console.error("Error saving Bill of Lading:", error);
-      alert("Failed to save Bill of Lading.");
+      toast.error("Failed to save Bill of Lading.");
     }
   };
 
@@ -92,7 +93,7 @@ const BillofLading = ({ bill, onClose }) => {
       !goodsData.measurement ||
       !goodsData.quantityDescription
     ) {
-      alert("Please fill all fields before adding.");
+      toast.error("Please fill all fields before adding.");
       return;
     }
 
@@ -478,12 +479,6 @@ const BillofLading = ({ bill, onClose }) => {
         Save Bill of Lading
       </button>
 
-        {/* <button
-          onClick={handleOpenPreview}
-          className="bg-black rounded-xl px-5 py-3 text-white"
-        >
-          Download Invoice
-        </button> */}
       </div>
       
     </div>
