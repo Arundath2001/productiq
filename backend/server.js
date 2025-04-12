@@ -20,7 +20,8 @@ const __dirname = path.resolve();
 const allowedOrigins = [
     "http://localhost:5173",
     "https://aswaqforwarder.com",
-    "https://productiq-web.onrender.com"
+    "https://productiq-web.onrender.com",
+    "https://www.aswaqforwarder.com"
   ];
   
 
