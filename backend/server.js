@@ -21,7 +21,8 @@ const allowedOrigins = [
     "http://localhost:5173",
     "https://aswaqforwarder.com",
     "https://productiq-web.onrender.com",
-    "https://www.aswaqforwarder.com"
+    "https://www.aswaqforwarder.com",
+    "http://localhost:8081"
   ];
   
 
