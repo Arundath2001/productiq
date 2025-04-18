@@ -57,7 +57,7 @@ export const uploadVoyage = async (req, res) => {
             return res.status(400).json({ message: "Product code already exists in this voyage" });
         }
 
-        const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+        const imageUrl = `${process.env.BASE_URL}/uploads/${req.file.filename}`;
         voyage.uploadedData.push({
             productCode,
             trackingNumber,
