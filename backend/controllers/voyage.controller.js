@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import Voyage from "../models/voyage.model.js";
 import axios from "axios";
+import { Expo } from 'expo-server-sdk';
 
 export const createVoyage = async (req, res) => {
     try {
@@ -168,6 +169,32 @@ export const getCompletedVoyages = async (req, res) => {
     }
 };
 
+const sendPushNotification = async (expoPushToken, message) => {
+    let expo = new Expo();
+
+    const messages = [{
+        to: expoPushToken,
+        sound: 'default',
+        title: 'Voyage Exported',
+        body: message,
+        data: { withSome: 'data' },
+    }];
+
+    try {
+        let chunks = expo.chunkPushNotifications(messages);
+        let tickets = [];
+
+        for (let chunk of chunks) {
+            let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+            tickets.push(...ticketChunk);
+        }
+
+        console.log('Push notification sent successfully');
+    } catch (error) {
+        console.error('Error sending push notification:', error);
+    }
+};
+
 
 export const exportVoyageData = async (req, res) => {
     try {
@@ -183,33 +210,16 @@ export const exportVoyageData = async (req, res) => {
         await voyage.save();
 
         const companyCodes = [...new Set(voyage.uploadedData.map(data => data.clientCompany))];
+        console.log("Company Codes:", companyCodes);
 
-        console.log(companyCodes);
-        
-
+        // Fetch clients that match the company codes
         const clients = await User.find({ role: "client", companyCode: { $in: companyCodes } });
+        console.log("Clients to notify:", clients);
 
-        console.log(clients);
-        
-
-        const pushTokens = clients.map(client => client.expoPushToken).filter(token => token?.startsWith("ExponentPushToken"));
-
-        if (pushTokens.length > 0) {
-            const messages = pushTokens.map(token => ({
-                to: token,
-                sound: "default",
-                title: "Voyage Completed",
-                body: `Voyage ${voyage.voyageName} has been completed.`,
-                data: { voyageId: voyage._id },
-            }));
-
-            try {
-                await axios.post("https://exp.host/--/api/v2/push/send", messages, {
-                    headers: { "Content-Type": "application/json" },
-                });
-                console.log("Push notifications sent successfully");
-            } catch (notificationError) {
-                console.error("Error sending push notifications:", notificationError.message);
+        // Send push notifications to all clients with expoPushToken
+        for (let client of clients) {
+            if (client.expoPushToken) {
+                await sendPushNotification(client.expoPushToken, "The voyage has been successfully exported.");
             }
         }
 
