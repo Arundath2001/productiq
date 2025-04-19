@@ -70,6 +70,13 @@ export const uploadVoyage = async (req, res) => {
 
         await voyage.save();
 
+        const clientUsers = await User.find({ role: 'client', companyCode: clientCompany });
+        for (let client of clientUsers) {
+            if (client.expoPushToken) {
+                await sendPushNotification(client.expoPushToken, `A new item with product code ${productCode} has been received.`);
+            }
+        }
+
         res.status(200).json({voyage});
 
     } catch (error) {
@@ -175,7 +182,7 @@ const sendPushNotification = async (expoPushToken, message) => {
     const messages = [{
         to: expoPushToken,
         sound: 'default',
-        title: 'Voyage Exported',
+        title: 'Aswaq Forwarder',
         body: message,
         data: { withSome: 'data' },
     }];
@@ -207,19 +214,23 @@ export const exportVoyageData = async (req, res) => {
 
         voyage.status = "completed";
         voyage.lastPrintedCounts = new Map();
+
+        voyage.uploadedData = voyage.uploadedData.map(item => ({
+            ...item.toObject(),
+            status: "completed"
+        }));
+
         await voyage.save();
 
         const companyCodes = [...new Set(voyage.uploadedData.map(data => data.clientCompany))];
         console.log("Company Codes:", companyCodes);
 
-        // Fetch clients that match the company codes
         const clients = await User.find({ role: "client", companyCode: { $in: companyCodes } });
         console.log("Clients to notify:", clients);
 
-        // Send push notifications to all clients with expoPushToken
         for (let client of clients) {
             if (client.expoPushToken) {
-                await sendPushNotification(client.expoPushToken, "The voyage has been successfully exported.");
+                await sendPushNotification(client.expoPushToken, "Items have been dispatched and are now on their way.");
             }
         }
 
@@ -282,7 +293,7 @@ export const getVoyageByCompany = async (req, res) => {
     try {
         const { companyCode } = req.params;
 
-        const voyages = await Voyage.find({ status: "completed" })
+        const voyages = await Voyage.find({})
             .sort({ createdAt: -1 })
             .select("uploadedData");
 
