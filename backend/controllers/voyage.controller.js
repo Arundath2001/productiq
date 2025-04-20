@@ -212,12 +212,15 @@ export const exportVoyageData = async (req, res) => {
             return res.status(404).json({ message: "Voyage not found" });
         }
 
+        const now = new Date();
+
         voyage.status = "completed";
         voyage.lastPrintedCounts = new Map();
 
         voyage.uploadedData = voyage.uploadedData.map(item => ({
             ...item.toObject(),
-            status: "completed"
+            status: "completed",
+            exportedDate: now
         }));
 
         await voyage.save();

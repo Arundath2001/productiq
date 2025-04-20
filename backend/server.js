@@ -10,7 +10,6 @@ import billOfLading from "./routers/billoflading.route.js";
 import cors from "cors";
 import path from "path";
 import { app, server } from "./lib/socket.js";
-import { Expo } from 'expo-server-sdk';
 
 dotenv.config();
 
