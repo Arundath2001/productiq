@@ -304,9 +304,12 @@ export const getVoyageByCompany = async (req, res) => {
             return res.status(404).json({ message: "No completed voyages found" });
         }
 
-        const filteredData = voyages.flatMap(voyage => 
-            voyage.uploadedData.filter(data => data.clientCompany === companyCode)
-        );
+        const filteredData = voyages.flatMap(voyage =>
+            voyage.uploadedData
+                .filter(data => data.clientCompany === companyCode)
+        )
+        .sort((a, b) => new Date(b.uploadedDate) - new Date(a.uploadedDate));
+        
 
         if (!filteredData.length) {
             return res.status(404).json({ message: `No uploaded data found for company ${companyCode}` });
