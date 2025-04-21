@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import Voyage from "../models/voyage.model.js";
 import axios from "axios";
 import { Expo } from 'expo-server-sdk';
+import { io } from "../lib/socket.js";
 
 export const createVoyage = async (req, res) => {
     try {
@@ -69,6 +70,19 @@ export const uploadVoyage = async (req, res) => {
         });
 
         await voyage.save();
+
+        io.emit("voyage-data-updated", {
+            voyageNumber,
+            newProduct: {
+                productCode,
+                trackingNumber,
+                clientCompany,
+                image: imageUrl,
+                uploadedBy: req.user._id,
+                weight
+            },
+            updateType: 'upload'
+        });        
 
         const clientUsers = await User.find({ role: 'client', companyCode: clientCompany });
         for (let client of clientUsers) {
@@ -236,6 +250,8 @@ export const exportVoyageData = async (req, res) => {
                 await sendPushNotification(client.expoPushToken, "Items have been dispatched and are now on their way.");
             }
         }
+
+        io.emit('voyage-data-updated', { voyageId, newProduct: voyage.uploadedData, updateType: 'export' });
 
         res.status(200).json({ message: "Voyage exported successfully and notifications sent" });
 

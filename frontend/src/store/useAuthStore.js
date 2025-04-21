@@ -71,6 +71,7 @@ export const useAuthStore = create((set, get) => ({
             console.log("Error in getUsersData", error);
         }
     },
+    
     createUser: async (userData) => {
         set({ isSigningUp: true });
         try {
