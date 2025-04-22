@@ -247,7 +247,7 @@ export const exportVoyageData = async (req, res) => {
 
         for (let client of clients) {
             if (client.expoPushToken) {
-                await sendPushNotification(client.expoPushToken, "Items have been dispatched and are now on their way.");
+                await sendPushNotification(client.expoPushToken, `Your items from Voyage ${voyage.voyageName} have been dispatched and are now on their way.`);
             }
         }
 
