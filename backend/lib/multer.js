@@ -11,16 +11,17 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png/;
-    const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimeType = allowedTypes.test(file.mimetype);
-
-    if (extName && mimeType) {
-        return cb(null, true);
+    if (
+      file.mimetype === 'image/jpeg' || 
+      file.mimetype === 'image/jpg' || 
+      file.mimetype === 'image/png' ||
+      file.mimetype === 'image/webp'
+    ) {
+      cb(null, true);
     } else {
-        return cb(new Error("Only images (jpeg, jpg, png) are allowed"));
+      cb(new Error('Only images (jpeg, jpg, png, webp) are allowed'), false);
     }
-};
+  };
 
 const upload = multer({
     storage: storage,
