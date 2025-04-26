@@ -61,7 +61,7 @@ const voyageSchema = mongoose.Schema({
         },
         weight:{
             type: Number,
-            require: true
+            required: true
         },
         exportedDate: { 
             type: Date 
