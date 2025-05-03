@@ -342,10 +342,38 @@ export const getPendingVoyages = async (req, res) => {
     try {
         const voyages = await Voyage.find({ status: "pending" })
             .sort({ createdAt: -1 })
-            .populate("createdBy", "username") 
-            .populate("uploadedData.uploadedBy", "username"); 
+            .populate("createdBy", "username")
+            .populate("uploadedData.uploadedBy", "username");
+        
+        // Process the voyages to organize data by main product codes
+        const processedVoyages = voyages.map(voyage => {
+            // Convert to plain object to avoid mongoose immutability
+            const voyageObj = voyage.toObject();
+            
+            // Create a map to group items by main product code
+            const groupedByMainCode = {};
+            
+            voyageObj.uploadedData.forEach(item => {
+                // Extract the main product code (part before the first '|')
+                const mainProductCode = item.productCode.split('|')[0];
+                
+                if (!groupedByMainCode[mainProductCode]) {
+                    groupedByMainCode[mainProductCode] = [];
+                }
+                
+                groupedByMainCode[mainProductCode].push(item);
+            });
+            
+            // Convert the map to an array of objects with mainCode and its items
+            voyageObj.groupedData = Object.keys(groupedByMainCode).map(mainCode => ({
+                mainProductCode: mainCode,
+                items: groupedByMainCode[mainCode]
+            }));
+            
+            return voyageObj;
+        });
 
-        res.status(200).json(voyages);
+        res.status(200).json(processedVoyages);
     } catch (error) {
         console.error("Error fetching pending voyages:", error.message);
         res.status(500).json({ message: "Internal server error" });
