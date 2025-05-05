@@ -280,6 +280,10 @@ export const deleteVoyage = async (req, res) => {
 
         await Voyage.findByIdAndDelete(voyageId);
 
+        await PrintBatch.deleteMany({ voyageNumber: voyage.voyageNumber });
+
+        await PrintedQr.deleteMany({ voyageNumber: voyage.voyageNumber });
+
         res.status(200).json({ message: "Voyage deleted successfully" });
 
     } catch (error) {
