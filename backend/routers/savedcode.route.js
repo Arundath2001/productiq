@@ -10,8 +10,8 @@ router.get("/", protectRoute, getSavedProductCode );
 
 router.delete("/:codeId", protectRoute, deleteSavedCode );
 
-router.get("/:productCode/failed", getFailedPrintsForSavedCode);
+router.get("/:productCode/failed", protectRoute, getFailedPrintsForSavedCode);
 
-router.get("/:productCode/summary", getPrintStatusSummaryForSavedCode);
+router.get("/:productCode/summary", protectRoute, getPrintStatusSummaryForSavedCode);
 
 export default router;
