@@ -1,5 +1,7 @@
 import User from "../models/user.model.js";
 import Voyage from "../models/voyage.model.js";
+import PrintBatch from "../models/printBatch.model.js";
+import PrintedQr from "../models/printedQr.model.js";
 import axios from "axios";
 import { Expo } from 'expo-server-sdk';
 import { io } from "../lib/socket.js";
@@ -238,6 +240,10 @@ export const exportVoyageData = async (req, res) => {
         }));
 
         await voyage.save();
+
+        await PrintBatch.deleteMany({ voyageNumber: voyage.voyageNumber });
+
+        await PrintedQr.deleteMany({ voyageNumber: voyage.voyageNumber });
 
         const companyCodes = [...new Set(voyage.uploadedData.map(data => data.clientCompany))];
         console.log("Company Codes:", companyCodes);
