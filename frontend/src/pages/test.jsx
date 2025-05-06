@@ -188,9 +188,9 @@ const BillOfLadingPDF = ({ billData }) => {
                   </Text>
                 </View>
 
-                <View style={styles.freight}>
+                {/* <View style={styles.freight}>
                   <Text style={styles.label}>FREIGHT PREPAID</Text>
-                </View>
+                </View> */}
               </View>
 
               <View style={styles.rightSection}>
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     borderColor: "#114FA2",
   },
   bottomBox: {
-    borderWidth: 0.8,
+    borderTop: 0.8,
     borderColor: "#114FA2",
     padding: 10,
   },
@@ -404,7 +404,8 @@ const styles = StyleSheet.create({
   smallText: {
     fontSize: 7,
     color: "#000000",
-    lineHeight: 1.4,
+    lineHeight: 2,
+    marginTop: 10
   },
   centeredText: {
     textAlign: "center",
