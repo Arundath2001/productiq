@@ -4,28 +4,31 @@ import PrintBatch from "../models/printBatch.model.js";
 
 export const saveProductCode = async (req, res) => {
     try {
-        const {productCode} = req.body;
+        const { productCode, companyCode } = req.body;
 
-        if(req.user.role !== 'employee'){
-            return res.status(400).json({message : "Only employee can add product code"});
+        if (!companyCode) {
+            return res.status(400).json({ message: "Company code is required" });
         }
 
-        const savedCode = await SavedCode.findOne({productCode});
+        if (req.user.role !== 'employee') {
+            return res.status(400).json({ message: "Only employee can add product code" });
+        }
 
-        if(savedCode) return res.status(400).json({message : "Product code already exisits"});
+        const savedCode = await SavedCode.findOne({ productCode });
+        if (savedCode) return res.status(400).json({ message: "Product code already exists" });
 
         const newSavedCode = new SavedCode({
             productCode,
+            companyCode,
             savedBy: req.user.id
         });
 
         await newSavedCode.save();
 
         res.status(200).json(newSavedCode);
-
     } catch (error) {
         console.log("Error in saveProductCode controller", error.message);
-        res.status(500).json({message: "Inernal server error"});
+        res.status(500).json({ message: "Internal server error" });
     }
 }
 
