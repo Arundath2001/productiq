@@ -156,161 +156,164 @@ export const generatePrintedQrBatch = async (req, res) => {
   };
   
   // Update print status for a batch or individual QR codes
-  export const updatePrintStatus = async (req, res) => {
+export const updatePrintStatus = async (req, res) => {
+  try {
+    const { batchId, qrIds, status } = req.body;
+    console.log("[PRINT-STATUS] Update request:", { batchId, qrIds: qrIds?.length, status });
+    
+    if ((!batchId && !qrIds) || !status) {
+      console.error("[PRINT-STATUS] Validation failed: Missing required fields");
+      return res.status(400).json({ message: "Either batchId or qrIds, and status are required" });
+    }
+    
+    if (!["printed", "failed"].includes(status)) {
+      console.error("[PRINT-STATUS] Invalid status:", status);
+      return res.status(400).json({ message: "Status must be either 'printed' or 'failed'" });
+    }
+    
+    // Start a transaction
+    console.log("[PRINT-STATUS] Starting MongoDB transaction");
+    const session = await mongoose.startSession();
+    let transactionStarted = false;
+    
     try {
-      const { batchId, qrIds, status } = req.body;
-      console.log("[PRINT-STATUS] Update request:", { batchId, qrIds: qrIds?.length, status });
+      transactionStarted = true;
+      console.log("[PRINT-STATUS] Transaction started");
       
-      if ((!batchId && !qrIds) || !status) {
-        console.error("[PRINT-STATUS] Validation failed: Missing required fields");
-        return res.status(400).json({ message: "Either batchId or qrIds, and status are required" });
-      }
-      
-      if (!["printed", "failed"].includes(status)) {
-        console.error("[PRINT-STATUS] Invalid status:", status);
-        return res.status(400).json({ message: "Status must be either 'printed' or 'failed'" });
-      }
-      
-      // Start a transaction
-      console.log("[PRINT-STATUS] Starting MongoDB transaction");
-      const session = await mongoose.startSession();
-      let transactionStarted = false;
-      
-      try {
-        transactionStarted = true;
-        console.log("[PRINT-STATUS] Transaction started");
-        
-        await session.withTransaction(async () => {
-          // If updating entire batch
-          if (batchId) {
-            console.log(`[PRINT-STATUS] Looking up batch: ${batchId}`);
-            const batch = await PrintBatch.findById(batchId).session(session);
-            if (!batch) {
-              console.error(`[PRINT-STATUS] Batch not found: ${batchId}`);
-              throw new Error("Batch not found");
-            }
-            
-            // Update batch status
-            console.log(`[PRINT-STATUS] Updating batch status from ${batch.printStatus} to ${status}`);
-            batch.printStatus = status;
-            await batch.save({ session });
-            
-            // Update all QR codes in the batch
-            console.log(`[PRINT-STATUS] Updating ${batch.qrCodes.length} QR codes to status: ${status}`);
-            await PrintedQr.updateMany(
-              { _id: { $in: batch.qrCodes } },
-              { 
-                $set: { printStatus: status },
-                $inc: { printAttempts: 1 },
-                $currentDate: { lastPrintAttempt: true }
-              },
-              { session }
-            );
-            
-            console.log(`[PRINT-STATUS] Batch ${batch.batchNumber} updated to ${status}`);
-            res.status(200).json({
-              message: `Print status updated to ${status} for batch ${batch.batchNumber}`,
-              updatedCount: batch.qrCodes.length
-            });
-          } 
-          // If updating individual QR codes
-          else if (qrIds && Array.isArray(qrIds)) {
-            // Update the status of specific QR codes
-            console.log(`[PRINT-STATUS] Updating ${qrIds.length} QR codes to status: ${status}`);
-            const updateResult = await PrintedQr.updateMany(
-              { _id: { $in: qrIds } },
-              { 
-                $set: { printStatus: status },
-                $inc: { printAttempts: 1 },
-                $currentDate: { lastPrintAttempt: true }
-              },
-              { session }
-            );
-            console.log(`[PRINT-STATUS] Updated ${updateResult.modifiedCount} QR codes`);
-            
-            // Check if these QR codes belong to any batch
-            console.log("[PRINT-STATUS] Checking for affected batches");
-            const qrCodes = await PrintedQr.find({ _id: { $in: qrIds } }).session(session);
-            const batchIds = [...new Set(qrCodes.map(qr => qr.batchId).filter(id => id))];
-            console.log(`[PRINT-STATUS] Found ${batchIds.length} affected batches`);
-            
-            // Update batch statuses if necessary
-            for (const bId of batchIds) {
-              console.log(`[PRINT-STATUS] Processing batch: ${bId}`);
-              const batch = await PrintBatch.findById(bId).session(session);
-              if (batch) {
-                // Get count of QR codes in this batch with each status
-                console.log(`[PRINT-STATUS] Analyzing QR status distribution for batch: ${bId}`);
-                const batchQrCounts = await PrintedQr.aggregate([
-                  { $match: { batchId: mongoose.Types.ObjectId(bId) } },
-                  { $group: { _id: "$printStatus", count: { $sum: 1 } } }
-                ]).session(session);
-                
-                // Determine new batch status
-                const statusCounts = Object.fromEntries(
-                  batchQrCounts.map(item => [item._id, item.count])
-                );
-                
-                const totalQrs = batch.qrCodes.length;
-                const printedCount = statusCounts.printed || 0;
-                const failedCount = statusCounts.failed || 0;
-                
-                console.log(`[PRINT-STATUS] Batch status distribution: total=${totalQrs}, printed=${printedCount}, failed=${failedCount}`);
-                
-                let newBatchStatus;
-                if (printedCount === totalQrs) {
-                  newBatchStatus = "printed";
-                } else if (failedCount === totalQrs) {
-                  newBatchStatus = "failed";
-                } else if (printedCount > 0 || failedCount > 0) {
-                  newBatchStatus = "partially_printed";
-                } else {
-                  newBatchStatus = "generated";
-                }
-                
+      await session.withTransaction(async () => {
+        // If updating individual QR codes
+        if (qrIds && Array.isArray(qrIds)) {
+          // Update the status of specific QR codes
+          console.log(`[PRINT-STATUS] Updating ${qrIds.length} QR codes to status: ${status}`);
+          const updateResult = await PrintedQr.updateMany(
+            { _id: { $in: qrIds } },
+            { 
+              $set: { printStatus: status },
+              $inc: { printAttempts: 1 },
+              $currentDate: { lastPrintAttempt: true }
+            },
+            { session }
+          );
+          console.log(`[PRINT-STATUS] Updated ${updateResult.modifiedCount} QR codes`);
+          
+          // Check if these QR codes belong to any batch
+          console.log("[PRINT-STATUS] Checking for affected batches");
+          const qrCodes = await PrintedQr.find({ _id: { $in: qrIds } }).session(session);
+          const batchIds = [...new Set(qrCodes.map(qr => qr.batchId).filter(id => id))];
+          console.log(`[PRINT-STATUS] Found ${batchIds.length} affected batches`);
+          
+          // Update batch statuses if necessary
+          for (const bId of batchIds) {
+            console.log(`[PRINT-STATUS] Processing batch: ${bId}`);
+            const batch = await PrintBatch.findById(bId).session(session);
+            if (batch) {
+              // Get count of QR codes in this batch with each status
+              console.log(`[PRINT-STATUS] Analyzing QR status distribution for batch: ${bId}`);
+              const batchQrCounts = await PrintedQr.aggregate([
+                { $match: { batchId: mongoose.Types.ObjectId(bId) } },
+                { $group: { _id: "$printStatus", count: { $sum: 1 } } }
+              ]).session(session);
+              
+              // Determine new batch status
+              const statusCounts = Object.fromEntries(
+                batchQrCounts.map(item => [item._id, item.count])
+              );
+              
+              const totalQrs = batch.qrCodes.length;
+              const printedCount = statusCounts.printed || 0;
+              const failedCount = statusCounts.failed || 0;
+              
+              console.log(`[PRINT-STATUS] Batch status distribution: total=${totalQrs}, printed=${printedCount}, failed=${failedCount}`);
+              
+              let newBatchStatus;
+              if (printedCount === totalQrs) {
+                newBatchStatus = "printed";
+              } else if (failedCount === totalQrs) {
+                newBatchStatus = "failed";
+              } else if (printedCount > 0 || failedCount > 0) {
+                newBatchStatus = "partially_printed";
+              } else {
+                newBatchStatus = "generated";
+              }
+              
+              // Only update batch status if it has changed
+              if (batch.printStatus !== newBatchStatus) {
                 console.log(`[PRINT-STATUS] Updating batch status from ${batch.printStatus} to ${newBatchStatus}`);
                 batch.printStatus = newBatchStatus;
                 await batch.save({ session });
               }
             }
-            
-            console.log(`[PRINT-STATUS] Update complete for ${updateResult.modifiedCount} QR codes and ${batchIds.length} batches`);
-            res.status(200).json({
-              message: `Print status updated to ${status}`,
-              updatedCount: updateResult.modifiedCount,
-              updatedBatches: batchIds.length
-            });
           }
-        });
-        
-        console.log("[PRINT-STATUS] Transaction completed successfully");
-        transactionStarted = false;
-        await session.endSession();
-        console.log("[PRINT-STATUS] Session ended");
-        
-      } catch (error) {
-        console.error("[PRINT-STATUS] Error updating print status:", error);
-        
-        // Only abort if transaction is still active
-        if (transactionStarted) {
-          console.log("[PRINT-STATUS] Attempting to abort transaction");
-          try {
-            await session.abortTransaction();
-            console.log("[PRINT-STATUS] Transaction aborted successfully");
-          } catch (abortError) {
-            console.error("[PRINT-STATUS] Error aborting transaction:", abortError);
+          
+          console.log(`[PRINT-STATUS] Update complete for ${updateResult.modifiedCount} QR codes and ${batchIds.length} batches`);
+          res.status(200).json({
+            message: `Print status updated to ${status}`,
+            updatedCount: updateResult.modifiedCount,
+            updatedBatches: batchIds.length
+          });
+        } 
+        // If updating entire batch (kept for completeness)
+        else if (batchId) {
+          console.log(`[PRINT-STATUS] Looking up batch: ${batchId}`);
+          const batch = await PrintBatch.findById(batchId).session(session);
+          if (!batch) {
+            console.error(`[PRINT-STATUS] Batch not found: ${batchId}`);
+            throw new Error("Batch not found");
           }
-          await session.endSession();
-          console.log("[PRINT-STATUS] Session ended after abort");
+          
+          // Update batch status
+          console.log(`[PRINT-STATUS] Updating batch status from ${batch.printStatus} to ${status}`);
+          batch.printStatus = status;
+          await batch.save({ session });
+          
+          // Update all QR codes in the batch
+          console.log(`[PRINT-STATUS] Updating ${batch.qrCodes.length} QR codes to status: ${status}`);
+          await PrintedQr.updateMany(
+            { _id: { $in: batch.qrCodes } },
+            { 
+              $set: { printStatus: status },
+              $inc: { printAttempts: 1 },
+              $currentDate: { lastPrintAttempt: true }
+            },
+            { session }
+          );
+          
+          console.log(`[PRINT-STATUS] Batch ${batch.batchNumber} updated to ${status}`);
+          res.status(200).json({
+            message: `Print status updated to ${status} for batch ${batch.batchNumber}`,
+            updatedCount: batch.qrCodes.length
+          });
         }
-        
-        res.status(500).json({ message: "Failed to update print status" });
-      }
+      });
+      
+      console.log("[PRINT-STATUS] Transaction completed successfully");
+      transactionStarted = false;
+      await session.endSession();
+      console.log("[PRINT-STATUS] Session ended");
+      
     } catch (error) {
-      console.error("[PRINT-STATUS] Error in updatePrintStatus controller:", error);
-      res.status(500).json({ message: "Internal server error" });
+      console.error("[PRINT-STATUS] Error updating print status:", error);
+      
+      // Only abort if transaction is still active
+      if (transactionStarted) {
+        console.log("[PRINT-STATUS] Attempting to abort transaction");
+        try {
+          await session.abortTransaction();
+          console.log("[PRINT-STATUS] Transaction aborted successfully");
+        } catch (abortError) {
+          console.error("[PRINT-STATUS] Error aborting transaction:", abortError);
+        }
+        await session.endSession();
+        console.log("[PRINT-STATUS] Session ended after abort");
+      }
+      
+      res.status(500).json({ message: "Failed to update print status" });
     }
-  };
+  } catch (error) {
+    console.error("[PRINT-STATUS] Error in updatePrintStatus controller:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
   
   // Get all batches with filters
   export const getBatches = async (req, res) => {
