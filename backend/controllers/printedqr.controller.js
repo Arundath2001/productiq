@@ -160,6 +160,8 @@ export const generatePrintedQrBatch = async (req, res) => {
   };
   
   // Update print status for a batch or individual QR codes
+// Fixed updatePrintStatus controller function for backend
+
 export const updatePrintStatus = async (req, res) => {
   try {
     const { batchId, qrIds, status } = req.body;
@@ -187,7 +189,7 @@ export const updatePrintStatus = async (req, res) => {
       await session.withTransaction(async () => {
         // If updating individual QR codes
         if (qrIds && Array.isArray(qrIds)) {
-          // Update the status of specific QR codes
+          // Update the status of specific QR codes only
           console.log(`[PRINT-STATUS] Updating ${qrIds.length} QR codes to status: ${status}`);
           const updateResult = await PrintedQr.updateMany(
             { _id: { $in: qrIds } },
@@ -213,15 +215,18 @@ export const updatePrintStatus = async (req, res) => {
             if (batch) {
               // Get count of QR codes in this batch with each status
               console.log(`[PRINT-STATUS] Analyzing QR status distribution for batch: ${bId}`);
-              const batchQrCounts = await PrintedQr.aggregate([
-                { $match: { batchId: mongoose.Types.ObjectId(bId) } },
-                { $group: { _id: "$printStatus", count: { $sum: 1 } } }
-              ]).session(session);
+              const batchQrCodes = await PrintedQr.find({ batchId: mongoose.Types.ObjectId(bId) }).session(session);
               
-              // Determine new batch status
-              const statusCounts = Object.fromEntries(
-                batchQrCounts.map(item => [item._id, item.count])
-              );
+              // Count QRs by status
+              const statusCounts = {
+                printed: 0,
+                failed: 0,
+                generated: 0
+              };
+              
+              batchQrCodes.forEach(qr => {
+                statusCounts[qr.printStatus] = (statusCounts[qr.printStatus] || 0) + 1;
+              });
               
               const totalQrs = batch.qrCodes.length;
               const printedCount = statusCounts.printed || 0;
@@ -256,7 +261,7 @@ export const updatePrintStatus = async (req, res) => {
             updatedBatches: batchIds.length
           });
         } 
-        // If updating entire batch (kept for completeness)
+        // If updating entire batch
         else if (batchId) {
           console.log(`[PRINT-STATUS] Looking up batch: ${batchId}`);
           const batch = await PrintBatch.findById(batchId).session(session);
