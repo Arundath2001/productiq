@@ -28,13 +28,17 @@ export const generatePrintedQrBatch = async (req, res) => {
       }
   
       console.log(`[QR-BATCH] Found voyage: ${voyageNumber}`, { voyageId: voyage._id });
-  
-      // Generate a unique batch number
-      const batchNumber = `${voyageNumber}-${productCode}-${Date.now()}`;
-      console.log(`[QR-BATCH] Generated batch number: ${batchNumber}`);
       
       let lastCount = voyage.lastPrintedCounts.get(productCode) || 0;
       console.log(`[QR-BATCH] Initial lastCount for ${productCode}: ${lastCount}`);
+      
+      // Calculate first and last QR sequence numbers
+      const firstSequenceNumber = (lastCount + 1).toString().padStart(2, "0");
+      const lastSequenceNumber = (lastCount + qty).toString().padStart(2, "0");
+      
+      // Create batch number with first and last QR data
+      const batchNumber = `${productCode}|${firstSequenceNumber}|${voyageNumber} to ${productCode}|${lastSequenceNumber}|${voyageNumber}`;
+      console.log(`[QR-BATCH] Generated batch number: ${batchNumber}`);
   
       let qrList = [];
       let qrIds = [];
