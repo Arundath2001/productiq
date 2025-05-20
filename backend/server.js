@@ -10,6 +10,7 @@ import billOfLading from "./routers/billoflading.route.js";
 import cors from "cors";
 import path from "path";
 import { app, server } from "./lib/socket.js";
+import notificationRoutes from "./routers/notification.route.js";
 
 dotenv.config();
 
@@ -45,6 +46,7 @@ app.use("/api/voyage", voyageRoutes );
 app.use("/api/printedqr", printedQrRoutes );
 app.use("/api/savedcode", saveCodeRoutes );
 app.use("/api/billoflading", billOfLading );
+app.use("/api/notification", notificationRoutes );
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 if(process.env.NODE_ENV==='production'){
