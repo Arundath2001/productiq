@@ -2,7 +2,6 @@ import { io } from "../lib/socket.js";
 import User from "../models/user.model.js";
 import { Expo } from 'expo-server-sdk';
 
-
 export const notification = async (req, res) => {
     try {
         const { message, title = "Aswaq Forwarder", sendPushNotification = true } = req.body;
@@ -27,16 +26,18 @@ export const notification = async (req, res) => {
                 { expoPushToken: { $exists: true, $ne: "" } },
                 "expoPushToken"
             );
-            
-            const tokens = usersWithTokens.map(user => user.expoPushToken).filter(token => token);
-            
+
+            const tokens = usersWithTokens
+                .map(user => user.expoPushToken)
+                .filter(Boolean);
+
             if (tokens.length > 0) {
-                await sendPushNotifications(tokens, message, title);
+                await sendPushNotificationsGroupedByExperienceId(tokens, message, title);
             }
         }
 
-        res.status(200).json({ 
-            success: true, 
+        res.status(200).json({
+            success: true,
             message: "Broadcast sent successfully",
             recipientCount: io.engine.clientsCount || 0
         });
@@ -47,31 +48,37 @@ export const notification = async (req, res) => {
     }
 };
 
+const sendPushNotificationsGroupedByExperienceId = async (tokens, message, title) => {
+    const expo = new Expo();
 
-const sendPushNotifications = async (tokens, message, title) => {
-    let expo = new Expo();
-    
-    const messages = tokens.map(token => ({
-        to: token,
-        sound: 'default',
-        title: title,
-        body: message,
-        data: { type: 'broadcast' },
-    }));
+    const groupedByExperienceId = {};
 
-    try {
-        let chunks = expo.chunkPushNotifications(messages);
-        let tickets = [];
+    for (const token of tokens) {
+        const experienceId = Expo.getPushNotificationExperienceId(token);
+        if (!groupedByExperienceId[experienceId]) {
+            groupedByExperienceId[experienceId] = [];
+        }
+        groupedByExperienceId[experienceId].push(token);
+    }
+
+    for (const [experienceId, tokenGroup] of Object.entries(groupedByExperienceId)) {
+        const messages = tokenGroup.map(token => ({
+            to: token,
+            sound: 'default',
+            title,
+            body: message,
+            data: { type: 'broadcast' },
+        }));
+
+        const chunks = expo.chunkPushNotifications(messages);
 
         for (let chunk of chunks) {
-            let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-            tickets.push(...ticketChunk);
+            try {
+                const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+                console.log(`Sent to ${chunk.length} tokens for ${experienceId}`);
+            } catch (error) {
+                console.error(`Failed to send to ${experienceId}:`, error);
+            }
         }
-
-        console.log(`Push notifications sent to ${tokens.length} devices`);
-        return tickets;
-    } catch (error) {
-        console.error('Error sending push notifications:', error);
-        throw error;
     }
 };
