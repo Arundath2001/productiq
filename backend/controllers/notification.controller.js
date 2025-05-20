@@ -2,7 +2,7 @@ import { io } from "../lib/socket.js";
 import User from "../models/user.model.js";
 import { Expo } from 'expo-server-sdk';
 
-
+// Main notification controller
 export const notification = async (req, res) => {
     try {
         const { message, title = "Aswaq Forwarder", sendPushNotification = true } = req.body;
@@ -15,6 +15,7 @@ export const notification = async (req, res) => {
             return res.status(403).json({ message: "Only admin can broadcast messages" });
         }
 
+        // Emit WebSocket message
         io.emit("broadcast-message", {
             title,
             message,
@@ -22,21 +23,32 @@ export const notification = async (req, res) => {
             sender: req.user.username || "Admin"
         });
 
+        // Send push notification if enabled
         if (sendPushNotification) {
             const usersWithTokens = await User.find(
                 { expoPushToken: { $exists: true, $ne: "" } },
                 "expoPushToken"
             );
-            
-            const tokens = usersWithTokens.map(user => user.expoPushToken).filter(token => token);
-            
-            if (tokens.length > 0) {
-                await sendPushNotifications(tokens, message, title);
+
+            const tokens = usersWithTokens
+                .map(user => user.expoPushToken)
+                .filter(token => token && token.startsWith('ExponentPushToken[')); // basic validation
+
+            // Filter for the desired experience ID
+            const validTokens = tokens.filter(token => {
+                const projectId = Expo.getPushNotificationExperienceId(token);
+                return projectId === '@arundath44/Aswaq';
+            });
+
+            if (validTokens.length > 0) {
+                await sendPushNotifications(validTokens, message, title);
+            } else {
+                console.warn("No valid push tokens found for @arundath44/Aswaq.");
             }
         }
 
-        res.status(200).json({ 
-            success: true, 
+        res.status(200).json({
+            success: true,
             message: "Broadcast sent successfully",
             recipientCount: io.engine.clientsCount || 0
         });
@@ -47,31 +59,26 @@ export const notification = async (req, res) => {
     }
 };
 
-
+// Helper function to send push notifications
 const sendPushNotifications = async (tokens, message, title) => {
-    let expo = new Expo();
-    
+    const expo = new Expo();
+
     const messages = tokens.map(token => ({
         to: token,
         sound: 'default',
-        title: title,
+        title,
         body: message,
         data: { type: 'broadcast' },
     }));
 
-    try {
-        let chunks = expo.chunkPushNotifications(messages);
-        let tickets = [];
+    const chunks = expo.chunkPushNotifications(messages);
 
-        for (let chunk of chunks) {
-            let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-            tickets.push(...ticketChunk);
+    for (const chunk of chunks) {
+        try {
+            await expo.sendPushNotificationsAsync(chunk);
+            console.log(`Push notifications sent to ${chunk.length} devices`);
+        } catch (error) {
+            console.error('Error sending push notifications:', error);
         }
-
-        console.log(`Push notifications sent to ${tokens.length} devices`);
-        return tickets;
-    } catch (error) {
-        console.error('Error sending push notifications:', error);
-        throw error;
     }
 };
