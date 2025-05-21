@@ -9,6 +9,7 @@ import ClientInfo from "../pages/ClientInfo";
 import VoyageDetails from "../pages/VoyageDetails";
 import AllCodeDetails from "../pages/AllCodeDetails";
 import AllBills from "../pages/AllBills";
+import SendNotification from "../pages/SendNotification";
 
 const MainContent = () => {
   const location = useLocation();
@@ -39,6 +40,8 @@ const MainContent = () => {
         return <ClientInfo />;
       case "/allBills":
         return <AllBills />;
+      case "/sendNotification":
+        return <SendNotification />;
       default:
         return <Voyages />;
     }

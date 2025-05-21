@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuthStore } from "../store/useAuthStore.js";
-import { FaFileInvoice, FaShip, FaCheckCircle, FaQrcode, FaUsers, FaBuilding, FaSignOutAlt } from "react-icons/fa";
+import { FaFileInvoice, FaShip, FaCheckCircle, FaQrcode, FaUsers, FaBuilding, FaSignOutAlt, FaBell } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Sidebar = ({ setSelectedTab }) => {
@@ -87,6 +87,16 @@ const Sidebar = ({ setSelectedTab }) => {
           >
             <FaFileInvoice />
             All Bills
+          </li>
+
+          <li
+            onClick={() => handleTabClick("sendNotification")}
+            className={`flex text-base rounded-xl items-center gap-2 px-3 py-2 cursor-pointer ${
+              activeTab === "sendNotification" ? "bg-black text-white" : ""
+            }`}
+          >
+            <FaBell />
+            Send Notification
           </li>
         </ul>
       </div>
