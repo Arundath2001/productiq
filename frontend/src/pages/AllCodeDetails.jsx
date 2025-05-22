@@ -36,8 +36,12 @@ const AllCodeDetails = () => {
   };
 
   const getTotalWeight = () => {
-    return productByCode.reduce((total, data) => total + (data.weight || 0), 0);
-  };
+  const total = productByCode.reduce(
+    (total, data) => total + (data.weight || 0), 
+    0
+  );
+  return Math.round(total * 100) / 100; 
+};
 
   const handleShowConfirm = (voyageId) => {
     setSelectedDataId(voyageId);

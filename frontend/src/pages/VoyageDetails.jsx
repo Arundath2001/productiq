@@ -89,11 +89,12 @@ const VoyageDetails = () => {
   };
 
   const getTotalWeight = () => {
-    return voyageDetails.uploadedData.reduce(
-      (total, data) => total + (data.weight || 0),
-      0
-    );
-  };
+  const total = voyageDetails.uploadedData.reduce(
+    (total, data) => total + (data.weight || 0),
+    0
+  );
+  return Math.round(total * 100) / 100; 
+};
 
   const filteredData = voyageDetails.uploadedData.filter((data) => {
     const matchesSearch = data.productCode
