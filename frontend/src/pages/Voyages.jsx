@@ -35,7 +35,7 @@ const Voyages = () => {
   };
 
   const handleViewClick = (voyageId) => {
-    navigate(`/voyage/${voyageId}`);
+    navigate(`/voyage/${voyageId}/companies`);
   };
 
   const handleCreateVoyage = () => {

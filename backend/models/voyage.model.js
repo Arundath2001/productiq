@@ -5,71 +5,42 @@ const voyageSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    voyageNumber:{
+    voyageNumber: {
         type: String,
         required: true,
         unique: true
     },
-    year:{
+    year: {
         type: Number,
         required: true
     },
-    createdBy:{
+    createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
-    status:{
+    status: {
         type: String,
         enum: ["pending", "completed"],
         default: "pending"
     },
-    lastPrintedCounts: { 
-        type: Map, 
-        of: Number, 
-        default: {} 
-    },
-    uploadedData:[{
-        productCode:{
-            type: String,
-            required: true
-        },
-        trackingNumber:{
-            type: String,
-            required: true
-        },
-        clientCompany:{
-            type: String,
-            required: true
-        },
-        uploadedBy:{
-            type: mongoose.Schema.Types.ObjectId,
-            required: true,
-            ref: 'User'
-        },
-        image:{
-            type: String,
-            required: true
-        },
-        status:{ 
-            type: String, 
-            enum: ["pending", "completed"], default: "pending" 
-        },
-        uploadedDate:{
-            type: Date,
-            default: Date.now
-        },
-        weight:{
-            type: Number,
-            required: true
-        },
-        exportedDate: { 
-            type: Date 
-        }  
-    }]
-},{
+    lastPrintedCounts: {
+        type: Map,
+        of: Number,
+        default: {}
+    }
+}, {
     timestamps: true
-})
+});
+
+voyageSchema.virtual('uploadedProducts', {
+    ref: 'UploadedProduct',
+    localField: '_id',
+    foreignField: 'voyageId'
+});
+
+voyageSchema.set('toJSON', { virtuals: true });
+voyageSchema.set('toObject', { virtuals: true });
 
 const Voyage = mongoose.model("Voyage", voyageSchema);
 

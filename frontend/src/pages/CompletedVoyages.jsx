@@ -34,7 +34,8 @@ const CompletedVoyages = () => {
   };
 
   const handleViewClick = (voyageId) => {
-    navigate(`/voyage/${voyageId}`);
+    // Navigate to completed voyage details (similar to active voyages)
+    navigate(`/completed-voyage/${voyageId}/companies`);
   };
 
   const handleShowConfirm = (voyageId) => {
@@ -81,7 +82,7 @@ const CompletedVoyages = () => {
         setStartDate={setStartDate}
         endDate={endDate}
         setEndDate={setEndDate}
-        placeholder="Search by voygae name..."
+        placeholder="Search by voyage name..."
       />
 
       <div className="mt-10">
@@ -93,7 +94,7 @@ const CompletedVoyages = () => {
                 className="flex rounded-xl items-center justify-between bg-white px-4 py-2.5 mb-2.5"
               >
                 <p className="text-black text-sm">
-                  {voyage.voyageName} | {voyage.voyageNumber}/{voyage.year}
+                  {voyage.voyageName} | VNo {voyage.voyageNumber}/{voyage.year}
                 </p>
 
                 <div className="flex gap-3 items-center">
@@ -101,7 +102,7 @@ const CompletedVoyages = () => {
 
                   <div
                     onClick={() => handleViewClick(voyage._id)}
-                    className="rounded-xl border px-2.5 py-1.5 cursor-pointer"
+                    className="rounded-xl border px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 transition-colors"
                   >
                     View
                   </div>
@@ -124,7 +125,7 @@ const CompletedVoyages = () => {
               className="w-32 h-32 mb-4 opacity-75"
             />
             <p className="text-lg font-semibold text-gray-700">
-              No active completed voyages found!
+              No completed voyages found!
             </p>
             <p className="text-sm text-gray-500">Try to export a new voyage.</p>
           </div>

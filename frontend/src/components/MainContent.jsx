@@ -10,24 +10,44 @@ import VoyageDetails from "../pages/VoyageDetails";
 import AllCodeDetails from "../pages/AllCodeDetails";
 import AllBills from "../pages/AllBills";
 import SendNotification from "../pages/SendNotification";
+import VoyageByCompany from "../pages/VoyageByCompany";
+import CompletedVoyageByCompany from "../pages/CompletedVoyageByCompany";
+import CompletedVoyageDetails from "../pages/CompletedVoyageDetails";
 
 const MainContent = () => {
   const location = useLocation();
-  const params = useParams();
-
+  const { voyageId, companyCode, productCode } = useParams();
   const path = location.pathname;
 
   const renderContent = () => {
-    if (path.startsWith("/voyage/")) {
-      return <VoyageDetails voyageId={params.voyageId} />;
-    }
-    if (path.startsWith("/voyages/getproducts/")) {
-      return <AllCodeDetails productCode={params.productCode} />;
+    // Handle /completed-voyage/:voyageId/companies/:companyCode
+    if (path.match(/^\/completed-voyage\/[^\/]+\/companies\/[^\/]+$/)) {
+      return <CompletedVoyageDetails voyageId={voyageId} companyCode={companyCode} />;
     }
 
+    // Handle /completed-voyage/:voyageId/companies
+    if (path.match(/^\/completed-voyage\/[^\/]+\/companies$/)) {
+      return <CompletedVoyageByCompany voyageId={voyageId} />;
+    }
+
+    // Handle /voyage/:voyageId/companies/:companyCode
+    if (path.match(/^\/voyage\/[^\/]+\/companies\/[^\/]+$/)) {
+      return <VoyageDetails voyageId={voyageId} companyCode={companyCode} />;
+    }
+
+    // Handle /voyage/:voyageId/companies
+    if (path.match(/^\/voyage\/[^\/]+\/companies$/)) {
+      return <VoyageByCompany voyageId={voyageId} />;
+    }
+
+    // Handle /voyages/getproducts/:productCode
+    if (path.match(/^\/voyages\/getproducts\/[^\/]+$/)) {
+      return <AllCodeDetails productCode={productCode} />;
+    }
+
+    // Handle static routes
     switch (path) {
       case "/":
-        return <Voyages />;
       case "/Voyages":
         return <Voyages />;
       case "/completed":
@@ -39,6 +59,7 @@ const MainContent = () => {
       case "/client":
         return <ClientInfo />;
       case "/allBills":
+      case "/allbills": // Handle both cases
         return <AllBills />;
       case "/sendNotification":
         return <SendNotification />;

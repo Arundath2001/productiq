@@ -3,22 +3,16 @@ import PageHeader from "../components/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
 import { useVoyageStore } from "../store/useVoyageStore.js";
 import { Loader } from "lucide-react";
-import { FaTrash } from "react-icons/fa";
-import ConfirmAlert from "../components/ConfirmAlert.jsx";
 import images from "../lib/images.js";
 
-const VoyageDetails = () => {
+const CompletedVoyageDetails = () => {
   const { voyageId, companyCode } = useParams();
 
   const {
-    companyDetails,
-    isCompanyDetailsLoading,
-    getCompanyDetailsByVoyage,
-    deleteVoyageData,
+    completedCompanyDetails,
+    isCompletedCompanyDetailsLoading,
+    getCompletedCompanyDetailsByVoyage,
   } = useVoyageStore();
-
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedDataId, setSelectedDataId] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -29,14 +23,13 @@ const VoyageDetails = () => {
 
   useEffect(() => {
     if (voyageId && companyCode) {
-      getCompanyDetailsByVoyage(voyageId, companyCode).catch(() => {
-        setError("Company details not found or no pending items.");
-        setTimeout(() => navigate("/completed"), 2000);
+      getCompletedCompanyDetailsByVoyage(voyageId, companyCode).catch(() => {
+        setError("Company details not found or no data available.");
       });
     }
-  }, [voyageId, companyCode, getCompanyDetailsByVoyage, navigate]);
+  }, [voyageId, companyCode, getCompletedCompanyDetailsByVoyage]);
 
-  if (isCompanyDetailsLoading) {
+  if (isCompletedCompanyDetailsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="size-15 animate-spin" />
@@ -44,7 +37,7 @@ const VoyageDetails = () => {
     );
   }
 
-  if (!companyDetails) {
+  if (!completedCompanyDetails) {
     return (
       <div>{error || "Company details not found or no data available."}</div>
     );
@@ -57,27 +50,7 @@ const VoyageDetails = () => {
     ).padStart(2, "0")}-${date.getFullYear()}`;
   };
 
-  const handleShowConfirm = (dataId) => {
-    setSelectedDataId(dataId);
-    setShowConfirm(true);
-  };
-
-  const handleDeleteVoyageData = async () => {
-    if (selectedDataId) {
-        await deleteVoyageData(voyageId, selectedDataId);
-        setShowConfirm(false);
-    }
-};
-
-  const getTotalWeight = () => {
-    const total = companyDetails.items.reduce(
-      (total, data) => total + (data.weight || 0),
-      0
-    );
-    return Math.round(total * 100) / 100;
-  };
-
-  const filteredData = companyDetails.items.filter((data) => {
+  const filteredData = completedCompanyDetails.items.filter((data) => {
     const matchesSearch = data.productCode
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -90,17 +63,14 @@ const VoyageDetails = () => {
     return matchesSearch && isWithinDateRange;
   });
 
-  console.log(companyDetails);
-  
-
   return (
     <div>
       <PageHeader
-        mainHead={`${companyDetails.voyageInfo.voyageName || ""} - ${
-          companyDetails.companyCode || "Company"
-        }`}
+        mainHead={`${completedCompanyDetails.voyageInfo.voyageName || ""} - ${
+          completedCompanyDetails.companyCode || "Company"
+        } (Completed)`}
         subText={`${filteredData.length} Products`}
-        weight={filteredData.length > 0 ? companyDetails.totalWeight : null}
+        weight={filteredData.length > 0 ? completedCompanyDetails.totalWeight : null}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         showDateFilter={true}
@@ -109,6 +79,8 @@ const VoyageDetails = () => {
         endDate={endDate}
         setEndDate={setEndDate}
         placeholder="Search by productcode"
+        showBackButton={true}
+        onBack={() => navigate(`/completed-voyage/${voyageId}/companies`)}
       />
 
       <div className="mt-5 overflow-x-auto">
@@ -139,7 +111,6 @@ const VoyageDetails = () => {
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
                 Created By
               </th>
-              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600"></th>
             </tr>
           </thead>
           <tbody>
@@ -171,14 +142,6 @@ const VoyageDetails = () => {
                   <td className="py-3 px-5 text-sm text-black">
                     {data.uploadedBy.username}
                   </td>
-                  <td className="py-3 px-5 text-sm text-black">
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => handleShowConfirm(data._id)}
-                    >
-                      <FaTrash color="gray" />
-                    </div>
-                  </td>
                 </tr>
               ))
             ) : (
@@ -203,18 +166,8 @@ const VoyageDetails = () => {
           </tbody>
         </table>
       </div>
-
-      {showConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
-          <ConfirmAlert
-            alertInfo="You want to delete this voyage data?"
-            handleClose={() => setShowConfirm(false)}
-            handleSubmit={handleDeleteVoyageData}
-          />
-        </div>
-      )}
     </div>
   );
 };
 
-export default VoyageDetails;
+export default CompletedVoyageDetails;

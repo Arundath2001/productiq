@@ -4,21 +4,57 @@ import MainContent from "../components/MainContent";
 import { useParams, useLocation } from 'react-router-dom';
 
 const HomePage = () => {
-  const { voyageId, productCode } = useParams();
-  const location = useLocation();  
+  const { voyageId, companyCode, productCode } = useParams();
+  const location = useLocation();
+  
   const [selectedTab, setSelectedTab] = useState('Voyages');
 
   useEffect(() => {
-    if (voyageId) {
+    const path = location.pathname;
+    
+    // Handle /completed-voyage/:voyageId/companies/:companyCode
+    if (path.match(/^\/completed-voyage\/[^\/]+\/companies\/[^\/]+$/)) {
+      setSelectedTab("CompletedVoyageDetails");
+    }
+    // Handle /completed-voyage/:voyageId/companies
+    else if (path.match(/^\/completed-voyage\/[^\/]+\/companies$/)) {
+      setSelectedTab("CompletedVoyageByCompany");
+    }
+    // Handle /voyage/:voyageId/companies/:companyCode
+    else if (path.match(/^\/voyage\/[^\/]+\/companies\/[^\/]+$/)) {
       setSelectedTab("VoyageDetails");
-    } else if (productCode) {
+    }
+    // Handle /voyage/:voyageId/companies
+    else if (path.match(/^\/voyage\/[^\/]+\/companies$/)) {
+      setSelectedTab("VoyageByCompany");
+    }
+    // Handle /voyages/getproducts/:productCode
+    else if (path.match(/^\/voyages\/getproducts\/[^\/]+$/)) {
       setSelectedTab("AllCodeDetails");
-    } else if (location.pathname === "/completed") { 
+    }
+    // Handle other routes
+    else if (path === "/completed") {
       setSelectedTab("Completed Voyages");
-    } else {
+    }
+    else if (path === "/productqr") {
+      setSelectedTab("Product QR");
+    }
+    else if (path === "/employee") {
+      setSelectedTab("Employee");
+    }
+    else if (path === "/client") {
+      setSelectedTab("Client");
+    }
+    else if (path === "/allBills" || path === "/allbills") {
+      setSelectedTab("All Bills");
+    }
+    else if (path === "/sendNotification") {
+      setSelectedTab("Send Notification");
+    }
+    else {
       setSelectedTab("Voyages");
     }
-  }, [voyageId, productCode, location.pathname]); 
+  }, [location.pathname]);
 
   return (
     <div className='flex h-screen'>
