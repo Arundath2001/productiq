@@ -875,29 +875,90 @@ export const getAllPendingCompaniesSummary = async (req, res) => {
             .sort({ createdAt: -1 });
 
         if (!pendingVoyages.length) {
-            return res.status(200).json([]);
+            return res.status(200).json({
+                voyages: [],
+                summary: {
+                    totalVoyages: 0,
+                    grandTotalItems: 0,
+                    grandTotalWeight: 0
+                }
+            });
         }
 
         const voyageIds = pendingVoyages.map(voyage => voyage._id);
 
-        // Find all products from pending voyages - similar to getVoyageByCompany
+        // Find all products from pending voyages
         const products = await UploadedProduct.find({ 
             voyageId: { $in: voyageIds }, 
             status: "pending" 
-        })
-        .populate('voyageId', 'voyageName voyageNumber year')
-        .populate("uploadedBy", "username")
-        .sort({ uploadedDate: -1 }); // Sort by upload date like getVoyageByCompany
+        });
 
-        if (!products.length) {
-            return res.status(200).json([]);
-        }
+        // Group products by voyage and calculate company summaries
+        const voyageSummaries = await Promise.all(
+            pendingVoyages.map(async (voyage) => {
+                const voyageProducts = products.filter(p => p.voyageId.toString() === voyage._id.toString());
+                
+                const companySummary = {};
+                
+                voyageProducts.forEach(product => {
+                    const company = product.clientCompany;
+                    
+                    if (!companySummary[company]) {
+                        companySummary[company] = {
+                            companyCode: company,
+                            itemCount: 0,
+                            totalWeight: 0,
+                            latestUpload: product.uploadedDate
+                        };
+                    }
+                    
+                    companySummary[company].itemCount += 1;
+                    companySummary[company].totalWeight += Number(product.weight) || 0;
+                    
+                    if (new Date(product.uploadedDate) > new Date(companySummary[company].latestUpload)) {
+                        companySummary[company].latestUpload = product.uploadedDate;
+                    }
+                });
 
-        // Return the data in the same format as getVoyageByCompany
-        // But instead of filtering by one company, we return all companies' data
-        res.status(200).json({ 
-            message: "All pending companies data",
-            uploadedData: products 
+                const companiesList = Object.values(companySummary)
+                    .map(company => ({
+                        ...company,
+                        totalWeight: Math.round(company.totalWeight * 100) / 100
+                    }))
+                    .sort((a, b) => a.companyCode.localeCompare(b.companyCode));
+
+                const grandTotalWeight = Math.round(companiesList.reduce((total, company) => total + company.totalWeight, 0) * 100) / 100;
+                const grandTotalItems = companiesList.reduce((total, company) => total + company.itemCount, 0);
+
+                return {
+                    voyageInfo: {
+                        voyageId: voyage._id,
+                        voyageName: voyage.voyageName,
+                        voyageNumber: voyage.voyageNumber,
+                        year: voyage.year,
+                        status: "pending"
+                    },
+                    companies: companiesList,
+                    summary: {
+                        totalCompanies: companiesList.length,
+                        grandTotalItems: grandTotalItems,
+                        grandTotalWeight: grandTotalWeight
+                    }
+                };
+            })
+        );
+
+        // Calculate overall totals
+        const overallTotalItems = voyageSummaries.reduce((sum, v) => sum + v.summary.grandTotalItems, 0);
+        const overallTotalWeight = Math.round(voyageSummaries.reduce((sum, v) => sum + v.summary.grandTotalWeight, 0) * 100) / 100;
+
+        res.status(200).json({
+            voyages: voyageSummaries,
+            summary: {
+                totalVoyages: pendingVoyages.length,
+                grandTotalItems: overallTotalItems,
+                grandTotalWeight: overallTotalWeight
+            }
         });
 
     } catch (error) {
