@@ -40,9 +40,21 @@ const userSchema = mongoose.Schema({
             return this.role !== "admin";
         }
     },
-    expoPushToken: { 
-        type: String 
-    }
+    // Changed from single token to array of tokens
+    expoPushTokens: [{
+        token: {
+            type: String,
+            required: true
+        },
+        deviceId: {
+            type: String,
+            required: true
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 },{
     timestamps: true
 });

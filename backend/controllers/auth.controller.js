@@ -191,7 +191,6 @@ export const deleteUser = async (req, res) => {
     }
 };
 
-
 export const editUser = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -239,13 +238,75 @@ export const editUser = async (req, res) => {
     }
 }
 
+// Updated function to handle multiple devices
 export const updateExpoPushToken = async (req, res) => {
     try {
-        const { userId, expoPushToken } = req.body;
-        await User.findByIdAndUpdate(userId, { expoPushToken });
+        const { userId, expoPushToken, deviceId } = req.body;
+        
+        if (!userId || !expoPushToken || !deviceId) {
+            return res.status(400).json({ message: "userId, expoPushToken, and deviceId are required" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Remove existing token for this device if it exists
+        user.expoPushTokens = user.expoPushTokens.filter(tokenObj => tokenObj.deviceId !== deviceId);
+        
+        // Add new token
+        user.expoPushTokens.push({
+            token: expoPushToken,
+            deviceId: deviceId,
+            createdAt: new Date()
+        });
+
+        await user.save();
+
+        console.log(`Updated push token for user ${userId}, device ${deviceId}`);
         res.status(200).json({ message: "Expo push token updated successfully" });
     } catch (error) {
         console.error("Error updating Expo push token:", error.message);
         res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// New function to remove push token on logout
+export const removeExpoPushToken = async (req, res) => {
+    try {
+        const { userId, deviceId } = req.body;
+        
+        if (!userId || !deviceId) {
+            return res.status(400).json({ message: "userId and deviceId are required" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Remove token for this specific device
+        user.expoPushTokens = user.expoPushTokens.filter(tokenObj => tokenObj.deviceId !== deviceId);
+        await user.save();
+
+        console.log(`Removed push token for user ${userId}, device ${deviceId}`);
+        res.status(200).json({ message: "Expo push token removed successfully" });
+    } catch (error) {
+        console.error("Error removing Expo push token:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Helper function to get all push tokens for a user (for sending notifications)
+export const getUserPushTokens = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+        if (!user) return [];
+        
+        return user.expoPushTokens.map(tokenObj => tokenObj.token);
+    } catch (error) {
+        console.error("Error getting user push tokens:", error.message);
+        return [];
     }
 };

@@ -60,7 +60,7 @@ export const uploadVoyage = async (req, res) => {
         if (isNaN(sequenceNumber) || isNaN(productVoyageNumber)) {
             return res.status(400).json({message: "Sequence number and voyage number must be valid numbers"});
         }
-        
+                
         const voyage = await Voyage.findOne({ voyageNumber: String(voyageNumber) });
         if(!voyage){
             return res.status(400).json({message : "Voyage not found"})
@@ -75,7 +75,7 @@ export const uploadVoyage = async (req, res) => {
             sequenceNumber: sequenceNumber,
             voyageNumber: productVoyageNumber
         });
-        
+                
         if (existingProduct) {
             return res.status(400).json({ message: "Product code with this sequence and voyage number already exists" });
         }
@@ -83,8 +83,7 @@ export const uploadVoyage = async (req, res) => {
         const imageUrl = `${process.env.BASE_URL}/uploads/${req.file.filename}`;
 
         console.log(process.env.BASE_URL);
-        
-        
+                         
         const newProduct = new UploadedProduct({
             productCode,
             sequenceNumber,
@@ -114,13 +113,25 @@ export const uploadVoyage = async (req, res) => {
                 voyageId: voyage._id
             },
             updateType: 'upload'
-        });        
-
+        });
+                
+        // Updated notification logic for multiple tokens
         const clientUsers = await User.find({ role: 'client', companyCode: clientCompany });
+        const allTokens = [];
+        
         for (let client of clientUsers) {
-            if (client.expoPushToken) {
-                await sendPushNotification(client.expoPushToken, `A new item with product code ${newProduct.compositeCode} has been received.`);
+            // Get all tokens for each client (all their logged-in devices)
+            if (client.expoPushTokens && client.expoPushTokens.length > 0) {
+                const activeTokens = client.expoPushTokens.map(tokenObj => tokenObj.token);
+                allTokens.push(...activeTokens);
             }
+        }
+
+        if (allTokens.length > 0) {
+            await sendPushNotificationToMultiple(
+                allTokens, 
+                `A new item with product code ${newProduct.compositeCode} has been received.`
+            );
         }
 
         res.status(200).json({product: newProduct});
@@ -290,30 +301,75 @@ export const getCompletedVoyages = async (req, res) => {
     }
 };
 
-const sendPushNotification = async (expoPushToken, message) => {
+const sendPushNotificationToMultiple = async (expoPushTokens, message) => {
     let expo = new Expo();
 
-    const messages = [{
-        to: expoPushToken,
+    // Create messages for all tokens
+    const messages = expoPushTokens.map(token => ({
+        to: token,
         sound: 'default',
         title: 'Aswaq Forwarder',
         body: message,
         data: { withSome: 'data' },
-    }];
+    }));
 
     try {
         let chunks = expo.chunkPushNotifications(messages);
         let tickets = [];
+        let failedTokens = [];
 
         for (let chunk of chunks) {
             let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
             tickets.push(...ticketChunk);
         }
 
-        console.log('Push notification sent successfully');
+        // Check for failed notifications and collect failed tokens
+        tickets.forEach((ticket, index) => {
+            if (ticket.status === 'error') {
+                console.error(`Push notification failed for token ${expoPushTokens[index]}:`, ticket.message);
+                
+                // If token is invalid/dead, add to failed tokens list
+                if (ticket.details && ticket.details.error === 'DeviceNotRegistered') {
+                    failedTokens.push(expoPushTokens[index]);
+                }
+            }
+        });
+
+        // Optionally clean up failed tokens from database
+        if (failedTokens.length > 0) {
+            console.log(`Found ${failedTokens.length} dead tokens, cleaning up...`);
+            await cleanupDeadTokens(failedTokens);
+        }
+
+        console.log(`Push notifications sent to ${expoPushTokens.length} devices`);
+        
     } catch (error) {
-        console.error('Error sending push notification:', error);
+        console.error('Error sending push notifications:', error);
     }
+};
+
+const cleanupDeadTokens = async (deadTokens) => {
+    try {
+        // Remove dead tokens from all users
+        const result = await User.updateMany(
+            {},
+            {
+                $pull: {
+                    expoPushTokens: {
+                        token: { $in: deadTokens }
+                    }
+                }
+            }
+        );
+        
+        console.log(`Cleaned up ${deadTokens.length} dead tokens from ${result.modifiedCount} users`);
+    } catch (error) {
+        console.error('Error cleaning up dead tokens:', error);
+    }
+};
+
+const sendPushNotification = async (expoPushToken, message) => {
+    await sendPushNotificationToMultiple([expoPushToken], message);
 };
 
 export const exportVoyageData = async (req, res) => {
@@ -350,10 +406,22 @@ export const exportVoyageData = async (req, res) => {
         const clients = await User.find({ role: "client", companyCode: { $in: companyCodes } });
         console.log("Clients to notify:", clients);
 
+        // Updated notification logic for multiple tokens
+        const allTokens = [];
+        
         for (let client of clients) {
-            if (client.expoPushToken) {
-                await sendPushNotification(client.expoPushToken, `Your items from Voyage ${voyage.voyageNumber} have been dispatched and are now on their way.`);
+            // Get all tokens for each client (all their logged-in devices)
+            if (client.expoPushTokens && client.expoPushTokens.length > 0) {
+                const activeTokens = client.expoPushTokens.map(tokenObj => tokenObj.token);
+                allTokens.push(...activeTokens);
             }
+        }
+
+        if (allTokens.length > 0) {
+            await sendPushNotificationToMultiple(
+                allTokens, 
+                `Your items from Voyage ${voyage.voyageNumber} have been dispatched and are now on their way.`
+            );
         }
 
         io.emit('voyage-data-updated', { voyageId, newProduct: products, updateType: 'export' });
@@ -365,6 +433,7 @@ export const exportVoyageData = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
 
 export const deleteVoyage = async (req, res) => {
     try {
