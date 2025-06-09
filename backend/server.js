@@ -7,6 +7,7 @@ import voyageRoutes from "./routers/voyage.route.js";
 import saveCodeRoutes from "./routers/savedcode.route.js";
 import printedQrRoutes from "./routers/printedQr.route.js";
 import billOfLading from "./routers/billoflading.route.js";
+import contactRoutes from "./routers/contact.routes.js";
 import cors from "cors";
 import path from "path";
 import { app, server } from "./lib/socket.js";
@@ -47,6 +48,8 @@ app.use("/api/printedqr", printedQrRoutes );
 app.use("/api/savedcode", saveCodeRoutes );
 app.use("/api/billoflading", billOfLading );
 app.use("/api/notification", notificationRoutes );
+app.use("/api/contact", contactRoutes)
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 if(process.env.NODE_ENV==='production'){

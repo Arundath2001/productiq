@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import { useAuthStore } from './store/useAuthStore';
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
+import ContactUs from './pages/ContactUs';
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
@@ -50,6 +51,10 @@ const App = () => {
         <Route path='/employee' element={authUser ? <HomePage /> : <Navigate to='/login' replace />} />
         <Route path='/client' element={authUser ? <HomePage /> : <Navigate to='/login' replace />} />
         <Route path='/voyages/getproducts/:productCode' element={authUser ? <HomePage /> : <Navigate to='/login' replace />} />
+        
+        {/* Publicly accessible Support page */}
+        <Route path='/contact' element={<ContactUs />} />
+        
       </Routes>
 
       <Toaster />
