@@ -38,7 +38,7 @@ export const contactController = async (req, res) => {
     // Email content for the business owner
     const businessOwnerMailOptions = {
       from: `"Contact Form" <${process.env.EMAIL_USER}>`,
-      to: 'aswaqforwarder@gmail.com',
+      to: 'arundath7994@gmail.com',
       subject: `New Contact Form Submission from ${name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">

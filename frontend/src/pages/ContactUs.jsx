@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Phone, Mail } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Phone, Mail, X, CheckCircle } from 'lucide-react';
 import { useContactStore } from '../store/useContact.js';
 import images from '../lib/images.js';
 
@@ -19,12 +19,72 @@ const ContactUs = () => {
     message: ''
   });
 
+  const [showPopup, setShowPopup] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+    }
+    
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required';
+    } else {
+      const cleanPhone = formData.phone.replace(/[\s\-\(\)]/g, '');
+      // Check if phone starts with + and has at least 10 digits total, or no + and at least 10 digits
+      if (cleanPhone.startsWith('+')) {
+        if (cleanPhone.length < 11 || !/^\+[1-9]\d{9,14}$/.test(cleanPhone)) {
+          errors.phone = 'International number must have country code + at least 10 digits (e.g., +971521634640)';
+        }
+      } else {
+        if (cleanPhone.length < 10 || !/^[1-9]\d{9,14}$/.test(cleanPhone)) {
+          errors.phone = 'Phone number must have at least 10 digits';
+        }
+      }
+    }
+    
+    if (!formData.message.trim()) {
+      errors.message = 'Message is required';
+    }
+    
+    return errors;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Format phone number as user types
+    let formattedValue = value;
+    if (name === 'phone') {
+      // Remove all non-digit characters except + at the beginning
+      formattedValue = value.replace(/[^\d+]/g, '');
+      if (formattedValue.length > 1 && formattedValue.startsWith('+')) {
+        formattedValue = '+' + formattedValue.slice(1).replace(/[^0-9]/g, '');
+      } else if (!formattedValue.startsWith('+') && formattedValue.length > 0) {
+        formattedValue = formattedValue.replace(/[^0-9]/g, '');
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: formattedValue
     }));
+
+    // Clear field-specific error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
 
     if (error || successMessage) {
       clearMessages();
@@ -32,6 +92,13 @@ const ContactUs = () => {
   };
 
   const handleSubmit = async () => {
+    const errors = validateForm();
+    setFormErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
     try {
       await submitContact(formData);
       setFormData({
@@ -40,15 +107,55 @@ const ContactUs = () => {
         phone: '',
         message: ''
       });
+      setShowPopup(true);
     } catch (error) {
       console.error('Form submission failed:', error);
     }
   };
 
+  // Auto-hide popup after 5 seconds
+  useEffect(() => {
+    if (showPopup) {
+      const timer = setTimeout(() => {
+        setShowPopup(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showPopup]);
+
   const currentYear = new Date().getFullYear();
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Success Popup */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <CheckCircle className="text-green-500 w-6 h-6 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-900">Message Sent!</h3>
+              </div>
+              <button
+                onClick={() => setShowPopup(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Your message has been successfully sent. Our team will get back to you within 24 hours.
+            </p>
+            <button
+              onClick={() => setShowPopup(false)}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="bg-white shadow-sm py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -74,13 +181,8 @@ const ContactUs = () => {
             </p>
           </div>
 
-          {/* Messages */}
-          {successMessage && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
-              {successMessage}
-            </div>
-          )}
-          {error && (
+          {/* Error Message (only show non-success messages) */}
+          {error && !error.includes('Thank you for your message') && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
               {error}
             </div>
@@ -89,55 +191,87 @@ const ContactUs = () => {
           {/* Contact Form */}
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Your Name <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="Enter your name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${
+                  formErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 disabled={isSubmitting}
+                required
               />
+              {formErrors.name && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Your Email <span className="text-red-500">*</span>
+              </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="Enter your email"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${
+                  formErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 disabled={isSubmitting}
+                required
               />
+              {formErrors.email && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Phone</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Your Phone <span className="text-red-500">*</span>
+              </label>
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                placeholder="Enter your phone number"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="e.g., +971521634640 or 5551234567"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none ${
+                  formErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 disabled={isSubmitting}
+                required
               />
+              {formErrors.phone && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.phone}</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Your Message</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Your Message <span className="text-red-500">*</span>
+              </label>
               <textarea
                 name="message"
                 value={formData.message}
                 onChange={handleInputChange}
                 placeholder="Enter your message"
                 rows={5}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none ${
+                  formErrors.message ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
                 disabled={isSubmitting}
+                required
               />
+              {formErrors.message && (
+                <p className="mt-1 text-sm text-red-600">{formErrors.message}</p>
+              )}
             </div>
 
             <button
