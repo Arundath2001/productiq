@@ -1,6 +1,6 @@
 import React from "react";
 import { useAuthStore } from "../store/useAuthStore.js";
-import { FaFileInvoice, FaShip, FaCheckCircle, FaQrcode, FaUsers, FaBuilding, FaSignOutAlt, FaBell } from "react-icons/fa";
+import { FaFileInvoice, FaShip, FaCheckCircle, FaQrcode, FaUsers, FaBuilding, FaSignOutAlt, FaBell, FaPlus } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Sidebar = ({ setSelectedTab }) => {
@@ -78,6 +78,15 @@ const Sidebar = ({ setSelectedTab }) => {
             <FaBuilding />
             Client Info
           </li>
+
+          <li
+            onClick={() => handleTabClick("customercode")}
+            className={`flex text-base rounded-xl items-center gap-2 px-3 py-2 cursor-pointer ${
+              activeTab === "customercode" ? "bg-black text-white" : ""
+            }`}>
+              <FaPlus />
+              Customer Code
+            </li>
 
           <li
             onClick={() => handleTabClick("allBills")}

@@ -51,6 +51,8 @@ const App = () => {
         <Route path='/employee' element={authUser ? <HomePage /> : <Navigate to='/login' replace />} />
         <Route path='/client' element={authUser ? <HomePage /> : <Navigate to='/login' replace />} />
         <Route path='/voyages/getproducts/:productCode' element={authUser ? <HomePage /> : <Navigate to='/login' replace />} />
+
+        <Route path='/customercode' element={authUser ? <HomePage /> : <Navigate to='/login' replace />} />
         
         {/* Publicly accessible Support page */}
         <Route path='/contact' element={<ContactUs />} />

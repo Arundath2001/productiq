@@ -13,6 +13,7 @@ import SendNotification from "../pages/SendNotification";
 import VoyageByCompany from "../pages/VoyageByCompany";
 import CompletedVoyageByCompany from "../pages/CompletedVoyageByCompany";
 import CompletedVoyageDetails from "../pages/CompletedVoyageDetails";
+import CustomerCodeCreation from "../pages/CustomerCodeCreation";
 
 const MainContent = () => {
   const location = useLocation();
@@ -63,6 +64,8 @@ const MainContent = () => {
         return <AllBills />;
       case "/sendNotification":
         return <SendNotification />;
+      case "/customercode":
+        return <CustomerCodeCreation />;
       default:
         return <Voyages />;
     }

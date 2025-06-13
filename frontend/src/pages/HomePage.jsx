@@ -50,6 +50,8 @@ const HomePage = () => {
     }
     else if (path === "/sendNotification") {
       setSelectedTab("Send Notification");
+    }else if (path === "/customercode") {
+      setSelectedTab("Customer Code");
     }
     else {
       setSelectedTab("Voyages");

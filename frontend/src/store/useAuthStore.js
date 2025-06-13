@@ -10,10 +10,16 @@ export const useAuthStore = create((set, get) => ({
     isSigningUp: false,
     isLoggingIng: false,
     isUpdatingProfile: false,
+    isApprovingClient: false,
+    isRejectingClient: false,
+    isResubmittingClient: false,
     usersData:{
         employees:[],
         clients:[]
     },
+    pendingClients: [],
+    approvedClients: [],
+    rejectedClients: [],
     socket: null,
     
 
@@ -139,6 +145,133 @@ export const useAuthStore = create((set, get) => ({
             console.log("Error in editUser", error);
         } finally {
             set({ isUpdatingProfile: false });
+        }
+    },
+
+    // Client Approval Functions
+    approveClient: async (userId, approvalData) => {
+        set({ isApprovingClient: true });
+        try {
+            const res = await axiosInstance.put(`/auth/approve-client/${userId}`, approvalData);
+            
+            // Update local state - remove from pending, add to approved
+            set((state) => ({
+                pendingClients: state.pendingClients.filter(client => client._id !== userId),
+                approvedClients: [...state.approvedClients, res.data.user],
+                usersData: {
+                    ...state.usersData,
+                    clients: state.usersData.clients.map(client => 
+                        client._id === userId ? { ...client, ...res.data.user } : client
+                    )
+                }
+            }));
+
+            toast.success("Client approved successfully");
+            return res.data.user;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to approve client");
+            console.log("Error in approveClient", error);
+        } finally {
+            set({ isApprovingClient: false });
+        }
+    },
+
+    rejectClient: async (userId, rejectionData) => {
+        set({ isRejectingClient: true });
+        try {
+            const res = await axiosInstance.put(`/auth/reject-client/${userId}`, rejectionData);
+            
+            // Update local state - remove from pending, add to rejected
+            set((state) => ({
+                pendingClients: state.pendingClients.filter(client => client._id !== userId),
+                rejectedClients: [...state.rejectedClients, res.data.user],
+                usersData: {
+                    ...state.usersData,
+                    clients: state.usersData.clients.map(client => 
+                        client._id === userId ? { ...client, ...res.data.user } : client
+                    )
+                }
+            }));
+
+            toast.success("Client rejected successfully");
+            return res.data.user;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to reject client");
+            console.log("Error in rejectClient", error);
+        } finally {
+            set({ isRejectingClient: false });
+        }
+    },
+
+    getPendingClients: async () => {
+        try {
+            const res = await axiosInstance.get("/auth/pending-clients");
+            set({ pendingClients: res.data.clients });
+            return res.data.clients;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to fetch pending clients");
+            console.log("Error in getPendingClients", error);
+        }
+    },
+
+    getClientsByStatus: async (status) => {
+        try {
+            const res = await axiosInstance.get(`/auth/clients/${status}`);
+            
+            // Update the appropriate state based on status
+            if (status === 'pending') {
+                set({ pendingClients: res.data.clients });
+            } else if (status === 'approved') {
+                set({ approvedClients: res.data.clients });
+            } else if (status === 'rejected') {
+                set({ rejectedClients: res.data.clients });
+            }
+            
+            return res.data.clients;
+        } catch (error) {
+            toast.error(error.response?.data?.message || `Failed to fetch ${status} clients`);
+            console.log("Error in getClientsByStatus", error);
+        }
+    },
+
+    resubmitRejectedClient: async (userId) => {
+        set({ isResubmittingClient: true });
+        try {
+            const res = await axiosInstance.put(`/auth/resubmit-client/${userId}`);
+            
+            // Update local state - remove from rejected, add to pending
+            set((state) => ({
+                rejectedClients: state.rejectedClients.filter(client => client._id !== userId),
+                pendingClients: [...state.pendingClients, res.data.user],
+                usersData: {
+                    ...state.usersData,
+                    clients: state.usersData.clients.map(client => 
+                        client._id === userId ? { ...client, ...res.data.user } : client
+                    )
+                }
+            }));
+
+            toast.success("Client resubmitted for approval successfully");
+            return res.data.user;
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to resubmit client");
+            console.log("Error in resubmitRejectedClient", error);
+        } finally {
+            set({ isResubmittingClient: false });
+        }
+    },
+
+    // Helper function to refresh all client data
+    refreshAllClientData: async () => {
+        try {
+            await Promise.all([
+                get().getPendingClients(),
+                get().getClientsByStatus('approved'),
+                get().getClientsByStatus('rejected'),
+                get().getUsersData()
+            ]);
+        } catch (error) {
+            console.log("Error refreshing client data", error);
         }
     },
 

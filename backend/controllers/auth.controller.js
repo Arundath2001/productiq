@@ -1,32 +1,911 @@
-import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
+import crypto from "crypto";
+import nodemailer from 'nodemailer';
 import bcrypt from "bcryptjs";
+import { generateToken } from "../lib/utils.js";
+import { Expo } from 'expo-server-sdk'; // Add this import
+
+// Using Map for in-memory storage (consider Redis for production)
+const otpStore = new Map();
+const verificationStore = new Map(); // Store verification status
+
+// Email configuration with better error handling
+const createTransporter = () => {
+
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        throw new Error("Email credentials not found in environment variables");
+    }
+
+    return nodemailer.createTransport({
+        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    });
+};
+
+// Push notification helper function
+const sendPushNotificationToMultiple = async (expoPushTokens, message) => {
+    let expo = new Expo();
+
+    // Create messages for all tokens
+    const messages = expoPushTokens.map(token => ({
+        to: token,
+        sound: 'default',
+        title: 'Aswaq Forwarder',
+        body: message,
+        data: { withSome: 'data' },
+    }));
+
+    try {
+        let chunks = expo.chunkPushNotifications(messages);
+        let tickets = [];
+        let failedTokens = [];
+
+        for (let chunk of chunks) {
+            let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+            tickets.push(...ticketChunk);
+        }
+
+        // Check for failed notifications and collect failed tokens
+        tickets.forEach((ticket, index) => {
+            if (ticket.status === 'error') {
+                console.error(`Push notification failed for token ${expoPushTokens[index]}:`, ticket.message);
+                // If token is invalid/dead, add to failed tokens list
+                if (ticket.details && ticket.details.error === 'DeviceNotRegistered') {
+                    failedTokens.push(expoPushTokens[index]);
+                }
+            }
+        });
+
+        // Optionally clean up failed tokens from database
+        if (failedTokens.length > 0) {
+            console.log(`Found ${failedTokens.length} dead tokens, cleaning up...`);
+            await cleanupDeadTokens(failedTokens);
+        }
+
+        console.log(`Push notifications sent to ${expoPushTokens.length} devices`);
+    } catch (error) {
+        console.error('Error sending push notifications:', error);
+    }
+};
+
+// Helper function to cleanup dead tokens
+const cleanupDeadTokens = async (deadTokens) => {
+    try {
+        await User.updateMany(
+            {},
+            {
+                $pull: {
+                    expoPushTokens: {
+                        token: { $in: deadTokens }
+                    }
+                }
+            }
+        );
+        console.log(`Cleaned up ${deadTokens.length} dead tokens from database`);
+    } catch (error) {
+        console.error('Error cleaning up dead tokens:', error);
+    }
+};
+
+// Step 1: Send OTP to email for client registration
+export const sendRegistrationOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        console.log("Request body for sendRegistrationOTP:", req.body);
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: "Invalid email format" });
+        }
+
+        // Check if email already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email already registered" });
+        }
+
+        // Generate 6-digit OTP
+        const otp = crypto.randomInt(100000, 999999).toString();
+
+        // Store OTP with 10 minutes expiry
+        otpStore.set(email, {
+            otp,
+            expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+            attempts: 0 // Track verification attempts
+        });
+
+        // Reset verification status
+        verificationStore.delete(email);
+
+        // Create transporter (with error handling)
+        let transporter;
+        try {
+            transporter = createTransporter();
+        } catch (error) {
+            console.log("Transporter creation error:", error.message);
+            return res.status(500).json({
+                message: "Email service configuration error",
+                error: error.message
+            });
+        }
+
+        // Send OTP email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Registration OTP - Your App Name',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #333;">Registration OTP</h2>
+                    <p>Your OTP for registration is:</p>
+                    <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
+                        ${otp}
+                    </div>
+                    <p>This OTP will expire in 10 minutes.</p>
+                    <p style="color: #666;">If you didn't request this, please ignore this email.</p>
+                </div>
+            `
+        };
+
+        // Test transporter connection before sending
+        await transporter.verify();
+        console.log("SMTP connection verified successfully");
+
+        await transporter.sendMail(mailOptions);
+        console.log("OTP email sent successfully to:", email);
+
+        res.status(200).json({
+            message: "OTP sent successfully to your email",
+            email,
+            expiresIn: 600 // 10 minutes in seconds
+        });
+
+    } catch (error) {
+        console.log("Error in sendRegistrationOTP controller:", error.message);
+
+        // More specific error handling
+        if (error.code === 'EAUTH') {
+            return res.status(500).json({
+                message: "Email authentication failed. Please check your credentials."
+            });
+        } else if (error.code === 'ECONNECTION') {
+            return res.status(500).json({
+                message: "Failed to connect to email server"
+            });
+        } else {
+            return res.status(500).json({
+                message: "Internal server error",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    }
+};
+
+// Step 2: Verify OTP only (separate from registration)
+export const verifyOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        console.log("OTP verification request:", { email, otp });
+
+        if (!email || !otp) {
+            return res.status(400).json({
+                message: "Email and OTP are required"
+            });
+        }
+
+        // Check if OTP exists
+        const storedOTPData = otpStore.get(email);
+        if (!storedOTPData) {
+            return res.status(400).json({ message: "OTP not found or expired. Please request a new OTP." });
+        }
+
+        // Check if OTP is expired
+        if (Date.now() > storedOTPData.expiresAt) {
+            otpStore.delete(email);
+            verificationStore.delete(email);
+            return res.status(400).json({ message: "OTP has expired. Please request a new OTP." });
+        }
+
+        // Check attempt limit (prevent brute force)
+        if (storedOTPData.attempts >= 5) {
+            otpStore.delete(email);
+            verificationStore.delete(email);
+            return res.status(400).json({
+                message: "Too many failed attempts. Please request a new OTP."
+            });
+        }
+
+        // Verify OTP
+        if (storedOTPData.otp !== otp) {
+            // Increment attempts
+            storedOTPData.attempts += 1;
+            otpStore.set(email, storedOTPData);
+
+            return res.status(400).json({
+                message: "Invalid OTP",
+                attemptsLeft: 5 - storedOTPData.attempts
+            });
+        }
+
+        // OTP is valid - mark as verified
+        verificationStore.set(email, {
+            verified: true,
+            verifiedAt: Date.now(),
+            expiresAt: Date.now() + 30 * 60 * 1000 // 30 minutes to complete registration
+        });
+
+        // Keep OTP for potential resend, but mark as used
+        storedOTPData.verified = true;
+        otpStore.set(email, storedOTPData);
+
+        res.status(200).json({
+            message: "OTP verified successfully. You can now complete your registration.",
+            email,
+            verified: true
+        });
+
+    } catch (error) {
+        console.log("Error in verifyOTP controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Add these new stores for forgot password functionality (add to your existing stores)
+const forgotPasswordOTPStore = new Map();
+const forgotPasswordVerificationStore = new Map();
+
+// Step 1: Send OTP to email for password reset
+export const sendForgotPasswordOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        console.log("Request body for sendForgotPasswordOTP:", req.body);
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: "Invalid email format" });
+        }
+
+        // Check if email exists in database
+        const existingUser = await User.findOne({ email });
+        if (!existingUser) {
+            return res.status(404).json({ message: "No account found with this email address" });
+        }
+
+        // Generate 6-digit OTP
+        const otp = crypto.randomInt(100000, 999999).toString();
+
+        // Store OTP with 10 minutes expiry
+        forgotPasswordOTPStore.set(email, {
+            otp,
+            expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+            attempts: 0, // Track verification attempts
+            userId: existingUser._id // Store user ID for reference
+        });
+
+        // Reset verification status
+        forgotPasswordVerificationStore.delete(email);
+
+        // Create transporter (with error handling)
+        let transporter;
+        try {
+            transporter = createTransporter();
+        } catch (error) {
+            console.log("Transporter creation error:", error.message);
+            return res.status(500).json({
+                message: "Email service configuration error",
+                error: error.message
+            });
+        }
+
+        // Send OTP email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Password Reset OTP - Aswaq Forwarder',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #333;">Password Reset Request</h2>
+                    <p>You requested to reset your password. Your OTP is:</p>
+                    <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0; border-radius: 8px;">
+                        ${otp}
+                    </div>
+                    <p>This OTP will expire in 10 minutes.</p>
+                    <p style="color: #666;">If you didn't request this password reset, please ignore this email and your password will remain unchanged.</p>
+                    <p style="color: #666;">For security reasons, this OTP can only be used once.</p>
+                </div>
+            `
+        };
+
+        // Test transporter connection before sending
+        await transporter.verify();
+        console.log("SMTP connection verified successfully");
+
+        await transporter.sendMail(mailOptions);
+        console.log("Forgot password OTP email sent successfully to:", email);
+
+        res.status(200).json({
+            message: "Password reset OTP sent successfully to your email",
+            email,
+            expiresIn: 600 // 10 minutes in seconds
+        });
+
+    } catch (error) {
+        console.log("Error in sendForgotPasswordOTP controller:", error.message);
+
+        // More specific error handling
+        if (error.code === 'EAUTH') {
+            return res.status(500).json({
+                message: "Email authentication failed. Please check your credentials."
+            });
+        } else if (error.code === 'ECONNECTION') {
+            return res.status(500).json({
+                message: "Failed to connect to email server"
+            });
+        } else {
+            return res.status(500).json({
+                message: "Internal server error",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
+    }
+};
+
+// Step 2: Verify OTP for password reset
+export const verifyForgotPasswordOTP = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        console.log("Forgot password OTP verification request:", { email, otp });
+
+        if (!email || !otp) {
+            return res.status(400).json({
+                message: "Email and OTP are required"
+            });
+        }
+
+        // Check if OTP exists
+        const storedOTPData = forgotPasswordOTPStore.get(email);
+        if (!storedOTPData) {
+            return res.status(400).json({ 
+                message: "OTP not found or expired. Please request a new password reset OTP." 
+            });
+        }
+
+        // Check if OTP is expired
+        if (Date.now() > storedOTPData.expiresAt) {
+            forgotPasswordOTPStore.delete(email);
+            forgotPasswordVerificationStore.delete(email);
+            return res.status(400).json({ 
+                message: "OTP has expired. Please request a new password reset OTP." 
+            });
+        }
+
+        // Check attempt limit (prevent brute force)
+        if (storedOTPData.attempts >= 5) {
+            forgotPasswordOTPStore.delete(email);
+            forgotPasswordVerificationStore.delete(email);
+            return res.status(400).json({
+                message: "Too many failed attempts. Please request a new password reset OTP."
+            });
+        }
+
+        // Verify OTP
+        if (storedOTPData.otp !== otp) {
+            // Increment attempts
+            storedOTPData.attempts += 1;
+            forgotPasswordOTPStore.set(email, storedOTPData);
+
+            return res.status(400).json({
+                message: "Invalid OTP",
+                attemptsLeft: 5 - storedOTPData.attempts
+            });
+        }
+
+        // OTP is valid - mark as verified
+        forgotPasswordVerificationStore.set(email, {
+            verified: true,
+            verifiedAt: Date.now(),
+            expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes to reset password
+            userId: storedOTPData.userId
+        });
+
+        // Mark OTP as used but keep it for potential cleanup
+        storedOTPData.verified = true;
+        forgotPasswordOTPStore.set(email, storedOTPData);
+
+        res.status(200).json({
+            message: "OTP verified successfully. You can now reset your password.",
+            email,
+            verified: true
+        });
+
+    } catch (error) {
+        console.log("Error in verifyForgotPasswordOTP controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Step 3: Reset password with new password
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, newPassword, confirmPassword } = req.body;
+
+        console.log("Reset password request:", { email, newPassword: "***", confirmPassword: "***" });
+
+        if (!email || !newPassword || !confirmPassword) {
+            return res.status(400).json({
+                message: "Email, new password, and confirm password are required"
+            });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters"
+            });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({
+                message: "New password and confirm password do not match"
+            });
+        }
+
+        // Check if email is verified for password reset
+        const verificationData = forgotPasswordVerificationStore.get(email);
+        if (!verificationData || !verificationData.verified) {
+            return res.status(400).json({
+                message: "Email not verified. Please verify your OTP first."
+            });
+        }
+
+        // Check if verification is still valid (15 minutes)
+        if (Date.now() > verificationData.expiresAt) {
+            forgotPasswordVerificationStore.delete(email);
+            forgotPasswordOTPStore.delete(email);
+            return res.status(400).json({
+                message: "Verification expired. Please start the password reset process again."
+            });
+        }
+
+        // Find user by ID (more secure than email)
+        const user = await User.findById(verificationData.userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Verify email matches (double security check)
+        if (user.email !== email) {
+            return res.status(400).json({ message: "Invalid verification data" });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update user password
+        user.password = hashedPassword;
+        await user.save();
+
+        // Clean up stores
+        forgotPasswordOTPStore.delete(email);
+        forgotPasswordVerificationStore.delete(email);
+
+        // Send push notification if user has tokens
+        if (user.expoPushTokens && user.expoPushTokens.length > 0) {
+            const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
+            await sendPushNotificationToMultiple(
+                userTokens,
+                `🔒 Your password has been successfully reset. If this wasn't you, please contact support immediately.`
+            );
+        }
+
+        // Send confirmation email
+        try {
+            const transporter = createTransporter();
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: email,
+                subject: 'Password Reset Successful - Aswaq Forwarder',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #333;">Password Reset Successful</h2>
+                        <p>Your password has been successfully reset.</p>
+                        <p>If you didn't make this change, please contact our support team immediately.</p>
+                        <p style="color: #666;">This email was sent on ${new Date().toLocaleString()}</p>
+                    </div>
+                `
+            };
+            await transporter.sendMail(mailOptions);
+        } catch (emailError) {
+            console.log("Error sending confirmation email:", emailError.message);
+            // Don't fail the request if email fails
+        }
+
+        res.status(200).json({
+            message: "Password reset successfully",
+            email
+        });
+
+    } catch (error) {
+        console.log("Error in resetPassword controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Resend forgot password OTP function
+export const resendForgotPasswordOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        // Check if email exists in database
+        const existingUser = await User.findOne({ email });
+        if (!existingUser) {
+            return res.status(404).json({ message: "No account found with this email address" });
+        }
+
+        // Generate new OTP
+        const otp = crypto.randomInt(100000, 999999).toString();
+
+        // Update/Set OTP with new expiry
+        forgotPasswordOTPStore.set(email, {
+            otp,
+            expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+            attempts: 0,
+            userId: existingUser._id
+        });
+
+        // Reset verification status
+        forgotPasswordVerificationStore.delete(email);
+
+        // Create transporter
+        let transporter;
+        try {
+            transporter = createTransporter();
+        } catch (error) {
+            console.log("Transporter creation error:", error.message);
+            return res.status(500).json({
+                message: "Email service configuration error"
+            });
+        }
+
+        // Send new OTP email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Resend Password Reset OTP - Aswaq Forwarder',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #333;">Password Reset OTP (Resent)</h2>
+                    <p>You requested to resend the password reset OTP. Your new OTP is:</p>
+                    <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0; border-radius: 8px;">
+                        ${otp}
+                    </div>
+                    <p>This OTP will expire in 10 minutes.</p>
+                    <p style="color: #666;">If you didn't request this, please ignore this email.</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log("Forgot password OTP resent successfully to:", email);
+
+        res.status(200).json({
+            message: "Password reset OTP resent successfully to your email",
+            email,
+            expiresIn: 600
+        });
+
+    } catch (error) {
+        console.log("Error in resendForgotPasswordOTP controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Check forgot password verification status (optional endpoint for frontend)
+export const checkForgotPasswordStatus = async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        const verificationData = forgotPasswordVerificationStore.get(email);
+        const otpData = forgotPasswordOTPStore.get(email);
+
+        res.status(200).json({
+            email,
+            hasOTP: !!otpData,
+            isVerified: !!(verificationData && verificationData.verified),
+            otpExpired: otpData ? Date.now() > otpData.expiresAt : true,
+            verificationExpired: verificationData ? Date.now() > verificationData.expiresAt : true
+        });
+
+    } catch (error) {
+        console.log("Error in checkForgotPasswordStatus controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const userId = req.user._id; // Assumes middleware sets req.user
+        const { newPassword, confirmPassword } = req.body;
+
+        // Validate inputs
+        if (!newPassword || !confirmPassword) {
+            return res.status(400).json({ message: "All password fields are required" });
+        }
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({ message: "New password must be at least 8 characters" });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: "New password and confirm password do not match" });
+        }
+
+        // Find user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update user password
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: "Password changed successfully" });
+
+    } catch (error) {
+        console.error("Error in changePassword:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+
+// Step 3: Complete registration with user details
+export const completeRegistration = async (req, res) => {
+    try {
+        const { email, username, password, phoneNumber } = req.body;
+
+        console.log("Complete registration request:", req.body);
+
+        if (!email || !username || !password || !phoneNumber) {
+            return res.status(400).json({
+                message: "Email, username, password, and phone number are required"
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                message: "Password must be at least 8 characters"
+            });
+        }
+
+        // Check if email is verified
+        const verificationData = verificationStore.get(email);
+        if (!verificationData || !verificationData.verified) {
+            return res.status(400).json({
+                message: "Email not verified. Please verify your OTP first."
+            });
+        }
+
+        // Check if verification is still valid (30 minutes)
+        if (Date.now() > verificationData.expiresAt) {
+            verificationStore.delete(email);
+            otpStore.delete(email);
+            return res.status(400).json({
+                message: "Verification expired. Please start the registration process again."
+            });
+        }
+
+        // Check if username already exists
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+            return res.status(400).json({ message: "Username already exists" });
+        }
+
+        // Check if email already exists (double check)
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) {
+            return res.status(400).json({ message: "Email already registered" });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create new client user
+        const newUser = new User({
+            username,
+            password: hashedPassword,
+            email,
+            phoneNumber,
+            role: 'client',
+            companyCode: null,
+        });
+
+        await newUser.save();
+
+        // Clean up stores
+        otpStore.delete(email);
+        verificationStore.delete(email);
+
+        // Generate token for immediate login
+        const token = generateToken(newUser._id, res);
+
+        res.status(201).json({
+            message: "Registration completed successfully",
+            user: {
+                _id: newUser._id,
+                username: newUser.username,
+                email: newUser.email,
+                phoneNumber: newUser.phoneNumber,
+                role: newUser.role,
+                companyCode: newUser.companyCode,
+            },
+            token
+        });
+
+    } catch (error) {
+        console.log("Error in completeRegistration controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Resend OTP function
+export const resendRegistrationOTP = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        // Check if email already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "Email already registered" });
+        }
+
+        // Generate new OTP
+        const otp = crypto.randomInt(100000, 999999).toString();
+
+        // Update/Set OTP with new expiry
+        otpStore.set(email, {
+            otp,
+            expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
+            attempts: 0
+        });
+
+        // Reset verification status
+        verificationStore.delete(email);
+
+        // Create transporter
+        let transporter;
+        try {
+            transporter = createTransporter();
+        } catch (error) {
+            console.log("Transporter creation error:", error.message);
+            return res.status(500).json({
+                message: "Email service configuration error"
+            });
+        }
+
+        // Send new OTP email
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Resend Registration OTP - Your App Name',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #333;">Registration OTP (Resent)</h2>
+                    <p>Your new OTP for registration is:</p>
+                    <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
+                        ${otp}
+                    </div>
+                    <p>This OTP will expire in 10 minutes.</p>
+                    <p style="color: #666;">If you didn't request this, please ignore this email.</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({
+            message: "OTP resent successfully to your email",
+            email,
+            expiresIn: 600
+        });
+
+    } catch (error) {
+        console.log("Error in resendRegistrationOTP controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Check verification status (optional endpoint for frontend)
+export const checkVerificationStatus = async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        const verificationData = verificationStore.get(email);
+        const otpData = otpStore.get(email);
+
+        res.status(200).json({
+            email,
+            hasOTP: !!otpData,
+            isVerified: !!(verificationData && verificationData.verified),
+            otpExpired: otpData ? Date.now() > otpData.expiresAt : true,
+            verificationExpired: verificationData ? Date.now() > verificationData.expiresAt : true
+        });
+
+    } catch (error) {
+        console.log("Error in checkVerificationStatus controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
 
 export const createUser = async (req, res) => {
     try {
-        const {username, password, companyCode, role, position, location} = req.body;
+        const { username, password, companyCode, role, position, location, phoneNumber, email } = req.body;
 
         console.log(req.body);
-        
 
-        if(!username || !password || !role ){
-            return res.status(400).json({message : "All are required fields"});
+
+        if (!username || !password || !role) {
+            return res.status(400).json({ message: "All are required fields" });
         }
 
-        if(password.length < 8){
-            return res.status(400).json({message : "Password must be at least 8 characters"});
+        if (password.length < 8) {
+            return res.status(400).json({ message: "Password must be at least 8 characters" });
         }
 
-        const user = await User.findOne({username})
+        const user = await User.findOne({ username })
 
-        if(user) return res.status(400).json({message : "Username already exists"});
+        if (user) return res.status(400).json({ message: "Username already exists" });
 
-        if(role === "employee" && !position){
-            return res.status(400).json({message : "position is a required field for employee"});
+        if (role === "employee" && !position) {
+            return res.status(400).json({ message: "position is a required field for employee" });
         }
 
-        if(role === "client" && (!companyCode || !location)){
-            return res.status(400).json({message : "companycode and location are required field for client"});
+        if (role === "client" && (!location || !phoneNumber || !email)) {
+            return res.status(400).json({ message: "location, phone number, and email are required fields for client" });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -35,7 +914,7 @@ export const createUser = async (req, res) => {
         const createdBy = req.user ? req.user._id : null;
 
         console.log(createdBy);
-        
+
 
         if (!createdBy) {
             return res.status(400).json({ message: "Unauthorized: Missing creator information." });
@@ -44,97 +923,100 @@ export const createUser = async (req, res) => {
         const newUser = new User({
             username,
             password: hashedPassword,
-            companyCode : role === "client" ? companyCode : undefined ,
+            companyCode: role === "client" ? companyCode : undefined,
             role,
-            position : role === "employee" ? position : undefined,
-            location : role === "client" ? location : undefined,
-            createdBy : role === "admin" ? undefined : createdBy
+            position: role === "employee" ? position : undefined,
+            location: role === "client" ? location : undefined,
+            phoneNumber: role === "client" ? phoneNumber : undefined,
+            email: role === "client" ? email : undefined,
+            createdBy: role === "admin" ? undefined : createdBy
         });
 
-        if(newUser){
-            
+        if (newUser) {
+
             await newUser.save();
 
             res.status(201).json({
                 _id: newUser._id,
                 username: newUser.username,
-                compnayCode: companyCode,
+                companyCode: companyCode,
                 role: role,
                 position: position,
                 location: location,
+                phoneNumber: phoneNumber,
+                email: email
             })
-        }else{
-            return res.status(400).json({message: "Invalid user data"})
+        } else {
+            return res.status(400).json({ message: "Invalid user data" })
         }
 
     } catch (error) {
         console.log("Error in create user controller", error.message);
-        res.status(500).json({message: "internal server error"});
+        res.status(500).json({ message: "internal server error" });
     }
 }
 
-export const login = async (req,res) => {
+export const login = async (req, res) => {
     try {
-        const {username, password, companyCode} = req.body;
+        const { username, password, companyCode } = req.body;
 
         console.log(req.body);
-        
 
-        const user = await User.findOne({username});
+        const user = await User.findOne({ username });
+        if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-        if(!user) return res.status(400).json({message : "Invalid credentials"});
+        // Check if user role is client for org login
+        // if (user.role !== 'client') {
+        //     return res.status(400).json({ message: "Only client users can access org login" });
+        // }
 
-        if(user.role === 'client' && user.companyCode !== companyCode){
-            return res.status(400).json({message : "Invalid compnay code"});
-        }
-        
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
 
-        if(!isPasswordCorrect) return res.status(400).json({message : "Invalid credentials"});
+        const token = generateToken(user._id, res);
 
-        const token = generateToken(user._id, res); 
-
-        console.log("Generated Token:", token); 
+        console.log("Generated Token:", token);
 
         res.status(200).json({
-            _id : user._id,
+            _id: user._id,
             username: user.username,
-            companyCode : user.companyCode,
+            companyCode: user.companyCode,
             role: user.role,
-            position : user.position,
-            location : user.location,
+            position: user.position,
+            location: user.location,
+            phoneNumber: user.phoneNumber,
+            email: user.email,
             token,
-        },
-    )
+        });
 
     } catch (error) {
         console.log("Error in login controller", error.message);
-        res.status(500).json({message : "Internal server error"})
+        res.status(500).json({ message: "Internal server error" });
     }
-}
+};
 
-export const logout = async  (req,res) => {
+export const logout = async (req, res) => {
     try {
-        res.cookie("jwt","", {maxAge : 0});
-        res.status(200).json({message : "Logged out successfully"})
+        res.cookie("jwt", "", { maxAge: 0 });
+        res.status(200).json({ message: "Logged out successfully" })
     } catch (error) {
         console.log("Error in logout controller");
-        res.status(500).json({message : "Internal server error"})
+        res.status(500).json({ message: "Internal server error" })
     }
-    
+
 }
 
-export const getCompnayCode = async (req,res) => {
+export const getCompanyCode = async (req, res) => {
     try {
-        const clients = await User.find({role : "client"}, "companyCode");
+        const clients = await User.find({ role: "client" }, "companyCode");
 
-        const companyCodes = [...new Set(clients.map(client => client.companyCode))];
+        const companyCodes = [...new Set(clients.map(client => client.companyCode).filter(code => code !== null))];
 
-        res.status(200).json({companyCodes});
-        
+        res.status(200).json({ companyCodes });
+
     } catch (error) {
-        console.log("Error in getCompnayCode controller", error.message);
-        res.status(500).json({message : "Internal server error"});
+        console.log("Error in getCompanyCode controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
     }
 }
 
@@ -149,8 +1031,8 @@ export const checkAuth = (req, res) => {
 
 export const getUserData = async (req, res) => {
     try {
-        const employees = await User.find({ role: "employee" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });;
-        const clients = await User.find({ role: "client" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });;
+        const employees = await User.find({ role: "employee" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });
+        const clients = await User.find({ role: "client" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });
 
         res.status(200).json({
             employees,
@@ -194,7 +1076,7 @@ export const deleteUser = async (req, res) => {
 export const editUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { username, password, companyCode, role, position, location } = req.body;        
+        const { username, password, companyCode, role, position, location, phoneNumber, email } = req.body;
 
         let user = await User.findById(userId);
 
@@ -227,6 +1109,8 @@ export const editUser = async (req, res) => {
             user.companyCode = role === "client" ? companyCode : undefined;
             user.position = role === "employee" ? position : undefined;
             user.location = role === "client" ? location : undefined;
+            user.phoneNumber = role === "client" ? phoneNumber : undefined;
+            user.email = role === "client" ? email : undefined;
         }
 
         await user.save();
@@ -242,7 +1126,7 @@ export const editUser = async (req, res) => {
 export const updateExpoPushToken = async (req, res) => {
     try {
         const { userId, expoPushToken, deviceId } = req.body;
-        
+
         if (!userId || !expoPushToken || !deviceId) {
             return res.status(400).json({ message: "userId, expoPushToken, and deviceId are required" });
         }
@@ -254,7 +1138,7 @@ export const updateExpoPushToken = async (req, res) => {
 
         // Remove existing token for this device if it exists
         user.expoPushTokens = user.expoPushTokens.filter(tokenObj => tokenObj.deviceId !== deviceId);
-        
+
         // Add new token
         user.expoPushTokens.push({
             token: expoPushToken,
@@ -276,7 +1160,7 @@ export const updateExpoPushToken = async (req, res) => {
 export const removeExpoPushToken = async (req, res) => {
     try {
         const { userId, deviceId } = req.body;
-        
+
         if (!userId || !deviceId) {
             return res.status(400).json({ message: "userId and deviceId are required" });
         }
@@ -303,10 +1187,257 @@ export const getUserPushTokens = async (userId) => {
     try {
         const user = await User.findById(userId);
         if (!user) return [];
-        
+
         return user.expoPushTokens.map(tokenObj => tokenObj.token);
     } catch (error) {
         console.error("Error getting user push tokens:", error.message);
         return [];
+    }
+};
+
+// Add these methods to your auth controller
+
+// Approve client and assign company code WITH PUSH NOTIFICATION
+export const approveClient = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { companyCode, approvalNotes } = req.body;
+        const approvedBy = req.user._id; // The admin/employee who is approving
+
+        if (!companyCode) {
+            return res.status(400).json({ message: "Company code is required for approval" });
+        }
+
+        // Find the user to approve
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if user is a client and pending approval
+        if (user.role !== 'client') {
+            return res.status(400).json({ message: "Only client users can be approved" });
+        }
+
+        if (user.approvalStatus !== 'pending') {
+            return res.status(400).json({
+                message: `User is already ${user.approvalStatus}`
+            });
+        }
+
+        // Update user with approval details
+        user.approvalStatus = 'approved';
+        user.companyCode = companyCode;
+        user.approvedBy = approvedBy;
+        user.approvedAt = new Date();
+        user.approvalNotes = approvalNotes || null;
+
+        // Clear any previous rejection data
+        user.rejectedBy = null;
+        user.rejectedAt = null;
+        user.rejectionMessage = null;
+
+        await user.save();
+
+        // Send push notification to the approved client
+        if (user.expoPushTokens && user.expoPushTokens.length > 0) {
+            const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
+            await sendPushNotificationToMultiple(
+                userTokens,
+                `🎉 Congratulations! Your account has been approved and you've been assigned to company code: ${companyCode}. You can now access all features.`
+            );
+        }
+
+        // Populate the approvedBy field for response
+        await user.populate('approvedBy', 'username');
+
+        res.status(200).json({
+            message: "Client approved successfully and notification sent",
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                companyCode: user.companyCode,
+                approvalStatus: user.approvalStatus,
+                approvedBy: user.approvedBy,
+                approvedAt: user.approvedAt,
+                approvalNotes: user.approvalNotes
+            }
+        });
+
+    } catch (error) {
+        console.log("Error in approveClient controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Reject client with message
+export const rejectClient = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { rejectionMessage } = req.body;
+        const rejectedBy = req.user._id; // The admin/employee who is rejecting
+
+        if (!rejectionMessage || rejectionMessage.trim() === '') {
+            return res.status(400).json({ message: "Rejection message is required" });
+        }
+
+        if (rejectionMessage.length > 500) {
+            return res.status(400).json({ message: "Rejection message must be less than 500 characters" });
+        }
+
+        // Find the user to reject
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if user is a client and pending approval
+        if (user.role !== 'client') {
+            return res.status(400).json({ message: "Only client users can be rejected" });
+        }
+
+        if (user.approvalStatus !== 'pending') {
+            return res.status(400).json({
+                message: `User is already ${user.approvalStatus}`
+            });
+        }
+
+        // Update user with rejection details
+        user.approvalStatus = 'rejected';
+        user.rejectedBy = rejectedBy;
+        user.rejectedAt = new Date();
+        user.rejectionMessage = rejectionMessage.trim();
+
+        // Clear any previous approval data
+        user.companyCode = null;
+        user.approvedBy = null;
+        user.approvedAt = null;
+        user.approvalNotes = null;
+
+        await user.save();
+
+        if (user.expoPushTokens && user.expoPushTokens.length > 0) {
+            const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
+            await sendPushNotificationToMultiple(
+                userTokens,
+                `❌ We're sorry! Your account request has been rejected. If you believe this is a mistake or need further assistance, please contact support.`
+            );
+        }
+
+
+        // Populate the rejectedBy field for response
+        await user.populate('rejectedBy', 'username');
+
+        res.status(200).json({
+            message: "Client rejected successfully",
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                approvalStatus: user.approvalStatus,
+                rejectedBy: user.rejectedBy,
+                rejectedAt: user.rejectedAt,
+                rejectionMessage: user.rejectionMessage
+            }
+        });
+
+    } catch (error) {
+        console.log("Error in rejectClient controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Get pending clients for approval
+export const getPendingClients = async (req, res) => {
+    try {
+        const pendingClients = await User.find({
+            role: 'client',
+            approvalStatus: 'pending'
+        }, '-password')
+            .populate('createdBy', 'username')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            message: "Pending clients retrieved successfully",
+            count: pendingClients.length,
+            clients: pendingClients
+        });
+
+    } catch (error) {
+        console.log("Error in getPendingClients controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Get clients by approval status
+export const getClientsByStatus = async (req, res) => {
+    try {
+        const { status } = req.params; // 'pending', 'approved', 'rejected'
+
+        if (!['pending', 'approved', 'rejected'].includes(status)) {
+            return res.status(400).json({ message: "Invalid status. Use: pending, approved, or rejected" });
+        }
+
+        const clients = await User.find({
+            role: 'client',
+            approvalStatus: status
+        }, '-password')
+            .populate('createdBy', 'username')
+            .populate('approvedBy', 'username')
+            .populate('rejectedBy', 'username')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            message: `${status.charAt(0).toUpperCase() + status.slice(1)} clients retrieved successfully`,
+            count: clients.length,
+            clients: clients
+        });
+
+    } catch (error) {
+        console.log("Error in getClientsByStatus controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Resubmit rejected client (allows rejected clients to be reconsidered)
+export const resubmitRejectedClient = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (user.role !== 'client') {
+            return res.status(400).json({ message: "Only client users can be resubmitted" });
+        }
+
+        if (user.approvalStatus !== 'rejected') {
+            return res.status(400).json({ message: "Only rejected clients can be resubmitted" });
+        }
+
+        // Reset to pending status
+        user.approvalStatus = 'pending';
+        user.rejectedBy = null;
+        user.rejectedAt = null;
+        user.rejectionMessage = null;
+
+        await user.save();
+
+        res.status(200).json({
+            message: "Client resubmitted for approval successfully",
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                approvalStatus: user.approvalStatus
+            }
+        });
+
+    } catch (error) {
+        console.log("Error in resubmitRejectedClient controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
     }
 };

@@ -34,6 +34,7 @@ export const contactController = async (req, res) => {
         pass: process.env.EMAIL_PASS  // Your app password
       }
     });
+    
 
     // Email content for the business owner
     const businessOwnerMailOptions = {

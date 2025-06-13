@@ -4,43 +4,71 @@ const userSchema = mongoose.Schema({
     username: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true,
+        minlength: 3,
+        maxlength: 30
     },
-    password:{
+    password: {
         type: String,
-        required: true
+        required: true,
+        minlength: 8
     },
-    companyCode:{
+    companyCode: {
         type: String,
-        required: function(){
-            return this.role === 'client';
-        }
+        default: null,
+        required: false
     },
-    role:{
+    role: {
         type: String,
         required: true,
         enum: ['admin', 'employee', 'client']
     },
-    position:{
+    position: {
         type: String,
-        required: function(){
+        required: function() {
             return this.role === 'employee';
         }
     },
-    location:{
+    phoneNumber: {
         type: String,
-        required: function(){
+        required: function() {
             return this.role === 'client';
+        },
+        validate: {
+            validator: function(phone) {
+                if (this.role === 'client' && phone) {
+                    return /^[\+]?[1-9][\d]{0,15}$/.test(phone);
+                }
+                return true;
+            },
+            message: 'Please enter a valid phone number'
         }
     },
-    createdBy:{
-        type: mongoose.Schema.Types.ObjectId, 
+    email: {
+        type: String,
+        required: function() {
+            return this.role === 'client';
+        },
+        unique: true,
+        sparse: true,
+        validate: {
+            validator: function(email) {
+                if (email) {
+                    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                }
+                return true;
+            },
+            message: 'Please enter a valid email address'
+        }
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: function(){
-            return this.role !== "admin";
+        required: function() {
+            return this.role !== "admin" && this.role !== "client";
         }
     },
-    // Changed from single token to array of tokens
     expoPushTokens: [{
         token: {
             type: String,
@@ -54,9 +82,68 @@ const userSchema = mongoose.Schema({
             type: Date,
             default: Date.now
         }
-    }]
-},{
+    }],
+    
+    // New approval system fields
+    approvalStatus: {
+        type: String,
+        default: function() {
+            return this.role === 'client' ? 'pending' : 'approved';
+        },
+        enum: ['pending', 'approved', 'rejected']
+    },
+    approvedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null
+    },
+    approvedAt: {
+        type: Date,
+        default: null
+    },
+    rejectedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null
+    },
+    rejectedAt: {
+        type: Date,
+        default: null
+    },
+    rejectionMessage: {
+        type: String,
+        default: null,
+        maxlength: 500
+    },
+    approvalNotes: {
+        type: String,
+        default: null,
+        maxlength: 500
+    }
+}, {
     timestamps: true
+});
+
+// Add indexes for better performance
+userSchema.index({ email: 1 });
+userSchema.index({ username: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ approvalStatus: 1 });
+userSchema.index({ companyCode: 1 });
+
+// Virtual to check if user needs approval
+userSchema.virtual('needsApproval').get(function() {
+    return this.role === 'client' && this.approvalStatus === 'pending';
+});
+
+// Virtual to check if user is approved
+userSchema.virtual('isApproved').get(function() {
+    return this.approvalStatus === 'approved';
+});
+
+// Virtual to check if user is rejected
+userSchema.virtual('isRejected').get(function() {
+    return this.approvalStatus === 'rejected';
 });
 
 const User = mongoose.model("User", userSchema);
