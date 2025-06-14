@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
 import { Expo } from 'expo-server-sdk'; // Add this import
+import { io } from "../lib/socket.js";
 
 // Using Map for in-memory storage (consider Redis for production)
 const otpStore = new Map();
@@ -1197,12 +1198,11 @@ export const getUserPushTokens = async (userId) => {
 
 // Add these methods to your auth controller
 
-// Approve client and assign company code WITH PUSH NOTIFICATION
 export const approveClient = async (req, res) => {
     try {
         const { userId } = req.params;
         const { companyCode, approvalNotes } = req.body;
-        const approvedBy = req.user._id; // The admin/employee who is approving
+        const approvedBy = req.user._id; //  The admin/employee who is approving 
 
         if (!companyCode) {
             return res.status(400).json({ message: "Company code is required for approval" });
@@ -1239,6 +1239,22 @@ export const approveClient = async (req, res) => {
 
         await user.save();
 
+        // Populate the approvedBy field for response
+        await user.populate('approvedBy', 'username');
+
+        // Emit socket event for real-time updates
+        io.emit("client-approval-updated", {
+            userId: user._id,
+            username: user.username,
+            email: user.email,
+            companyCode: user.companyCode,
+            approvalStatus: user.approvalStatus,
+            approvedBy: user.approvedBy,
+            approvedAt: user.approvedAt,
+            approvalNotes: user.approvalNotes,
+            updateType: 'approved'
+        });
+
         // Send push notification to the approved client
         if (user.expoPushTokens && user.expoPushTokens.length > 0) {
             const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
@@ -1247,9 +1263,6 @@ export const approveClient = async (req, res) => {
                 `🎉 Congratulations! Your account has been approved and you've been assigned to company code: ${companyCode}. You can now access all features.`
             );
         }
-
-        // Populate the approvedBy field for response
-        await user.populate('approvedBy', 'username');
 
         res.status(200).json({
             message: "Client approved successfully and notification sent",
@@ -1271,28 +1284,17 @@ export const approveClient = async (req, res) => {
     }
 };
 
-// Reject client with message
 export const rejectClient = async (req, res) => {
     try {
         const { userId } = req.params;
         const { rejectionMessage } = req.body;
-        const rejectedBy = req.user._id; // The admin/employee who is rejecting
+        const rejectedBy = req.user._id;
 
-        if (!rejectionMessage || rejectionMessage.trim() === '') {
-            return res.status(400).json({ message: "Rejection message is required" });
-        }
-
-        if (rejectionMessage.length > 500) {
-            return res.status(400).json({ message: "Rejection message must be less than 500 characters" });
-        }
-
-        // Find the user to reject
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Check if user is a client and pending approval
         if (user.role !== 'client') {
             return res.status(400).json({ message: "Only client users can be rejected" });
         }
@@ -1307,7 +1309,7 @@ export const rejectClient = async (req, res) => {
         user.approvalStatus = 'rejected';
         user.rejectedBy = rejectedBy;
         user.rejectedAt = new Date();
-        user.rejectionMessage = rejectionMessage.trim();
+        user.rejectionMessage = rejectionMessage || null;
 
         // Clear any previous approval data
         user.companyCode = null;
@@ -1316,21 +1318,31 @@ export const rejectClient = async (req, res) => {
         user.approvalNotes = null;
 
         await user.save();
+        await user.populate('rejectedBy', 'username');
 
+        // Emit socket event for real-time updates
+        io.emit("client-approval-updated", {
+            userId: user._id,
+            username: user.username,
+            email: user.email,
+            approvalStatus: user.approvalStatus,
+            rejectedBy: user.rejectedBy,
+            rejectedAt: user.rejectedAt,
+            rejectionMessage: user.rejectionMessage,
+            updateType: 'rejected'
+        });
+
+        // Send push notification to the rejected client
         if (user.expoPushTokens && user.expoPushTokens.length > 0) {
             const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
             await sendPushNotificationToMultiple(
                 userTokens,
-                `❌ We're sorry! Your account request has been rejected. If you believe this is a mistake or need further assistance, please contact support.`
+                `❌ Your account approval has been declined. ${rejectionMessage ? 'Reason: ' + rejectionMessage : 'Please contact support for more information.'}`
             );
         }
 
-
-        // Populate the rejectedBy field for response
-        await user.populate('rejectedBy', 'username');
-
         res.status(200).json({
-            message: "Client rejected successfully",
+            message: "Client rejected successfully and notification sent",
             user: {
                 _id: user._id,
                 username: user.username,
