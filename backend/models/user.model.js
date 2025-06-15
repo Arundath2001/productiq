@@ -38,7 +38,7 @@ const userSchema = mongoose.Schema({
         validate: {
             validator: function(phone) {
                 if (this.role === 'client' && phone) {
-                    return /^[\+]?[1-9][\d]{0,15}$/.test(phone);
+                    return /^[\+]?[0-9][\d]{0,15}$/.test(phone);
                 }
                 return true;
             },
