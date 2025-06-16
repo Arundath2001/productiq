@@ -1033,7 +1033,11 @@ export const checkAuth = (req, res) => {
 export const getUserData = async (req, res) => {
     try {
         const employees = await User.find({ role: "employee" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });
-        const clients = await User.find({ role: "client" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });
+        const clients = await User.find({ role: "client" }, "-password")
+            .populate("createdBy", "username")
+            .populate("approvedBy", "username")    // Add this line
+            .populate("rejectedBy", "username")    // Add this line
+            .sort({ createdAt: -1 });
 
         res.status(200).json({
             employees,
@@ -1214,16 +1218,20 @@ export const approveClient = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Check if user is a client and pending approval
+        // Check if user is a client
         if (user.role !== 'client') {
             return res.status(400).json({ message: "Only client users can be approved" });
         }
 
-        if (user.approvalStatus !== 'pending') {
+        // Allow approval for pending and rejected users
+        if (user.approvalStatus === 'approved') {
             return res.status(400).json({
-                message: `User is already ${user.approvalStatus}`
+                message: "User is already approved"
             });
         }
+
+        // Determine if this is a re-approval
+        const isReapproval = user.approvalStatus === 'rejected';
 
         // Update user with approval details
         user.approvalStatus = 'approved';
@@ -1252,20 +1260,25 @@ export const approveClient = async (req, res) => {
             approvedBy: user.approvedBy,
             approvedAt: user.approvedAt,
             approvalNotes: user.approvalNotes,
-            updateType: 'approved'
+            updateType: isReapproval ? 'reapproved' : 'approved'
         });
 
-        // Send push notification to the approved client
+        // Send appropriate push notification
         if (user.expoPushTokens && user.expoPushTokens.length > 0) {
             const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
-            await sendPushNotificationToMultiple(
-                userTokens,
-                `🎉 Congratulations! Your account has been approved and you've been assigned to company code: ${companyCode}. You can now access all features.`
-            );
+            const notificationMessage = isReapproval 
+                ? `🎉 Great news! Your account has been re-approved and you've been assigned to company code: ${companyCode}. You can now access all features again.`
+                : `🎉 Congratulations! Your account has been approved and you've been assigned to company code: ${companyCode}. You can now access all features.`;
+            
+            await sendPushNotificationToMultiple(userTokens, notificationMessage);
         }
 
+        const successMessage = isReapproval 
+            ? "Client re-approved successfully and notification sent"
+            : "Client approved successfully and notification sent";
+
         res.status(200).json({
-            message: "Client approved successfully and notification sent",
+            message: successMessage,
             user: {
                 _id: user._id,
                 username: user.username,
@@ -1274,7 +1287,8 @@ export const approveClient = async (req, res) => {
                 approvalStatus: user.approvalStatus,
                 approvedBy: user.approvedBy,
                 approvedAt: user.approvedAt,
-                approvalNotes: user.approvalNotes
+                approvalNotes: user.approvalNotes,
+                isReapproval
             }
         });
 
@@ -1290,6 +1304,10 @@ export const rejectClient = async (req, res) => {
         const { rejectionMessage } = req.body;
         const rejectedBy = req.user._id;
 
+        if (!rejectionMessage?.trim()) {
+            return res.status(400).json({ message: "Rejection message is required" });
+        }
+
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -1299,19 +1317,31 @@ export const rejectClient = async (req, res) => {
             return res.status(400).json({ message: "Only client users can be rejected" });
         }
 
-        if (user.approvalStatus !== 'pending') {
+        // Allow rejection for pending and approved users
+        if (user.approvalStatus === 'rejected') {
             return res.status(400).json({
-                message: `User is already ${user.approvalStatus}`
+                message: "User is already rejected"
             });
         }
+
+        // Determine if this is a re-rejection (from approved status)
+        const isRerejection = user.approvalStatus === 'approved';
+        
+        // Store previous approval data for logging/audit purposes
+        const previousData = isRerejection ? {
+            companyCode: user.companyCode,
+            approvedBy: user.approvedBy,
+            approvedAt: user.approvedAt,
+            approvalNotes: user.approvalNotes
+        } : null;
 
         // Update user with rejection details
         user.approvalStatus = 'rejected';
         user.rejectedBy = rejectedBy;
         user.rejectedAt = new Date();
-        user.rejectionMessage = rejectionMessage || null;
+        user.rejectionMessage = rejectionMessage.trim();
 
-        // Clear any previous approval data
+        // Clear approval data when rejecting
         user.companyCode = null;
         user.approvedBy = null;
         user.approvedAt = null;
@@ -1329,20 +1359,26 @@ export const rejectClient = async (req, res) => {
             rejectedBy: user.rejectedBy,
             rejectedAt: user.rejectedAt,
             rejectionMessage: user.rejectionMessage,
-            updateType: 'rejected'
+            updateType: isRerejection ? 'rerejected' : 'rejected',
+            previousData
         });
 
-        // Send push notification to the rejected client
+        // Send appropriate push notification
         if (user.expoPushTokens && user.expoPushTokens.length > 0) {
             const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
-            await sendPushNotificationToMultiple(
-                userTokens,
-                `❌ Your account approval has been declined. ${rejectionMessage ? 'Reason: ' + rejectionMessage : 'Please contact support for more information.'}`
-            );
+            const notificationMessage = isRerejection
+                ? `⚠️ Your account approval has been revoked. Reason: ${rejectionMessage}. Please contact support for more information.`
+                : `❌ Your account approval has been declined. Reason: ${rejectionMessage}. Please contact support for more information.`;
+            
+            await sendPushNotificationToMultiple(userTokens, notificationMessage);
         }
 
+        const successMessage = isRerejection
+            ? "Client approval revoked successfully and notification sent"
+            : "Client rejected successfully and notification sent";
+
         res.status(200).json({
-            message: "Client rejected successfully and notification sent",
+            message: successMessage,
             user: {
                 _id: user._id,
                 username: user.username,
@@ -1350,7 +1386,8 @@ export const rejectClient = async (req, res) => {
                 approvalStatus: user.approvalStatus,
                 rejectedBy: user.rejectedBy,
                 rejectedAt: user.rejectedAt,
-                rejectionMessage: user.rejectionMessage
+                rejectionMessage: user.rejectionMessage,
+                isRerejection
             }
         });
 

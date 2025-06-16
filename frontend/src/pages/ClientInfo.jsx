@@ -31,11 +31,24 @@ const ClientInfo = () => {
   const [rejectingUser, setRejectingUser] = useState(null);
   const [rejectionMessage, setRejectionMessage] = useState("");
 
+  // Predefined rejection reasons
+  const predefinedReasons = [
+    "Incomplete documentation provided",
+    "Invalid contact information",
+    "Business registration not verified",
+    "Duplicate account detected",
+    "Does not meet eligibility criteria",
+    "Suspicious activity detected",
+    "Missing required licenses",
+    "Custom reason" // This will allow users to write their own
+  ];
+
   useEffect(() => {
     getUsersData();
     getAllCompanies();
   }, []);
 
+  
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, "0");
@@ -64,7 +77,7 @@ const ClientInfo = () => {
 
   const handleApproveClick = (user) => {
     setApprovingUser(user);
-    setSelectedCustomerCode("");
+    setSelectedCustomerCode(user.companyCode || ""); // Pre-fill if user already has a company code
     setApprovalNotes("");
   };
 
@@ -100,11 +113,31 @@ const ClientInfo = () => {
     }
   };
 
+  const handlePredefinedReasonSelect = (reason) => {
+    if (reason === "Custom reason") {
+      setRejectionMessage(""); // Clear for custom input
+    } else {
+      setRejectionMessage(reason);
+    }
+  };
+
   const getApprovalStatusBadge = (user) => {
     if (user.approvalStatus === 'approved') {
       return <span className="text-green-600 text-xs font-medium">Approved</span>;
     } else if (user.approvalStatus === 'rejected') {
-      return <span className="text-red-600 text-xs font-medium">Rejected</span>;
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-red-600 text-xs font-medium">Rejected</span>
+          {user.rejectionMessage && (
+            <span 
+              className="text-gray-500 text-xs cursor-help" 
+              title={`Rejection reason: ${user.rejectionMessage}`}
+            >
+              ℹ️
+            </span>
+          )}
+        </div>
+      );
     } else {
       return <span className="text-yellow-600 text-xs font-medium">Pending</span>;
     }
@@ -115,6 +148,7 @@ const ClientInfo = () => {
         client.username.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : [];
+    
 
   return (
     <div>
@@ -134,10 +168,10 @@ const ClientInfo = () => {
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">#</th>
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">CLIENT USERNAME</th>
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">CUSTOMER CODE</th>
-              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">CLIENT LOCATION</th>
+              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">CONTACT DETAILS</th>
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">STATUS</th>
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">CREATED AT</th>
-              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">CREATED BY</th>
+              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">APPROVED/REJECTED BY</th>
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">ACTIONS</th>
             </tr>
           </thead>
@@ -148,10 +182,15 @@ const ClientInfo = () => {
                   <td className="py-3 px-5 text-sm text-black">{index + 1}</td>
                   <td className="py-3 px-5 text-sm text-black">{data.username}</td>
                   <td className="py-3 px-5 text-sm text-black">{data.companyCode || "-"}</td>
-                  <td className="py-3 px-5 text-sm text-black">{data.location}</td>
+                  <td className="py-3 px-5 text-sm text-black">
+                    <div className="flex flex-col">
+                      <span className="font-medium">{data.phoneNumber}</span>
+                      <span className="text-gray-600 text-xs break-all">{data.email}</span>
+                    </div>
+                  </td>
                   <td className="py-3 px-5 text-sm text-black">{getApprovalStatusBadge(data)}</td>
                   <td className="py-3 px-5 text-sm text-black">{formatDate(data.createdAt)}</td>
-                  <td className="py-3 px-5 text-sm text-black">{data.createdBy?.username}</td>
+                  <td className="py-3 px-5 text-sm text-black">{data.approvedBy?.username || data.rejectedBy?.username || "-"}</td>
                   <td className="py-3 px-5 text-sm text-black relative">
                     <div className="flex gap-3.5">
                       {data.approvalStatus === 'pending' ? (
@@ -173,8 +212,15 @@ const ClientInfo = () => {
                         </>
                       ) : data.approvalStatus === 'approved' ? (
                         <>
+                          <button 
+                            onClick={() => handleRejectClick(data)}
+                            className="text-red-600 font-medium hover:text-red-800 transition-colors"
+                            disabled={isRejectingClient}
+                          >
+                            {isRejectingClient ? "Rejecting..." : "Reject"}
+                          </button>
                           <FaTrash 
-                            className="cursor-pointer hover:text-red-600 transition-colors" 
+                            className="cursor-pointer hover:text-red-600 transition-colors ml-2" 
                             color="gray" 
                             onClick={() => handleConfirm(data._id)} 
                           />
@@ -184,13 +230,22 @@ const ClientInfo = () => {
                             onClick={() => handleShowForm(data)} 
                           />
                         </>
-                      ) : (
-                        <span className="text-gray-500 text-xs">
-                          {data.rejectionMessage && (
-                            <span title={data.rejectionMessage}>Rejected</span>
-                          )}
-                        </span>
-                      )}
+                      ) : data.approvalStatus === 'rejected' ? (
+                        <>
+                          <button
+                            onClick={() => handleApproveClick(data)}
+                            className="text-green-600 font-medium hover:text-green-800 transition-colors"
+                            disabled={isApprovingClient}
+                          >
+                            {isApprovingClient ? "Re-approving..." : "Re-approve"}
+                          </button>
+                          <FaTrash 
+                            className="cursor-pointer hover:text-red-600 transition-colors ml-2" 
+                            color="gray" 
+                            onClick={() => handleConfirm(data._id)} 
+                          />
+                        </>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -235,7 +290,17 @@ const ClientInfo = () => {
       {approvingUser && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#00000066] z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Approve {approvingUser.username}</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              {approvingUser.approvalStatus === 'rejected' ? 'Re-approve' : 'Approve'} {approvingUser.username}
+            </h2>
+            
+            {approvingUser.approvalStatus === 'rejected' && approvingUser.rejectionMessage && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-700">
+                  <strong>Previous rejection reason:</strong> {approvingUser.rejectionMessage}
+                </p>
+              </div>
+            )}
             
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -284,7 +349,7 @@ const ClientInfo = () => {
                 disabled={!selectedCustomerCode || isApprovingClient}
                 onClick={handleApproveSubmit}
               >
-                {isApprovingClient ? "Approving..." : "Approve"}
+                {isApprovingClient ? "Approving..." : (approvingUser.approvalStatus === 'rejected' ? 'Re-approve' : 'Approve')}
               </button>
             </div>
           </div>
@@ -299,11 +364,29 @@ const ClientInfo = () => {
             
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quick Select Reason
+              </label>
+              <div className="grid grid-cols-1 gap-2 mb-3">
+                {predefinedReasons.map((reason, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    className="text-left p-2 text-sm border rounded hover:bg-gray-50 transition-colors"
+                    onClick={() => handlePredefinedReasonSelect(reason)}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Rejection Reason *
               </label>
               <textarea
                 className="w-full border border-gray-300 rounded-md p-2 h-24 resize-none"
-                placeholder="Please provide a reason for rejection..."
+                placeholder="Please provide a reason for rejection or select from above..."
                 value={rejectionMessage}
                 onChange={(e) => setRejectionMessage(e.target.value)}
                 maxLength={500}
