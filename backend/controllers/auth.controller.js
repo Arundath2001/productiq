@@ -149,7 +149,7 @@ export const sendRegistrationOTP = async (req, res) => {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
-            subject: 'Registration OTP - Your App Name',
+            subject: 'Registration OTP - Aswaq Forwarder',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #333;">Registration OTP</h2>
@@ -858,7 +858,7 @@ export const resendRegistrationOTP = async (req, res) => {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
-            subject: 'Resend Registration OTP - Your App Name',
+            subject: 'Resend Registration OTP - Aswaq Forwarder',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #333;">Registration OTP (Resent)</h2>
@@ -1230,8 +1230,7 @@ export const getUserPushTokens = async (userId) => {
     }
 };
 
-// Add these methods to your auth controller
-
+// Updated approveClient function with email notification
 export const approveClient = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -1258,6 +1257,11 @@ export const approveClient = async (req, res) => {
             return res.status(400).json({
                 message: "User is already approved"
             });
+        }
+
+        // Check if user has email
+        if (!user.email) {
+            return res.status(400).json({ message: "User email not found. Cannot send approval notification." });
         }
 
         // Determine if this is a re-approval
@@ -1293,7 +1297,7 @@ export const approveClient = async (req, res) => {
             updateType: isReapproval ? 'reapproved' : 'approved'
         });
 
-        // Send appropriate push notification
+        // Send push notification
         if (user.expoPushTokens && user.expoPushTokens.length > 0) {
             const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
             const notificationMessage = isReapproval 
@@ -1303,9 +1307,75 @@ export const approveClient = async (req, res) => {
             await sendPushNotificationToMultiple(userTokens, notificationMessage);
         }
 
+        // Send email notification
+        try {
+            const transporter = createTransporter();
+            const approverName = user.approvedBy?.username || 'Admin';
+            
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: user.email,
+                subject: isReapproval 
+                    ? 'Account Re-Approved - Aswaq Forwarder' 
+                    : 'Account Approved - Aswaq Forwarder',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <h1 style="color: #28a745; margin: 0;">🎉 ${isReapproval ? 'Account Re-Approved!' : 'Account Approved!'}</h1>
+                        </div>
+                        
+                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h2 style="color: #333; margin-top: 0;">Hello ${user.username},</h2>
+                            <p style="font-size: 16px; line-height: 1.6; color: #555;">
+                                ${isReapproval 
+                                    ? 'Great news! Your account has been re-approved and you can now access all features again.'
+                                    : 'Congratulations! Your account has been approved and you now have access to all features.'
+                                }
+                            </p>
+                        </div>
+
+                        <div style="background-color: #e7f3ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h3 style="color: #0066cc; margin-top: 0;">Account Details:</h3>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="margin-bottom: 10px;"><strong>Username:</strong> ${user.username}</li>
+                                <li style="margin-bottom: 10px;"><strong>Email:</strong> ${user.email}</li>
+                                <li style="margin-bottom: 10px;"><strong>Company Code:</strong> ${companyCode}</li>
+                                <li style="margin-bottom: 10px;"><strong>Approved By:</strong> ${approverName}</li>
+                                <li style="margin-bottom: 10px;"><strong>Approved On:</strong> ${new Date().toLocaleString()}</li>
+                                ${approvalNotes ? `<li style="margin-bottom: 10px;"><strong>Notes:</strong> ${approvalNotes}</li>` : ''}
+                            </ul>
+                        </div>
+
+                        <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 20px;">
+                            <p style="margin: 0; color: #155724;">
+                                <strong>What's Next?</strong><br>
+                                You can now log in to your account and access all available features. If you have any questions or need assistance, please don't hesitate to contact our support team.
+                            </p>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                            <p style="color: #666; font-size: 14px;">
+                                This email was sent automatically. Please do not reply to this email.<br>
+                                If you have any questions, please contact our support team.
+                            </p>
+                            <p style="color: #999; font-size: 12px;">
+                                © ${new Date().getFullYear()} Aswaq Forwarder. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                `
+            };
+
+            await transporter.sendMail(mailOptions);
+            console.log(`Approval email sent successfully to: ${user.email}`);
+        } catch (emailError) {
+            console.log("Error sending approval email:", emailError.message);
+            // Don't fail the request if email fails, but log the error
+        }
+
         const successMessage = isReapproval 
-            ? "Client re-approved successfully and notification sent"
-            : "Client approved successfully and notification sent";
+            ? "Client re-approved successfully. Notifications sent via push and email."
+            : "Client approved successfully. Notifications sent via push and email.";
 
         res.status(200).json({
             message: successMessage,
@@ -1328,6 +1398,7 @@ export const approveClient = async (req, res) => {
     }
 };
 
+// Updated rejectClient function with email notification
 export const rejectClient = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -1352,6 +1423,11 @@ export const rejectClient = async (req, res) => {
             return res.status(400).json({
                 message: "User is already rejected"
             });
+        }
+
+        // Check if user has email
+        if (!user.email) {
+            return res.status(400).json({ message: "User email not found. Cannot send rejection notification." });
         }
 
         // Determine if this is a re-rejection (from approved status)
@@ -1393,7 +1469,7 @@ export const rejectClient = async (req, res) => {
             previousData
         });
 
-        // Send appropriate push notification
+        // Send push notification
         if (user.expoPushTokens && user.expoPushTokens.length > 0) {
             const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
             const notificationMessage = isRerejection
@@ -1403,9 +1479,88 @@ export const rejectClient = async (req, res) => {
             await sendPushNotificationToMultiple(userTokens, notificationMessage);
         }
 
+        // Send email notification
+        try {
+            const transporter = createTransporter();
+            const rejectorName = user.rejectedBy?.username || 'Admin';
+            
+            const mailOptions = {
+                from: process.env.EMAIL_USER,
+                to: user.email,
+                subject: isRerejection 
+                    ? 'Account Approval Revoked - Aswaq Forwarder' 
+                    : 'Account Application Update - Aswaq Forwarder',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <h1 style="color: #dc3545; margin: 0;">
+                                ${isRerejection ? '⚠️ Account Approval Revoked' : '❌ Account Application Update'}
+                            </h1>
+                        </div>
+                        
+                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h2 style="color: #333; margin-top: 0;">Hello ${user.username},</h2>
+                            <p style="font-size: 16px; line-height: 1.6; color: #555;">
+                                ${isRerejection 
+                                    ? 'We regret to inform you that your account approval has been revoked.'
+                                    : 'We have reviewed your account application, and unfortunately, we are unable to approve it at this time.'
+                                }
+                            </p>
+                        </div>
+
+                        <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; border-left: 4px solid #dc3545; margin-bottom: 20px;">
+                            <h3 style="color: #721c24; margin-top: 0;">Reason for ${isRerejection ? 'Revocation' : 'Rejection'}:</h3>
+                            <p style="margin: 0; color: #721c24; font-weight: 500;">
+                                ${rejectionMessage}
+                            </p>
+                        </div>
+
+                        <div style="background-color: #e7f3ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h3 style="color: #0066cc; margin-top: 0;">Application Details:</h3>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="margin-bottom: 10px;"><strong>Username:</strong> ${user.username}</li>
+                                <li style="margin-bottom: 10px;"><strong>Email:</strong> ${user.email}</li>
+                                <li style="margin-bottom: 10px;"><strong>${isRerejection ? 'Revoked' : 'Rejected'} By:</strong> ${rejectorName}</li>
+                                <li style="margin-bottom: 10px;"><strong>${isRerejection ? 'Revoked' : 'Rejected'} On:</strong> ${new Date().toLocaleString()}</li>
+                                ${previousData && previousData.companyCode ? 
+                                    `<li style="margin-bottom: 10px;"><strong>Previous Company Code:</strong> ${previousData.companyCode}</li>` 
+                                    : ''
+                                }
+                            </ul>
+                        </div>
+
+                        <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+                            <p style="margin: 0; color: #856404;">
+                                <strong>What can you do next?</strong><br>
+                                If you believe this decision was made in error or if you have additional information to provide, 
+                                please contact our support team. You may also reapply for account approval in the future 
+                                after addressing the concerns mentioned above.
+                            </p>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                            <p style="color: #666; font-size: 14px;">
+                                This email was sent automatically. Please do not reply to this email.<br>
+                                If you have any questions, please contact our support team.
+                            </p>
+                            <p style="color: #999; font-size: 12px;">
+                                © ${new Date().getFullYear()} Aswaq Forwarder. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                `
+            };
+
+            await transporter.sendMail(mailOptions);
+            console.log(`Rejection email sent successfully to: ${user.email}`);
+        } catch (emailError) {
+            console.log("Error sending rejection email:", emailError.message);
+            // Don't fail the request if email fails, but log the error
+        }
+
         const successMessage = isRerejection
-            ? "Client approval revoked successfully and notification sent"
-            : "Client rejected successfully and notification sent";
+            ? "Client approval revoked successfully. Notifications sent via push and email."
+            : "Client rejected successfully. Notifications sent via push and email.";
 
         res.status(200).json({
             message: successMessage,
