@@ -26,34 +26,40 @@ const userSchema = mongoose.Schema({
     },
     position: {
         type: String,
-        required: function() {
+        required: function () {
             return this.role === 'employee';
         }
     },
     phoneNumber: {
         type: String,
-        required: function() {
+        required: function () {
             return this.role === 'client';
         },
         validate: {
-            validator: function(phone) {
+            validator: function (phone) {
                 if (this.role === 'client' && phone) {
-                    return /^[\+]?[0-9][\d]{0,15}$/.test(phone);
+                    return /^[\+]?[0-9][\d\s]{0,15}$/.test(phone);
                 }
                 return true;
             },
             message: 'Please enter a valid phone number'
         }
     },
+    countryCode: {
+        type: String,
+        required: function () {
+            return this.role === 'client' && this.approvalStatus !== 'rejected';  // ← ADD THIS CONDITION
+        }
+    },
     email: {
         type: String,
-        required: function() {
+        required: function () {
             return this.role === 'client';
         },
         unique: true,
         sparse: true,
         validate: {
-            validator: function(email) {
+            validator: function (email) {
                 if (email) {
                     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
                 }
@@ -65,7 +71,7 @@ const userSchema = mongoose.Schema({
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: function() {
+        required: function () {
             return this.role !== "admin" && this.role !== "client";
         }
     },
@@ -83,11 +89,11 @@ const userSchema = mongoose.Schema({
             default: Date.now
         }
     }],
-    
+
     // New approval system fields
     approvalStatus: {
         type: String,
-        default: function() {
+        default: function () {
             return this.role === 'client' ? 'pending' : 'approved';
         },
         enum: ['pending', 'approved', 'rejected']
@@ -130,19 +136,20 @@ userSchema.index({ username: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ approvalStatus: 1 });
 userSchema.index({ companyCode: 1 });
+userSchema.index({ countryCode: 1 });
 
 // Virtual to check if user needs approval
-userSchema.virtual('needsApproval').get(function() {
+userSchema.virtual('needsApproval').get(function () {
     return this.role === 'client' && this.approvalStatus === 'pending';
 });
 
 // Virtual to check if user is approved
-userSchema.virtual('isApproved').get(function() {
+userSchema.virtual('isApproved').get(function () {
     return this.approvalStatus === 'approved';
 });
 
 // Virtual to check if user is rejected
-userSchema.virtual('isRejected').get(function() {
+userSchema.virtual('isRejected').get(function () {
     return this.approvalStatus === 'rejected';
 });
 

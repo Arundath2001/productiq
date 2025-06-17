@@ -698,19 +698,45 @@ export const changePassword = async (req, res) => {
 // Step 3: Complete registration with user details
 export const completeRegistration = async (req, res) => {
     try {
-        const { email, username, password, phoneNumber } = req.body;
+        const { email, username, password, phoneNumber, countryCode } = req.body;
 
         console.log("Complete registration request:", req.body);
 
-        if (!email || !username || !password || !phoneNumber) {
+        if (!email || !username || !password || !phoneNumber || !countryCode) {
             return res.status(400).json({
-                message: "Email, username, password, and phone number are required"
+                message: "Email, username, password, phone number, and country code are required"
             });
         }
 
         if (password.length < 8) {
             return res.status(400).json({
                 message: "Password must be at least 8 characters"
+            });
+        }
+
+        // Validate country code format
+        const countryCodeRegex = /^\+[1-9]\d{0,3}$/;
+        if (!countryCodeRegex.test(countryCode)) {
+            return res.status(400).json({
+                message: "Please enter a valid country code (e.g., +1, +91, +44)"
+            });
+        }
+
+        // Validate phone number format
+        const phoneRegex = /^[\+]?[0-9][\d\s\-\(\)]{6,17}$/;
+        const digitCount = phoneNumber.replace(/[\s\-\(\)\+]/g, '').length;
+        
+        if (!phoneRegex.test(phoneNumber) || digitCount < 7) {
+            return res.status(400).json({
+                message: "Please enter a valid phone number (minimum 7 digits)"
+            });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({
+                message: "Please enter a valid email address"
             });
         }
 
@@ -753,6 +779,7 @@ export const completeRegistration = async (req, res) => {
             password: hashedPassword,
             email,
             phoneNumber,
+            countryCode,
             role: 'client',
             companyCode: null,
         });
@@ -773,6 +800,7 @@ export const completeRegistration = async (req, res) => {
                 username: newUser.username,
                 email: newUser.email,
                 phoneNumber: newUser.phoneNumber,
+                countryCode: newUser.countryCode,
                 role: newUser.role,
                 companyCode: newUser.companyCode,
             },
@@ -781,6 +809,8 @@ export const completeRegistration = async (req, res) => {
 
     } catch (error) {
         console.log("Error in completeRegistration controller:", error.message);
+
+
         res.status(500).json({ message: "Internal server error" });
     }
 };

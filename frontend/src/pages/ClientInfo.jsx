@@ -184,7 +184,7 @@ const ClientInfo = () => {
                   <td className="py-3 px-5 text-sm text-black">{data.companyCode || "-"}</td>
                   <td className="py-3 px-5 text-sm text-black">
                     <div className="flex flex-col">
-                      <span className="font-medium">{data.phoneNumber}</span>
+                      <span className="font-medium">{data.countryCode} {data.phoneNumber}</span>
                       <span className="text-gray-600 text-xs break-all">{data.email}</span>
                     </div>
                   </td>
