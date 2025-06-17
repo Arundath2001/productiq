@@ -151,16 +151,45 @@ export const sendRegistrationOTP = async (req, res) => {
             to: email,
             subject: 'Registration OTP - Aswaq Forwarder',
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #333;">Registration OTP</h2>
-                    <p>Your OTP for registration is:</p>
-                    <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 25px 20px; text-align: center;">
+                <div style="color: white; font-size: 28px; margin-bottom: 8px;">🚀</div>
+                <h1 style="color: white; margin: 0; font-size: 20px; font-weight: 600;">Welcome to Aswaq!</h1>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 25px 20px;">
+                <p style="color: #4a5568; margin: 0 0 20px; font-size: 15px; line-height: 1.5;">Your verification code:</p>
+                
+                <!-- OTP -->
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 2px solid #bbf7d0; padding: 20px; text-align: center; border-radius: 12px; margin: 20px 0;">
+                    <div style="font-size: 32px; font-weight: 700; color: #065f46; letter-spacing: 6px; font-family: 'Courier New', monospace;">
                         ${otp}
                     </div>
-                    <p>This OTP will expire in 10 minutes.</p>
-                    <p style="color: #666;">If you didn't request this, please ignore this email.</p>
+                    <div style="margin-top: 12px;">
+                        <span style="background: #10b981; color: white; padding: 4px 12px; border-radius: 16px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                            Expires in 10 min
+                        </span>
+                    </div>
                 </div>
-            `
+                
+                <!-- Welcome Note -->
+                <div style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 12px 15px; border-radius: 0 6px 6px 0; margin: 20px 0;">
+                    <p style="color: #92400e; margin: 0; font-size: 13px; line-height: 1.4;">
+                        <strong>Almost there!</strong> Complete registration to start forwarding packages.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: #f8fafc; padding: 15px 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+                <p style="color: #a0aec0; margin: 0; font-size: 12px;">
+                    © 2025 Aswaq Forwarder
+                </p>
+            </div>
+        </div>
+    `
         };
 
         // Test transporter connection before sending
@@ -326,17 +355,45 @@ export const sendForgotPasswordOTP = async (req, res) => {
             to: email,
             subject: 'Password Reset OTP - Aswaq Forwarder',
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #333;">Password Reset Request</h2>
-                    <p>You requested to reset your password. Your OTP is:</p>
-                    <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0; border-radius: 8px;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px 20px; text-align: center;">
+                <div style="color: white; font-size: 28px; margin-bottom: 8px;">🔐</div>
+                <h1 style="color: white; margin: 0; font-size: 20px; font-weight: 600;">Password Reset</h1>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 25px 20px;">
+                <p style="color: #4a5568; margin: 0 0 20px; font-size: 15px; line-height: 1.5;">Your password reset code:</p>
+                
+                <!-- OTP -->
+                <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border: 2px solid #e2e8f0; padding: 20px; text-align: center; border-radius: 12px; margin: 20px 0;">
+                    <div style="font-size: 32px; font-weight: 700; color: #2d3748; letter-spacing: 6px; font-family: 'Courier New', monospace;">
                         ${otp}
                     </div>
-                    <p>This OTP will expire in 10 minutes.</p>
-                    <p style="color: #666;">If you didn't request this password reset, please ignore this email and your password will remain unchanged.</p>
-                    <p style="color: #666;">For security reasons, this OTP can only be used once.</p>
+                    <div style="margin-top: 12px;">
+                        <span style="background: #667eea; color: white; padding: 4px 12px; border-radius: 16px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                            Expires in 10 min
+                        </span>
+                    </div>
                 </div>
-            `
+                
+                <!-- Security Note -->
+                <div style="background: #fef5e7; border-left: 3px solid #f6d55c; padding: 12px 15px; border-radius: 0 6px 6px 0; margin: 20px 0;">
+                    <p style="color: #744210; margin: 0; font-size: 13px; line-height: 1.4;">
+                        <strong>Security:</strong> One-time use only. Ignore if you didn't request this.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: #f8fafc; padding: 15px 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+                <p style="color: #a0aec0; margin: 0; font-size: 12px;">
+                    © 2025 Aswaq Forwarder
+                </p>
+            </div>
+        </div>
+    `
         };
 
         // Test transporter connection before sending
@@ -389,8 +446,8 @@ export const verifyForgotPasswordOTP = async (req, res) => {
         // Check if OTP exists
         const storedOTPData = forgotPasswordOTPStore.get(email);
         if (!storedOTPData) {
-            return res.status(400).json({ 
-                message: "OTP not found or expired. Please request a new password reset OTP." 
+            return res.status(400).json({
+                message: "OTP not found or expired. Please request a new password reset OTP."
             });
         }
 
@@ -398,8 +455,8 @@ export const verifyForgotPasswordOTP = async (req, res) => {
         if (Date.now() > storedOTPData.expiresAt) {
             forgotPasswordOTPStore.delete(email);
             forgotPasswordVerificationStore.delete(email);
-            return res.status(400).json({ 
-                message: "OTP has expired. Please request a new password reset OTP." 
+            return res.status(400).json({
+                message: "OTP has expired. Please request a new password reset OTP."
             });
         }
 
@@ -530,13 +587,109 @@ export const resetPassword = async (req, res) => {
                 to: email,
                 subject: 'Password Reset Successful - Aswaq Forwarder',
                 html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <h2 style="color: #333;">Password Reset Successful</h2>
-                        <p>Your password has been successfully reset.</p>
-                        <p>If you didn't make this change, please contact our support team immediately.</p>
-                        <p style="color: #666;">This email was sent on ${new Date().toLocaleString()}</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 40px 30px; text-align: center;">
+                <div style="background-color: rgba(255, 255, 255, 0.1); border-radius: 50%; width: 80px; height: 80px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                    <div style="color: white; font-size: 36px;">✅</div>
+                </div>
+                <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">Password Updated Successfully</h1>
+                <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0; font-size: 16px;">Your account is now secure with your new password</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div style="padding: 40px 30px;">
+                <!-- Success Message -->
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 2px solid #a7f3d0; padding: 25px; margin: 25px 0; border-radius: 16px; position: relative;">
+                        <div style="color: #065f46; font-size: 18px; font-weight: 600; margin-bottom: 10px;">🎉 All Set!</div>
+                        <p style="color: #047857; font-size: 16px; margin: 0; line-height: 1.6;">Your password has been successfully updated. You can now log in to your Aswaq Forwarder account with your new password.</p>
                     </div>
-                `
+                </div>
+                
+                <!-- Security Summary -->
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin: 25px 0;">
+                    <h3 style="color: #1e293b; margin: 0 0 20px; font-size: 18px; font-weight: 600; display: flex; align-items: center;">
+                        <span style="margin-right: 10px;">🔐</span>
+                        Security Summary
+                    </h3>
+                    <div style="display: grid; gap: 15px;">
+                        <div style="display: flex; align-items: center; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #059669;">
+                            <span style="color: #059669; margin-right: 12px; font-size: 16px;">✓</span>
+                            <span style="color: #475569; font-size: 14px; font-weight: 500;">Password successfully changed</span>
+                        </div>
+                        <div style="display: flex; align-items: center; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #059669;">
+                            <span style="color: #059669; margin-right: 12px; font-size: 16px;">✓</span>
+                            <span style="color: #475569; font-size: 14px; font-weight: 500;">Account access secured</span>
+                        </div>
+                        <div style="display: flex; align-items: center; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #059669;">
+                            <span style="color: #059669; margin-right: 12px; font-size: 16px;">✓</span>
+                            <span style="color: #475569; font-size: 14px; font-weight: 500;">All active sessions maintained</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Next Steps -->
+                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; padding: 25px; margin: 25px 0; border-radius: 0 12px 12px 0;">
+                    <h3 style="color: #1e40af; margin: 0 0 15px; font-size: 16px; font-weight: 600;">🚀 What's Next?</h3>
+                    <ul style="color: #1e40af; margin: 0; padding-left: 20px; line-height: 1.8;">
+                        <li>Log in to your account with your new password</li>
+                        <li>Review your account settings and security preferences</li>
+                        <li>Continue using Aswaq Forwarder services seamlessly</li>
+                    </ul>
+                </div>
+                
+                <!-- Security Alert -->
+                <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 25px; margin: 25px 0;">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div style="color: #dc2626; margin-right: 15px; font-size: 24px;">🚨</div>
+                        <div>
+                            <h4 style="color: #991b1b; margin: 0 0 10px; font-size: 16px; font-weight: 600;">Didn't change your password?</h4>
+                            <p style="color: #7f1d1d; margin: 0 0 15px; font-size: 14px; line-height: 1.6;">If you did not request this password change, your account may be compromised. Please take immediate action:</p>
+                            <div style="background-color: #ffffff; border-radius: 8px; padding: 15px; margin-top: 15px;">
+                                <p style="color: #991b1b; margin: 0 0 10px; font-size: 14px; font-weight: 600;">Immediate Steps:</p>
+                                <ol style="color: #7f1d1d; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+                                    <li>Contact our support team immediately</li>
+                                    <li>Check your account for any unauthorized activity</li>
+                                    <li>Review and update your security settings</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timestamp -->
+                <div style="background-color: #f1f5f9; border-radius: 8px; padding: 15px; text-align: center; margin: 25px 0;">
+                    <p style="color: #64748b; margin: 0; font-size: 13px;">
+                        <strong>Timestamp:</strong> ${new Date().toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZoneName: 'short'
+                })}
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                <p style="color: #718096; margin: 0 0 15px; font-size: 14px;">
+                    <strong style="color: #059669;">Aswaq Forwarder</strong> - Keeping your account secure
+                </p>
+                <div style="display: inline-flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                    <a href="#" style="color: #059669; text-decoration: none; font-size: 13px; font-weight: 500; padding: 8px 16px; background-color: #ecfdf5; border-radius: 6px;">🛡️ Security Center</a>
+                    <a href="#" style="color: #059669; text-decoration: none; font-size: 13px; font-weight: 500; padding: 8px 16px; background-color: #ecfdf5; border-radius: 6px;">💬 Contact Support</a>
+                    <a href="#" style="color: #059669; text-decoration: none; font-size: 13px; font-weight: 500; padding: 8px 16px; background-color: #ecfdf5; border-radius: 6px;">📋 Account Settings</a>
+                </div>
+                <p style="color: #a0aec0; margin: 20px 0 0; font-size: 12px;">
+                    © 2025 Aswaq Forwarder. All rights reserved.
+                </p>
+            </div>
+        </div>
+    `
             };
             await transporter.sendMail(mailOptions);
         } catch (emailError) {
@@ -601,16 +754,76 @@ export const resendForgotPasswordOTP = async (req, res) => {
             to: email,
             subject: 'Resend Password Reset OTP - Aswaq Forwarder',
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #333;">Password Reset OTP (Resent)</h2>
-                    <p>You requested to resend the password reset OTP. Your new OTP is:</p>
-                    <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0; border-radius: 8px;">
-                        ${otp}
-                    </div>
-                    <p>This OTP will expire in 10 minutes.</p>
-                    <p style="color: #666;">If you didn't request this, please ignore this email.</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                <div style="background-color: rgba(255, 255, 255, 0.1); border-radius: 50%; width: 80px; height: 80px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                    <div style="color: white; font-size: 36px;">🔐</div>
                 </div>
-            `
+                <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">Security Code Resent</h1>
+                <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0; font-size: 16px;">Your new password reset code is ready</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div style="padding: 40px 30px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <p style="color: #4a5568; font-size: 18px; margin: 0 0 25px; line-height: 1.6;">We've generated a new OTP for your password reset request.</p>
+                    
+                    <!-- OTP Display -->
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border: 2px solid #e2e8f0; padding: 25px; margin: 25px 0; border-radius: 16px; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%); pointer-events: none;"></div>
+                        <p style="color: #718096; font-size: 14px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Your Security Code</p>
+                        <div style="font-size: 36px; font-weight: 700; color: #2d3748; letter-spacing: 8px; font-family: 'Courier New', monospace; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: relative;">
+                            ${otp}
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <span style="display: inline-block; background-color: #667eea; color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                ⏱️ Expires in 10 minutes
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Instructions -->
+                <div style="background-color: #f8f9ff; border-left: 4px solid #667eea; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+                    <h3 style="color: #4c51bf; margin: 0 0 12px; font-size: 16px; font-weight: 600;">How to use this code:</h3>
+                    <ol style="color: #4a5568; margin: 0; padding-left: 20px; line-height: 1.6;">
+                        <li>Return to the password reset page</li>
+                        <li>Enter the 6-digit code above</li>
+                        <li>Create your new secure password</li>
+                    </ol>
+                </div>
+                
+                <!-- Security Notice -->
+                <div style="background-color: #fef5e7; border: 1px solid #f6d55c; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div style="color: #d69e2e; margin-right: 12px; font-size: 20px;">⚠️</div>
+                        <div>
+                            <h4 style="color: #744210; margin: 0 0 8px; font-size: 14px; font-weight: 600;">Security Notice</h4>
+                            <p style="color: #744210; margin: 0; font-size: 14px; line-height: 1.5;">If you didn't request this password reset, please secure your account immediately and contact our support team.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                <p style="color: #718096; margin: 0 0 15px; font-size: 14px;">
+                    This is an automated message from <strong style="color: #4a5568;">Aswaq Forwarder</strong>
+                </p>
+                <div style="display: inline-flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                    <a href="#" style="color: #667eea; text-decoration: none; font-size: 13px; font-weight: 500;">Support Center</a>
+                    <span style="color: #cbd5e0;">•</span>
+                    <a href="#" style="color: #667eea; text-decoration: none; font-size: 13px; font-weight: 500;">Privacy Policy</a>
+                    <span style="color: #cbd5e0;">•</span>
+                    <a href="#" style="color: #667eea; text-decoration: none; font-size: 13px; font-weight: 500;">Security</a>
+                </div>
+                <p style="color: #a0aec0; margin: 20px 0 0; font-size: 12px;">
+                    © 2025 Aswaq Forwarder. All rights reserved.
+                </p>
+            </div>
+        </div>
+    `
         };
 
         await transporter.sendMail(mailOptions);
@@ -725,7 +938,7 @@ export const completeRegistration = async (req, res) => {
         // Validate phone number format
         const phoneRegex = /^[\+]?[0-9][\d\s\-\(\)]{6,17}$/;
         const digitCount = phoneNumber.replace(/[\s\-\(\)\+]/g, '').length;
-        
+
         if (!phoneRegex.test(phoneNumber) || digitCount < 7) {
             return res.status(400).json({
                 message: "Please enter a valid phone number (minimum 7 digits)"
@@ -860,16 +1073,98 @@ export const resendRegistrationOTP = async (req, res) => {
             to: email,
             subject: 'Resend Registration OTP - Aswaq Forwarder',
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #333;">Registration OTP (Resent)</h2>
-                    <p>Your new OTP for registration is:</p>
-                    <div style="background-color: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; margin: 20px 0;">
-                        ${otp}
-                    </div>
-                    <p>This OTP will expire in 10 minutes.</p>
-                    <p style="color: #666;">If you didn't request this, please ignore this email.</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 30px; text-align: center;">
+                <div style="background-color: rgba(255, 255, 255, 0.1); border-radius: 50%; width: 80px; height: 80px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+                    <div style="color: white; font-size: 36px;">🚀</div>
                 </div>
-            `
+                <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">Welcome Aboard!</h1>
+                <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0; font-size: 16px;">Your new registration code is ready</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div style="padding: 40px 30px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <p style="color: #4a5568; font-size: 18px; margin: 0 0 25px; line-height: 1.6;">We've generated a fresh verification code to complete your registration with <strong style="color: #10b981;">Aswaq Forwarder</strong>.</p>
+                    
+                    <!-- OTP Display -->
+                    <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 2px solid #bbf7d0; padding: 25px; margin: 25px 0; border-radius: 16px; position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%); pointer-events: none;"></div>
+                        <p style="color: #059669; font-size: 14px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Your Verification Code</p>
+                        <div style="font-size: 36px; font-weight: 700; color: #065f46; letter-spacing: 8px; font-family: 'Courier New', monospace; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); position: relative;">
+                            ${otp}
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <span style="display: inline-block; background-color: #10b981; color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                ⏱️ Expires in 10 minutes
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Instructions -->
+                <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 20px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+                    <h3 style="color: #065f46; margin: 0 0 12px; font-size: 16px; font-weight: 600;">Complete your registration:</h3>
+                    <ol style="color: #4a5568; margin: 0; padding-left: 20px; line-height: 1.6;">
+                        <li>Return to the registration page</li>
+                        <li>Enter the 6-digit verification code above</li>
+                        <li>Complete your profile setup</li>
+                        <li>Start using Aswaq Forwarder services!</li>
+                    </ol>
+                </div>
+                
+                <!-- Welcome Benefits -->
+                <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 25px; margin: 25px 0;">
+                    <div style="text-align: center;">
+                        <h3 style="color: #92400e; margin: 0 0 15px; font-size: 18px; font-weight: 600;">🎉 What's waiting for you?</h3>
+                        <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px; margin-top: 20px;">
+                            <div style="flex: 1; min-width: 140px; text-align: center;">
+                                <div style="color: #d97706; font-size: 24px; margin-bottom: 8px;">📦</div>
+                                <p style="color: #92400e; font-size: 14px; font-weight: 600; margin: 0;">Fast Forwarding</p>
+                            </div>
+                            <div style="flex: 1; min-width: 140px; text-align: center;">
+                                <div style="color: #d97706; font-size: 24px; margin-bottom: 8px;">🌍</div>
+                                <p style="color: #92400e; font-size: 14px; font-weight: 600; margin: 0;">Global Reach</p>
+                            </div>
+                            <div style="flex: 1; min-width: 140px; text-align: center;">
+                                <div style="color: #d97706; font-size: 24px; margin-bottom: 8px;">🔒</div>
+                                <p style="color: #92400e; font-size: 14px; font-weight: 600; margin: 0;">Secure Service</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Security Notice -->
+                <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div style="color: #dc2626; margin-right: 12px; font-size: 20px;">🛡️</div>
+                        <div>
+                            <h4 style="color: #991b1b; margin: 0 0 8px; font-size: 14px; font-weight: 600;">Didn't request this?</h4>
+                            <p style="color: #991b1b; margin: 0; font-size: 14px; line-height: 1.5;">If you didn't attempt to register with Aswaq Forwarder, you can safely ignore this email. No account will be created without verification.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f7fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                <p style="color: #718096; margin: 0 0 15px; font-size: 14px;">
+                    Welcome to <strong style="color: #10b981;">Aswaq Forwarder</strong> - Your trusted forwarding partner
+                </p>
+                <div style="display: inline-flex; gap: 20px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                    <a href="#" style="color: #10b981; text-decoration: none; font-size: 13px; font-weight: 500;">Help Center</a>
+                    <span style="color: #cbd5e0;">•</span>
+                    <a href="#" style="color: #10b981; text-decoration: none; font-size: 13px; font-weight: 500;">Contact Support</a>
+                    <span style="color: #cbd5e0;">•</span>
+                    <a href="#" style="color: #10b981; text-decoration: none; font-size: 13px; font-weight: 500;">Terms of Service</a>
+                </div>
+                <p style="color: #a0aec0; margin: 20px 0 0; font-size: 12px;">
+                    © 2025 Aswaq Forwarder. All rights reserved.
+                </p>
+            </div>
+        </div>
+    `
         };
 
         await transporter.sendMail(mailOptions);
@@ -1300,10 +1595,10 @@ export const approveClient = async (req, res) => {
         // Send push notification
         if (user.expoPushTokens && user.expoPushTokens.length > 0) {
             const userTokens = user.expoPushTokens.map(tokenObj => tokenObj.token);
-            const notificationMessage = isReapproval 
+            const notificationMessage = isReapproval
                 ? `🎉 Great news! Your account has been re-approved and you've been assigned to company code: ${companyCode}. You can now access all features again.`
                 : `🎉 Congratulations! Your account has been approved and you've been assigned to company code: ${companyCode}. You can now access all features.`;
-            
+
             await sendPushNotificationToMultiple(userTokens, notificationMessage);
         }
 
@@ -1311,12 +1606,12 @@ export const approveClient = async (req, res) => {
         try {
             const transporter = createTransporter();
             const approverName = user.approvedBy?.username || 'Admin';
-            
+
             const mailOptions = {
                 from: process.env.EMAIL_USER,
                 to: user.email,
-                subject: isReapproval 
-                    ? 'Account Re-Approved - Aswaq Forwarder' 
+                subject: isReapproval
+                    ? 'Account Re-Approved - Aswaq Forwarder'
                     : 'Account Approved - Aswaq Forwarder',
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -1327,10 +1622,10 @@ export const approveClient = async (req, res) => {
                         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                             <h2 style="color: #333; margin-top: 0;">Hello ${user.username},</h2>
                             <p style="font-size: 16px; line-height: 1.6; color: #555;">
-                                ${isReapproval 
-                                    ? 'Great news! Your account has been re-approved and you can now access all features again.'
-                                    : 'Congratulations! Your account has been approved and you now have access to all features.'
-                                }
+                                ${isReapproval
+                        ? 'Great news! Your account has been re-approved and you can now access all features again.'
+                        : 'Congratulations! Your account has been approved and you now have access to all features.'
+                    }
                             </p>
                         </div>
 
@@ -1373,7 +1668,7 @@ export const approveClient = async (req, res) => {
             // Don't fail the request if email fails, but log the error
         }
 
-        const successMessage = isReapproval 
+        const successMessage = isReapproval
             ? "Client re-approved successfully. Notifications sent via push and email."
             : "Client approved successfully. Notifications sent via push and email.";
 
@@ -1432,7 +1727,7 @@ export const rejectClient = async (req, res) => {
 
         // Determine if this is a re-rejection (from approved status)
         const isRerejection = user.approvalStatus === 'approved';
-        
+
         // Store previous approval data for logging/audit purposes
         const previousData = isRerejection ? {
             companyCode: user.companyCode,
@@ -1475,7 +1770,7 @@ export const rejectClient = async (req, res) => {
             const notificationMessage = isRerejection
                 ? `⚠️ Your account approval has been revoked. Reason: ${rejectionMessage}. Please contact support for more information.`
                 : `❌ Your account approval has been declined. Reason: ${rejectionMessage}. Please contact support for more information.`;
-            
+
             await sendPushNotificationToMultiple(userTokens, notificationMessage);
         }
 
@@ -1483,12 +1778,12 @@ export const rejectClient = async (req, res) => {
         try {
             const transporter = createTransporter();
             const rejectorName = user.rejectedBy?.username || 'Admin';
-            
+
             const mailOptions = {
                 from: process.env.EMAIL_USER,
                 to: user.email,
-                subject: isRerejection 
-                    ? 'Account Approval Revoked - Aswaq Forwarder' 
+                subject: isRerejection
+                    ? 'Account Approval Revoked - Aswaq Forwarder'
                     : 'Account Application Update - Aswaq Forwarder',
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -1501,10 +1796,10 @@ export const rejectClient = async (req, res) => {
                         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                             <h2 style="color: #333; margin-top: 0;">Hello ${user.username},</h2>
                             <p style="font-size: 16px; line-height: 1.6; color: #555;">
-                                ${isRerejection 
-                                    ? 'We regret to inform you that your account approval has been revoked.'
-                                    : 'We have reviewed your account application, and unfortunately, we are unable to approve it at this time.'
-                                }
+                                ${isRerejection
+                        ? 'We regret to inform you that your account approval has been revoked.'
+                        : 'We have reviewed your account application, and unfortunately, we are unable to approve it at this time.'
+                    }
                             </p>
                         </div>
 
@@ -1522,10 +1817,10 @@ export const rejectClient = async (req, res) => {
                                 <li style="margin-bottom: 10px;"><strong>Email:</strong> ${user.email}</li>
                                 <li style="margin-bottom: 10px;"><strong>${isRerejection ? 'Revoked' : 'Rejected'} By:</strong> ${rejectorName}</li>
                                 <li style="margin-bottom: 10px;"><strong>${isRerejection ? 'Revoked' : 'Rejected'} On:</strong> ${new Date().toLocaleString()}</li>
-                                ${previousData && previousData.companyCode ? 
-                                    `<li style="margin-bottom: 10px;"><strong>Previous Company Code:</strong> ${previousData.companyCode}</li>` 
-                                    : ''
-                                }
+                                ${previousData && previousData.companyCode ?
+                        `<li style="margin-bottom: 10px;"><strong>Previous Company Code:</strong> ${previousData.companyCode}</li>`
+                        : ''
+                    }
                             </ul>
                         </div>
 
