@@ -147,14 +147,13 @@ export const sendRegistrationOTP = async (req, res) => {
 
         // Send OTP email
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"Aswaq Forwarder" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Registration OTP - Aswaq Forwarder',
             html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 25px 20px; text-align: center;">
-                <div style="color: white; font-size: 28px; margin-bottom: 8px;">🚀</div>
                 <h1 style="color: white; margin: 0; font-size: 20px; font-weight: 600;">Welcome to Aswaq!</h1>
             </div>
             
@@ -351,7 +350,7 @@ export const sendForgotPasswordOTP = async (req, res) => {
 
         // Send OTP email
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"Aswaq Forwarder" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Password Reset OTP - Aswaq Forwarder',
             html: `
@@ -583,7 +582,7 @@ export const resetPassword = async (req, res) => {
         try {
             const transporter = createTransporter();
             const mailOptions = {
-                from: process.env.EMAIL_USER,
+                from: `"Aswaq Forwarder" <${process.env.EMAIL_USER}>`,
                 to: email,
                 subject: 'Password Reset Successful - Aswaq Forwarder',
                 html: `
@@ -607,27 +606,6 @@ export const resetPassword = async (req, res) => {
                     </div>
                 </div>
                 
-                <!-- Security Summary -->
-                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin: 25px 0;">
-                    <h3 style="color: #1e293b; margin: 0 0 20px; font-size: 18px; font-weight: 600; display: flex; align-items: center;">
-                        <span style="margin-right: 10px;">🔐</span>
-                        Security Summary
-                    </h3>
-                    <div style="display: grid; gap: 15px;">
-                        <div style="display: flex; align-items: center; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #059669;">
-                            <span style="color: #059669; margin-right: 12px; font-size: 16px;">✓</span>
-                            <span style="color: #475569; font-size: 14px; font-weight: 500;">Password successfully changed</span>
-                        </div>
-                        <div style="display: flex; align-items: center; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #059669;">
-                            <span style="color: #059669; margin-right: 12px; font-size: 16px;">✓</span>
-                            <span style="color: #475569; font-size: 14px; font-weight: 500;">Account access secured</span>
-                        </div>
-                        <div style="display: flex; align-items: center; padding: 12px; background-color: #ffffff; border-radius: 8px; border-left: 4px solid #059669;">
-                            <span style="color: #059669; margin-right: 12px; font-size: 16px;">✓</span>
-                            <span style="color: #475569; font-size: 14px; font-weight: 500;">All active sessions maintained</span>
-                        </div>
-                    </div>
-                </div>
                 
                 <!-- Next Steps -->
                 <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #3b82f6; padding: 25px; margin: 25px 0; border-radius: 0 12px 12px 0;">
@@ -750,7 +728,7 @@ export const resendForgotPasswordOTP = async (req, res) => {
 
         // Send new OTP email
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"Aswaq Forwarder" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Resend Password Reset OTP - Aswaq Forwarder',
             html: `
@@ -1069,7 +1047,7 @@ export const resendRegistrationOTP = async (req, res) => {
 
         // Send new OTP email
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"Aswaq Forwarder" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Resend Registration OTP - Aswaq Forwarder',
             html: `
@@ -1608,7 +1586,7 @@ export const approveClient = async (req, res) => {
             const approverName = user.approvedBy?.username || 'Admin';
 
             const mailOptions = {
-                from: process.env.EMAIL_USER,
+                from: `"Aswaq Forwarder" <${process.env.EMAIL_USER}>`,
                 to: user.email,
                 subject: isReapproval
                     ? 'Account Re-Approved - Aswaq Forwarder'
@@ -1780,7 +1758,7 @@ export const rejectClient = async (req, res) => {
             const rejectorName = user.rejectedBy?.username || 'Admin';
 
             const mailOptions = {
-                from: process.env.EMAIL_USER,
+                from: `"Aswaq Forwarder" <${process.env.EMAIL_USER}>`,
                 to: user.email,
                 subject: isRerejection
                     ? 'Account Approval Revoked - Aswaq Forwarder'
