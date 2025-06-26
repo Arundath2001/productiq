@@ -9,7 +9,7 @@ const companySchema = mongoose.Schema({
         uppercase: true,
         minlength: 2,
         maxlength: 10,
-        match: /^[A-Z0-9_-]+$/ 
+        match: /^[A-Z0-9\s_-]+$/ // Added \s to allow spaces along with letters, numbers, underscores, and hyphens
     },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
