@@ -76,20 +76,16 @@ export const generatePrintedQrBatch = async (req, res) => {
             lastCount++;
             const sequenceNumber = lastCount.toString().padStart(2, "0");
             const qrData = `${productCode}|${sequenceNumber}|${voyageNumber}`;
-            
-            const qr_svg = imageSync(qrData, { type: "png" });
-            const qrImage = `data:image/png;base64,${qr_svg.toString("base64")}`;
-  
+
             const printedQr = new PrintedQr({
               productCode,
               voyageNumber,
               quantity: lastCount,
               printedBy: req.user.id,
-              qrImage,
               printStatus: "generated",
               batchId: newBatch._id // Link to batch
             });
-  
+
             await printedQr.save({ session });
             
             // Add QR ID to batch
@@ -102,7 +98,6 @@ export const generatePrintedQrBatch = async (req, res) => {
               sequenceNumber,
               voyageNumber,
               qrData,
-              qrImage,
               printStatus: "generated"
             });
 
