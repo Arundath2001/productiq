@@ -5,7 +5,7 @@ export const contactController = async (req, res) => {
     const { name, email, phone, message } = req.body;
 
     console.log(req.body);
-    
+
     // Validate required fields
     if (!name || !email || !message) {
       return res.status(400).json({
@@ -34,12 +34,12 @@ export const contactController = async (req, res) => {
         pass: process.env.EMAIL_PASS  // Your app password
       }
     });
-    
+
 
     // Email content for the business owner
     const businessOwnerMailOptions = {
       from: `"Contact Form" <${process.env.EMAIL_USER}>`,
-      to: 'arundath7994@gmail.com',
+      to: process.env.EMAIL_USER,
       subject: `New Contact Form Submission from ${name}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">
@@ -139,7 +139,7 @@ export const contactController = async (req, res) => {
 
     // Send email to business owner
     await transporter.sendMail(businessOwnerMailOptions);
-    
+
     // Send auto-reply to the sender
     await transporter.sendMail(autoReplyMailOptions);
 
@@ -156,7 +156,7 @@ export const contactController = async (req, res) => {
 
   } catch (error) {
     console.error('Error sending email:', error);
-    
+
     // Handle specific nodemailer errors
     if (error.code === 'EAUTH') {
       return res.status(500).json({
@@ -164,7 +164,7 @@ export const contactController = async (req, res) => {
         message: 'Email authentication failed. Please check email configuration.'
       });
     }
-    
+
     if (error.code === 'ENOTFOUND') {
       return res.status(500).json({
         success: false,
