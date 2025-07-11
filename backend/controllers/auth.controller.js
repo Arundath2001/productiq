@@ -981,6 +981,71 @@ export const completeRegistration = async (req, res) => {
         otpStore.delete(email);
         verificationStore.delete(email);
 
+        // Send email notification to admin about new user registration
+        try {
+            const transporter = createTransporter();
+            const adminEmail = process.env.EMAIL_USER; // Make sure to set this in your .env file
+
+            if (adminEmail) {
+                const adminMailOptions = {
+                    from: `"Aswaq Forwarder" <${process.env.EMAIL_USER}>`,
+                    to: adminEmail,
+                    subject: 'New Client Registration - Aswaq Forwarder',
+                    html: `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                            <div style="text-align: center; margin-bottom: 30px;">
+                                <h1 style="color: #007bff; margin: 0;">🆕 New Client Registration</h1>
+                            </div>
+                            
+                            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h2 style="color: #333; margin-top: 0;">Admin Notification</h2>
+                                <p style="font-size: 16px; line-height: 1.6; color: #555;">
+                                    A new client has registered and is waiting for approval.
+                                </p>
+                            </div>
+
+                            <div style="background-color: #e7f3ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #0066cc; margin-top: 0;">Client Details:</h3>
+                                <ul style="list-style: none; padding: 0;">
+                                    <li style="margin-bottom: 10px;"><strong>Username:</strong> ${username}</li>
+                                    <li style="margin-bottom: 10px;"><strong>Email:</strong> ${email}</li>
+                                    <li style="margin-bottom: 10px;"><strong>Phone:</strong> ${countryCode} ${phoneNumber}</li>
+                                    <li style="margin-bottom: 10px;"><strong>Registration Date:</strong> ${new Date().toLocaleString()}</li>
+                                    <li style="margin-bottom: 10px;"><strong>Status:</strong> Pending Approval</li>
+                                </ul>
+                            </div>
+
+                            <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;">
+                                <p style="margin: 0; color: #856404;">
+                                    <strong>Action Required:</strong><br>
+                                    Please log in to the admin panel to review and approve this client registration. 
+                                    The client will need to be assigned a company code upon approval.
+                                </p>
+                            </div>
+
+                            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                                <p style="color: #666; font-size: 14px;">
+                                    This email was sent automatically when a new client registered.<br>
+                                    Please do not reply to this email.
+                                </p>
+                                <p style="color: #999; font-size: 12px;">
+                                    © ${new Date().getFullYear()} Aswaq Forwarder. All rights reserved.
+                                </p>
+                            </div>
+                        </div>
+                    `
+                };
+
+                await transporter.sendMail(adminMailOptions);
+                console.log(`Admin notification email sent successfully to: ${adminEmail}`);
+            } else {
+                console.log("Admin email not configured. Skipping admin notification.");
+            }
+        } catch (emailError) {
+            console.log("Error sending admin notification email:", emailError.message);
+            // Don't fail the request if email fails, but log the error
+        }
+
         // Generate token for immediate login
         const token = generateToken(newUser._id, res);
 
@@ -1000,8 +1065,6 @@ export const completeRegistration = async (req, res) => {
 
     } catch (error) {
         console.log("Error in completeRegistration controller:", error.message);
-
-
         res.status(500).json({ message: "Internal server error" });
     }
 };
