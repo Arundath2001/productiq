@@ -54,9 +54,9 @@ const PageHeader = ({
           )}
           {onCloseVoyage && (
             <NormalButton
-              buttonName="Close Voyage"
+              buttonName="End Voyage"
               onClick={onCloseVoyage}
-              className="bg-red-500 hover:bg-red-600 text-white" // Red styling to indicate important action
+              className="bg-red-500 hover:bg-red-600 text-red"
             />
           )}
         </div>

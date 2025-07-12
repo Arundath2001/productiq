@@ -702,16 +702,21 @@ export const getCompanyDetailsByVoyage = async (req, res) => {
 export const getAllVoyageProducts = async (req, res) => {
     try {
         const { voyageId } = req.params;
+        const { status } = req.query;
 
         const voyage = await Voyage.findById(voyageId);
         if (!voyage) {
             return res.status(404).json({ message: "Voyage not found" });
         }
 
-        const products = await UploadedProduct.find({
-            voyageId: voyageId,
-            status: "pending"
-        })
+        // Build query based on status parameter
+        let productQuery = { voyageId: voyageId };
+
+        if (status) {
+            productQuery.status = status;
+        }
+
+        const products = await UploadedProduct.find(productQuery)
             .populate("uploadedBy", "username")
             .sort({
                 productCode: 1,
@@ -730,8 +735,11 @@ export const getAllVoyageProducts = async (req, res) => {
             uploadedDate: product.uploadedDate,
             uploadedBy: product.uploadedBy,
             compositeCode: product.compositeCode,
-            image: product.image
+            image: product.image,
+            status: product.status
         }));
+
+        const totalWeight = Math.round(productData.reduce((total, item) => total + (item.weight || 0), 0) * 100) / 100;
 
         res.status(200).json({
             voyageInfo: {
@@ -743,7 +751,7 @@ export const getAllVoyageProducts = async (req, res) => {
             },
             products: productData,
             totalItems: productData.length,
-            totalWeight: Math.round(productData.reduce((total, item) => total + (item.weight || 0), 0) * 100) / 100
+            totalWeight: totalWeight
         });
 
     } catch (error) {

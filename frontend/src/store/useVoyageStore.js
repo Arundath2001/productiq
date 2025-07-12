@@ -205,13 +205,24 @@ export const useVoyageStore = create((set, get) => ({
         }
     },
 
-    getAllVoyageProducts: async (voyageId) => {
+    getAllPendingVoyageProducts: async (voyageId) => {
         try {
-            const res = await axiosInstance.get(`/voyage/${voyageId}/all-products`);
-            return res.data.products; // Return the products array for Excel export
+            const res = await axiosInstance.get(`/voyage/${voyageId}/all-products?status=pending`);
+            return res.data.products;
         } catch (error) {
-            console.error("Error fetching all voyage products:", error.message);
-            toast.error(error.response?.data?.message || "Failed to fetch voyage products");
+            console.error("Error fetching pending voyage products:", error.message);
+            toast.error(error.response?.data?.message || "Failed to fetch pending voyage products");
+            throw error;
+        }
+    },
+
+    getAllCompletedVoyageProducts: async (voyageId) => {
+        try {
+            const res = await axiosInstance.get(`/voyage/${voyageId}/all-products?status=completed`);
+            return res.data.products;
+        } catch (error) {
+            console.error("Error fetching completed voyage products:", error.message);
+            toast.error(error.response?.data?.message || "Failed to fetch completed voyage products");
             throw error;
         }
     },

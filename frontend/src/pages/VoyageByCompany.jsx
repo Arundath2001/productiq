@@ -19,8 +19,8 @@ const VoyageByCompany = () => {
     isCompaniesSummaryLoading,
     getCompaniesSummaryByVoyage,
     exportVoyage,
-    closeVoyage, // New method for closing voyage
-    getAllVoyageProducts,
+    closeVoyage,
+    getAllPendingVoyageProducts,
   } = useVoyageStore();
 
   useEffect(() => {
@@ -50,9 +50,14 @@ const VoyageByCompany = () => {
 
   const confirmExport = async () => {
     try {
-      const allProducts = await getAllVoyageProducts(voyageId);
+      const allProducts = await getAllPendingVoyageProducts(voyageId);
 
-      // Only export to Excel - no status change or notifications
+      if (!allProducts || allProducts.length === 0) {
+        alert("No products found for this voyage. Export cancelled.");
+        setShowExportConfirm(false);
+        return;
+      }
+
       exportVoyageData(
         allProducts,
         companiesSummary.voyageInfo.voyageName,
@@ -60,26 +65,21 @@ const VoyageByCompany = () => {
       );
 
       setShowExportConfirm(false);
-
-      // Just show success message or stay on the same page
-      // No redirect to completed page
     } catch (error) {
       console.error("Export failed:", error);
+      alert(`Export failed: ${error.message}`);
       setShowExportConfirm(false);
     }
   };
 
   const confirmCloseVoyage = async () => {
     try {
-      // This will handle status change, notifications, and cleanup
       await closeVoyage(voyageId);
-
       setShowCloseVoyageConfirm(false);
-
-      // Redirect to completed voyages page
       window.location.href = "/completed";
     } catch (error) {
       console.error("Close voyage failed:", error);
+      alert(`Close voyage failed: ${error.message}`);
       setShowCloseVoyageConfirm(false);
     }
   };

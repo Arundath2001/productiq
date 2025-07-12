@@ -1,18 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useVoyageStore } from '../store/useVoyageStore.js';
-import { Loader } from 'lucide-react';
-import PageHeader from '../components/PageHeader';
-import images from '../lib/images.js';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useVoyageStore } from "../store/useVoyageStore.js";
+import { Loader } from "lucide-react";
+import PageHeader from "../components/PageHeader";
+import images from "../lib/images.js";
+import { exportVoyageData } from "../lib/excel.js";
+import ConfirmAlert from "../components/ConfirmAlert.jsx";
 
 const CompletedVoyageByCompany = () => {
   const { voyageId } = useParams();
   const navigate = useNavigate();
 
+  const [showExportConfirm, setShowExportConfirm] = useState(false);
+
   const {
     completedCompaniesSummary,
     isCompletedCompaniesSummaryLoading,
     getCompletedCompaniesSummaryByVoyage,
+    getAllCompletedVoyageProducts,
   } = useVoyageStore();
 
   useEffect(() => {
@@ -30,6 +35,34 @@ const CompletedVoyageByCompany = () => {
 
   const handleViewClick = (companyCode) => {
     navigate(`/completed-voyage/${voyageId}/companies/${companyCode}`);
+  };
+
+  const handleExport = () => {
+    setShowExportConfirm(true);
+  };
+
+  const confirmExport = async () => {
+    try {
+      const allProducts = await getAllCompletedVoyageProducts(voyageId);
+
+      if (!allProducts || allProducts.length === 0) {
+        alert("No products found for this completed voyage.");
+        setShowExportConfirm(false);
+        return;
+      }
+
+      exportVoyageData(
+        allProducts,
+        completedCompaniesSummary.voyageInfo.voyageName,
+        voyageId
+      );
+
+      setShowExportConfirm(false);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert(`Export failed: ${error.message}`);
+      setShowExportConfirm(false);
+    }
   };
 
   if (isCompletedCompaniesSummaryLoading) {
@@ -51,7 +84,8 @@ const CompletedVoyageByCompany = () => {
         subText={`${completedCompaniesSummary.summary.totalCompanies} Companies | ${completedCompaniesSummary.summary.grandTotalItems} Items`}
         weight={completedCompaniesSummary.summary.grandTotalWeight}
         showBackButton={true}
-        onBack={() => navigate('/completed')}
+        onBack={() => navigate("/completed")}
+        onExport={handleExport} // Add export functionality
       />
 
       <div className="mt-5">
@@ -74,7 +108,7 @@ const CompletedVoyageByCompany = () => {
                 <p className="text-sm text-gray-600">
                   Latest Upload: {formatDate(company.latestUpload)}
                 </p>
-                
+
                 <div
                   onClick={() => handleViewClick(company.companyCode)}
                   className="rounded-xl border px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -97,6 +131,17 @@ const CompletedVoyageByCompany = () => {
           </div>
         )}
       </div>
+
+      {/* Export Confirmation Modal */}
+      {showExportConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
+          <ConfirmAlert
+            alertInfo="This will download the Excel file with all voyage data. Do you want to proceed?"
+            handleClose={() => setShowExportConfirm(false)}
+            handleSubmit={confirmExport}
+          />
+        </div>
+      )}
     </div>
   );
 };
