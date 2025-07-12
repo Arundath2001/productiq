@@ -50,7 +50,7 @@ export const useVoyageStore = create((set, get) => ({
             set({ completedVoyages: res.data });
 
             console.log("Completed Voyages:", res.data);
-            
+
 
             if (res.data.length === 0) {
                 toast("No completed voyages available", { icon: "ℹ️" });
@@ -221,18 +221,44 @@ export const useVoyageStore = create((set, get) => ({
         try {
             await axiosInstance.put(`/voyage/export/${voyageId}`);
 
-            set((state) => ({
-                voyages: state.voyages.map((voyage) =>
-                    voyage._id === voyageId ? { ...voyage, status: "completed" } : voyage
-                ),
-                voyageStatus: "completed",
-            }));
-
-            toast.success("Voyage exported successfully!");
+            toast.success("Voyage data exported successfully!");
 
         } catch (error) {
             console.error("Error exporting voyage", error.message);
             toast.error(error.response?.data?.message || "Failed to export voyage");
+        }
+    },
+
+    closeVoyage: async (voyageId) => {
+        try {
+            await axiosInstance.put(`/voyage/close/${voyageId}`);
+
+            set((state) => ({
+                voyages: state.voyages.map((voyage) =>
+                    voyage._id === voyageId ? {
+                        ...voyage,
+                        status: "completed",
+                        completedDate: new Date().toISOString()
+                    } : voyage
+                ),
+                voyageStatus: "completed",
+                // Update companies summary if it exists
+                companiesSummary: state.companiesSummary && state.companiesSummary.voyageInfo?._id === voyageId
+                    ? {
+                        ...state.companiesSummary,
+                        voyageInfo: {
+                            ...state.companiesSummary.voyageInfo,
+                            status: "completed"
+                        }
+                    }
+                    : state.companiesSummary
+            }));
+
+            toast.success("Voyage closed successfully! Notifications sent to clients.");
+
+        } catch (error) {
+            console.error("Error closing voyage", error.message);
+            toast.error(error.response?.data?.message || "Failed to close voyage");
         }
     },
 

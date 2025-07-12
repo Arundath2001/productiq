@@ -381,10 +381,38 @@ export const exportVoyageData = async (req, res) => {
             return res.status(404).json({ message: "Voyage not found" });
         }
 
+        const products = await UploadedProduct.find({ voyageId: voyageId });
+
+        res.status(200).json({
+            message: "Voyage data exported successfully",
+            products: products,
+            voyageInfo: voyage
+        });
+
+    } catch (error) {
+        console.error("Error in exportVoyageData controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const closeVoyage = async (req, res) => {
+    try {
+        const { voyageId } = req.params;
+
+        const voyage = await Voyage.findById(voyageId);
+        if (!voyage) {
+            return res.status(404).json({ message: "Voyage not found" });
+        }
+
+        if (voyage.status === "completed") {
+            return res.status(400).json({ message: "Voyage is already completed" });
+        }
+
         const now = new Date();
 
         voyage.status = "completed";
         voyage.lastPrintedCounts = new Map();
+        voyage.completedDate = now;
         await voyage.save();
 
         const updatedProducts = await UploadedProduct.updateMany(
@@ -406,11 +434,9 @@ export const exportVoyageData = async (req, res) => {
         const clients = await User.find({ role: "client", companyCode: { $in: companyCodes } });
         console.log("Clients to notify:", clients);
 
-        // Updated notification logic for multiple tokens
         const allTokens = [];
 
         for (let client of clients) {
-            // Get all tokens for each client (all their logged-in devices)
             if (client.expoPushTokens && client.expoPushTokens.length > 0) {
                 const activeTokens = client.expoPushTokens.map(tokenObj => tokenObj.token);
                 allTokens.push(...activeTokens);
@@ -426,13 +452,17 @@ export const exportVoyageData = async (req, res) => {
 
         io.emit('voyage-data-updated', { voyageId, newProduct: products, updateType: 'export' });
 
-        res.status(200).json({ message: "Voyage exported successfully and notifications sent" });
+        res.status(200).json({
+            message: "Voyage closed successfully and notifications sent",
+            voyage: voyage
+        });
 
     } catch (error) {
-        console.error("Error in exportVoyageData controller:", error.message);
+        console.error("Error in closeVoyage controller:", error.message);
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
 
 
 export const deleteVoyage = async (req, res) => {

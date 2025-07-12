@@ -1,23 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useVoyageStore } from '../store/useVoyageStore.js';
-import { Loader } from 'lucide-react';
-import PageHeader from '../components/PageHeader';
-import images from '../lib/images.js';
-import { exportVoyageData } from '../lib/excel.js';
-import ConfirmAlert from '../components/ConfirmAlert.jsx';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useVoyageStore } from "../store/useVoyageStore.js";
+import { Loader } from "lucide-react";
+import PageHeader from "../components/PageHeader";
+import images from "../lib/images.js";
+import { exportVoyageData } from "../lib/excel.js";
+import ConfirmAlert from "../components/ConfirmAlert.jsx";
 
 const VoyageByCompany = () => {
   const { voyageId } = useParams();
   const navigate = useNavigate();
-  
+
   const [showExportConfirm, setShowExportConfirm] = useState(false);
+  const [showCloseVoyageConfirm, setShowCloseVoyageConfirm] = useState(false);
 
   const {
     companiesSummary,
     isCompaniesSummaryLoading,
     getCompaniesSummaryByVoyage,
     exportVoyage,
+    closeVoyage, // New method for closing voyage
     getAllVoyageProducts,
   } = useVoyageStore();
 
@@ -42,26 +44,45 @@ const VoyageByCompany = () => {
     setShowExportConfirm(true);
   };
 
-  const confirmExport = async () => {
-  try {
-    const allProducts = await getAllVoyageProducts(voyageId);
-    
-    exportVoyageData(
-      allProducts, 
-      companiesSummary.voyageInfo.voyageName,
-      voyageId
-    );
-    
-    await exportVoyage(voyageId);
+  const handleCloseVoyage = () => {
+    setShowCloseVoyageConfirm(true);
+  };
 
-    setShowExportConfirm(false);
-    
-    window.location.href = "/completed";
-  } catch (error) {
-    console.error('Export failed:', error);
-    setShowExportConfirm(false);
-  }
-};
+  const confirmExport = async () => {
+    try {
+      const allProducts = await getAllVoyageProducts(voyageId);
+
+      // Only export to Excel - no status change or notifications
+      exportVoyageData(
+        allProducts,
+        companiesSummary.voyageInfo.voyageName,
+        voyageId
+      );
+
+      setShowExportConfirm(false);
+
+      // Just show success message or stay on the same page
+      // No redirect to completed page
+    } catch (error) {
+      console.error("Export failed:", error);
+      setShowExportConfirm(false);
+    }
+  };
+
+  const confirmCloseVoyage = async () => {
+    try {
+      // This will handle status change, notifications, and cleanup
+      await closeVoyage(voyageId);
+
+      setShowCloseVoyageConfirm(false);
+
+      // Redirect to completed voyages page
+      window.location.href = "/completed";
+    } catch (error) {
+      console.error("Close voyage failed:", error);
+      setShowCloseVoyageConfirm(false);
+    }
+  };
 
   if (isCompaniesSummaryLoading) {
     return (
@@ -75,6 +96,9 @@ const VoyageByCompany = () => {
     return <div>No companies data available.</div>;
   }
 
+  // Check if voyage is still active (not completed)
+  const isVoyageActive = companiesSummary.voyageInfo.status !== "completed";
+
   return (
     <div>
       <PageHeader
@@ -82,6 +106,7 @@ const VoyageByCompany = () => {
         subText={`${companiesSummary.summary.totalCompanies} Companies | ${companiesSummary.summary.grandTotalItems} Items`}
         weight={companiesSummary.summary.grandTotalWeight}
         onExport={handleExport}
+        onCloseVoyage={isVoyageActive ? handleCloseVoyage : null} // Only show if voyage is active
       />
 
       <div className="mt-5">
@@ -104,7 +129,7 @@ const VoyageByCompany = () => {
                 <p className="text-sm text-gray-600">
                   Latest Upload: {formatDate(company.latestUpload)}
                 </p>
-                
+
                 <div
                   onClick={() => handleViewClick(company.companyCode)}
                   className="rounded-xl border px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -128,12 +153,24 @@ const VoyageByCompany = () => {
         )}
       </div>
 
+      {/* Export Confirmation Modal */}
       {showExportConfirm && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
           <ConfirmAlert
-            alertInfo="Downloading the Excel file will reset all product quantities in this voyage to zero and move it to Completed Voyages."
+            alertInfo="This will download the Excel file with all voyage data. Do you want to proceed?"
             handleClose={() => setShowExportConfirm(false)}
             handleSubmit={confirmExport}
+          />
+        </div>
+      )}
+
+      {/* Close Voyage Confirmation Modal */}
+      {showCloseVoyageConfirm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
+          <ConfirmAlert
+            alertInfo="Closing this voyage will reset all product quantities to zero, send notifications to clients, and move it to Completed Voyages. This action cannot be undone."
+            handleClose={() => setShowCloseVoyageConfirm(false)}
+            handleSubmit={confirmCloseVoyage}
           />
         </div>
       )}

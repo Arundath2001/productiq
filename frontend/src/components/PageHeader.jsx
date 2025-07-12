@@ -4,7 +4,22 @@ import NormalButton from "./NormalButton";
 import { FaFilter } from "react-icons/fa";
 import SearchFields from "./SearchFields";
 
-const PageHeader = ({ mainHead, subText, onCreate, onExport, searchQuery, setSearchQuery, showDateFilter, startDate, setStartDate, endDate, setEndDate, weight = false, placeholder }) => {
+const PageHeader = ({
+  mainHead,
+  subText,
+  onCreate,
+  onExport,
+  onCloseVoyage, // New prop for closing voyage
+  searchQuery,
+  setSearchQuery,
+  showDateFilter,
+  startDate,
+  setStartDate,
+  endDate,
+  setEndDate,
+  weight = false,
+  placeholder,
+}) => {
   const [showFilters, setShowFilters] = useState(false);
 
   const toggleFilters = () => {
@@ -15,12 +30,16 @@ const PageHeader = ({ mainHead, subText, onCreate, onExport, searchQuery, setSea
     <div>
       <div className="flex items-center justify-between">
         <div className="flex items-center">
-          <h1 className="text-black font-medium text-base px-1.5">{mainHead}</h1>
+          <h1 className="text-black font-medium text-base px-1.5">
+            {mainHead}
+          </h1>
           <p className="text-xs text-blue-400">{subText}</p>
           {weight && (
             <>
-            <h1 className="text-black font-medium text-base px-1.5">Total Weight</h1>
-            <p className="text-xs text-blue-400">{weight} kg</p>
+              <h1 className="text-black font-medium text-base px-1.5">
+                Total Weight
+              </h1>
+              <p className="text-xs text-blue-400">{weight} kg</p>
             </>
           )}
         </div>
@@ -32,6 +51,13 @@ const PageHeader = ({ mainHead, subText, onCreate, onExport, searchQuery, setSea
           )}
           {onExport && (
             <NormalButton buttonName="Export As Excel" onClick={onExport} />
+          )}
+          {onCloseVoyage && (
+            <NormalButton
+              buttonName="Close Voyage"
+              onClick={onCloseVoyage}
+              className="bg-red-500 hover:bg-red-600 text-white" // Red styling to indicate important action
+            />
           )}
         </div>
       </div>
