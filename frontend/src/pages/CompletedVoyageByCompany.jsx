@@ -85,7 +85,7 @@ const CompletedVoyageByCompany = () => {
         weight={completedCompaniesSummary.summary.grandTotalWeight}
         showBackButton={true}
         onBack={() => navigate("/completed")}
-        onExport={handleExport} // Add export functionality
+        onExport={handleExport}
       />
 
       <div className="mt-5">
@@ -132,7 +132,6 @@ const CompletedVoyageByCompany = () => {
         )}
       </div>
 
-      {/* Export Confirmation Modal */}
       {showExportConfirm && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
           <ConfirmAlert
