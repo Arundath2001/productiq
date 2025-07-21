@@ -1,12 +1,23 @@
 import React from "react";
 import { useAuthStore } from "../store/useAuthStore.js";
-import { FaFileInvoice, FaShip, FaCheckCircle, FaQrcode, FaUsers, FaBuilding, FaSignOutAlt, FaBell, FaPlus } from "react-icons/fa";
+import {
+  FaFileInvoice,
+  FaShip,
+  FaCheckCircle,
+  FaQrcode,
+  FaUsers,
+  FaBuilding,
+  FaSignOutAlt,
+  FaBell,
+  FaPlus,
+  FaTruck,
+} from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Sidebar = ({ setSelectedTab }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const activeTab = location.pathname.startsWith("/voyage/")
     ? "VoyageDetails"
     : location.pathname.startsWith("/voyages/getproducts/")
@@ -26,13 +37,15 @@ const Sidebar = ({ setSelectedTab }) => {
         <h1 className="text-4xl mb-5 font-bold linear bg-gradient-to-r from-[#6FB5FF] via-[#FFC79C] to-[#C39EF2] text-transparent bg-clip-text">
           Aswaq
           <br />
-          Forwader
+          Forwarder
         </h1>
         <ul>
           <li
             onClick={() => handleTabClick("Voyages")}
             className={`flex text-base rounded-xl items-center gap-2 px-3 py-2 cursor-pointer ${
-              activeTab === "" || activeTab === "Voyages" ? "bg-black text-white" : ""
+              activeTab === "" || activeTab === "Voyages"
+                ? "bg-black text-white"
+                : ""
             }`}
           >
             <FaShip />
@@ -47,6 +60,16 @@ const Sidebar = ({ setSelectedTab }) => {
           >
             <FaCheckCircle />
             Completed Voyages
+          </li>
+
+          <li
+            onClick={() => handleTabClick("trackproduct")}
+            className={`flex text-base rounded-xl items-center gap-2 px-3 py-2 cursor-pointer ${
+              activeTab === "trackproduct" ? "bg-black text-white" : ""
+            }`}
+          >
+            <FaTruck />
+            Track Product
           </li>
 
           <li
@@ -83,10 +106,11 @@ const Sidebar = ({ setSelectedTab }) => {
             onClick={() => handleTabClick("customercode")}
             className={`flex text-base rounded-xl items-center gap-2 px-3 py-2 cursor-pointer ${
               activeTab === "customercode" ? "bg-black text-white" : ""
-            }`}>
-              <FaPlus />
-              Customer Code
-            </li>
+            }`}
+          >
+            <FaPlus />
+            Customer Code
+          </li>
 
           <li
             onClick={() => handleTabClick("allBills")}

@@ -51,7 +51,6 @@ const VoyageByCompany = () => {
   const confirmExport = async () => {
     try {
       const allProducts = await getAllPendingVoyageProducts(voyageId);
-      console.log(allProducts);
 
       if (!allProducts || allProducts.length === 0) {
         alert("No products found for this voyage. Export cancelled.");

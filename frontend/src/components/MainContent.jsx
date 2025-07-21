@@ -14,6 +14,7 @@ import VoyageByCompany from "../pages/VoyageByCompany";
 import CompletedVoyageByCompany from "../pages/CompletedVoyageByCompany";
 import CompletedVoyageDetails from "../pages/CompletedVoyageDetails";
 import CustomerCodeCreation from "../pages/CustomerCodeCreation";
+import TrackProduct from "../pages/TrackProduct";
 
 const MainContent = () => {
   const location = useLocation();
@@ -23,7 +24,9 @@ const MainContent = () => {
   const renderContent = () => {
     // Handle /completed-voyage/:voyageId/companies/:companyCode
     if (path.match(/^\/completed-voyage\/[^\/]+\/companies\/[^\/]+$/)) {
-      return <CompletedVoyageDetails voyageId={voyageId} companyCode={companyCode} />;
+      return (
+        <CompletedVoyageDetails voyageId={voyageId} companyCode={companyCode} />
+      );
     }
 
     // Handle /completed-voyage/:voyageId/companies
@@ -66,6 +69,8 @@ const MainContent = () => {
         return <SendNotification />;
       case "/customercode":
         return <CustomerCodeCreation />;
+      case "/trackproduct":
+        return <TrackProduct />;
       default:
         return <Voyages />;
     }
