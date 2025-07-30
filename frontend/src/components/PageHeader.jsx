@@ -9,7 +9,7 @@ const PageHeader = ({
   subText,
   onCreate,
   onExport,
-  onCloseVoyage, // New prop for closing voyage
+  onCloseVoyage,
   searchQuery,
   setSearchQuery,
   showDateFilter,
@@ -19,6 +19,7 @@ const PageHeader = ({
   setEndDate,
   weight = false,
   placeholder,
+  createButtonText,
 }) => {
   const [showFilters, setShowFilters] = useState(false);
 
@@ -47,7 +48,10 @@ const PageHeader = ({
         <div className="flex gap-2.5">
           <NormalButton icon={FaFilter} onClick={toggleFilters} />
           {onCreate && (
-            <NormalButton buttonName="Create Voyage" onClick={onCreate} />
+            <NormalButton
+              buttonName={createButtonText || "Create Voyage"}
+              onClick={onCreate}
+            />
           )}
           {onExport && (
             <NormalButton buttonName="Export As Excel" onClick={onExport} />

@@ -1,5 +1,5 @@
 import express from "express";
-import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllVoyageProducts, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompletedCompaniesSummaryByVoyage, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByCompany, getPendingVoyages, getProductDetails, getVoyage, getVoyageByCompany, getVoyageNumber, getVoyages, uploadVoyage } from "../controllers/voyage.controller.js";
+import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllVoyageProducts, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompletedCompaniesSummaryByVoyage, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyages, getProductDetails, getVoyage, getVoyageByCompany, getVoyageNumber, getVoyages, uploadVoyage } from "../controllers/voyage.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import upload from "../lib/multer.js";
 
@@ -11,7 +11,7 @@ router.post("/:voyageNumber/upload", protectRoute, upload.single('image'), uploa
 
 router.get("/voyagenumber", protectRoute, getVoyageNumber);
 
-router.get("/voyages", protectRoute, getVoyages);
+router.get("/voyages/:branchId", protectRoute, getVoyages);
 
 router.get("/pending-voyages", protectRoute, getPendingVoyages);
 
@@ -29,7 +29,7 @@ router.delete("/:voyageId", protectRoute, deleteVoyage);
 
 router.delete("/:voyageId/data/:dataId", protectRoute, deleteVoyageData);
 
-router.get("/company/:companyCode", protectRoute, getVoyageByCompany);
+router.get("/company/:companyCode/:branchId", protectRoute, getVoyageByCompany);
 
 router.get('/:voyageId/companies', getCompaniesSummaryByVoyage);
 
@@ -43,7 +43,9 @@ router.get("/:voyageId/completed-companies/:companyCode", protectRoute, getCompl
 
 router.get('/completed-company/:companyCode', protectRoute, getCompletedVoyagesByCompany);
 
-router.get('/companies/pending', protectRoute, getAllPendingCompaniesSummary);
+router.get('/completed-company/:companyCode/branch/:branchId', protectRoute, getCompletedVoyagesByCompanyAndBranch);
+
+router.get('/companies/pending/:branchId', protectRoute, getAllPendingCompaniesSummary);
 
 
 export default router; 

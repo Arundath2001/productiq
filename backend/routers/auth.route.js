@@ -1,40 +1,46 @@
 import express from "express";
-import { 
-    checkAuth, 
-    completeRegistration, 
-    createUser, 
-    deleteUser, 
-    editUser, 
-    getUserData, 
-    login, 
-    logout, 
-    removeExpoPushToken, 
-    resendRegistrationOTP, 
-    sendRegistrationOTP, 
-    updateExpoPushToken, 
+import {
+    checkAuth,
+    completeRegistration,
+    createUser,
+    deleteUser,
+    editUser,
+    getUserData,
+    login,
+    logout,
+    removeExpoPushToken,
+    resendRegistrationOTP,
+    sendRegistrationOTP,
+    updateExpoPushToken,
     verifyOTP,
-    approveClient, 
-    rejectClient, 
-    getPendingClients, 
-    getClientsByStatus, 
-    resubmitRejectedClient,  
+    approveClient,
+    rejectClient,
+    getPendingClients,
+    getClientsByStatus,
+    resubmitRejectedClient,
     changePassword,
     verifyForgotPasswordOTP,
     resetPassword,
     resendForgotPasswordOTP,
     checkForgotPasswordStatus,
-    sendForgotPasswordOTP
+    sendForgotPasswordOTP,
+    adminLogin,
+    employeeLogin,
+    clientLogin
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 // Authentication routes
-router.post("/register", protectRoute, createUser)
-router.post("/login", login)
-router.post("/logout", logout)
+router.post("/register", protectRoute, createUser);
+router.post("/login", login);
+router.post("/employee-login", employeeLogin);
+router.post("/client-login", clientLogin);
+router.post("/adminlogin", adminLogin);
+router.post("/logout", logout);
 // router.get("/companycode", protectRoute, getCompnayCode)
-router.get("/check", protectRoute, checkAuth)
+router.get("/check", protectRoute, checkAuth);
 router.get('/usersdata', protectRoute, getUserData);
 router.delete('/delete/:userId', protectRoute, deleteUser);
 router.put("/edit/:userId", protectRoute, editUser);

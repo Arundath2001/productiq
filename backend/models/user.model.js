@@ -22,7 +22,18 @@ const userSchema = mongoose.Schema({
     role: {
         type: String,
         required: true,
-        enum: ['admin', 'employee', 'client']
+        enum: ['employee', 'client', 'admin']
+    },
+    adminRoles: {
+        type: [String],
+        default: [],
+        validate: {
+            validator: function (roles) {
+                const validAdminRoles = ['bl', 'invoice', 'approve', "superadmin", "air_cargo_admin", "ship_cargo_admin"];
+                return roles.every(role => validAdminRoles.includes(role));
+            },
+            message: 'Invalid admin role specified'
+        }
     },
     position: {
         type: String,
@@ -48,7 +59,7 @@ const userSchema = mongoose.Schema({
     countryCode: {
         type: String,
         required: function () {
-            return this.role === 'client' && this.approvalStatus !== 'rejected';  // ← ADD THIS CONDITION
+            return this.role === 'client' && this.approvalStatus !== 'rejected';
         }
     },
     email: {
@@ -75,6 +86,17 @@ const userSchema = mongoose.Schema({
             return this.role !== "admin" && this.role !== "client";
         }
     },
+    branchId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Branch",
+        required: function () {
+            return this.role === 'employee' ||
+                (this.adminRoles && (
+                    this.adminRoles.includes('air_cargo_admin') ||
+                    this.adminRoles.includes('ship_cargo_admin')
+                ));
+        }
+    },
     expoPushTokens: [{
         token: {
             type: String,
@@ -89,8 +111,6 @@ const userSchema = mongoose.Schema({
             default: Date.now
         }
     }],
-
-    // New approval system fields
     approvalStatus: {
         type: String,
         default: function () {
@@ -130,28 +150,62 @@ const userSchema = mongoose.Schema({
     timestamps: true
 });
 
-// Add indexes for better performance
 userSchema.index({ email: 1 });
 userSchema.index({ username: 1 });
 userSchema.index({ role: 1 });
+userSchema.index({ adminRoles: 1 });
 userSchema.index({ approvalStatus: 1 });
 userSchema.index({ companyCode: 1 });
 userSchema.index({ countryCode: 1 });
+userSchema.index({ branchId: 1 });
 
-// Virtual to check if user needs approval
 userSchema.virtual('needsApproval').get(function () {
     return this.role === 'client' && this.approvalStatus === 'pending';
 });
 
-// Virtual to check if user is approved
 userSchema.virtual('isApproved').get(function () {
     return this.approvalStatus === 'approved';
 });
 
-// Virtual to check if user is rejected
 userSchema.virtual('isRejected').get(function () {
     return this.approvalStatus === 'rejected';
 });
+
+userSchema.methods.hasAdminRole = function (adminRole) {
+    return this.adminRoles.includes(adminRole);
+};
+
+userSchema.methods.hasAnyAdminRole = function (adminRoles) {
+    return adminRoles.some(role => this.adminRoles.includes(role));
+};
+
+userSchema.methods.addAdminRole = function (adminRole) {
+    if (!this.adminRoles.includes(adminRole)) {
+        this.adminRoles.push(adminRole);
+    }
+};
+
+userSchema.methods.removeAdminRole = function (adminRole) {
+    this.adminRoles = this.adminRoles.filter(role => role !== adminRole);
+};
+
+userSchema.methods.canAccess = function (feature) {
+    const adminRoles = ['superadmin', 'shipadmin', 'airadmin'];
+
+    if (!adminRoles.includes(this.role)) {
+        return false;
+    }
+
+    if (this.role === 'superadmin') {
+        return true;
+    }
+
+    return this.adminRoles.includes(feature);
+};
+
+userSchema.methods.belongsToBranch = function (branchId) {
+    return this.branchId && this.branchId.toString() === branchId.toString();
+};
 
 const User = mongoose.model("User", userSchema);
 

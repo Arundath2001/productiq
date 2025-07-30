@@ -20,17 +20,13 @@ export const useVoyageStore = create((set, get) => ({
     completedCompanyDetails: null,
     isCompletedCompanyDetailsLoading: false,
 
-    getVoyages: async () => {
+    getVoyages: async (branchId) => {
         set({ isVoyagesLoading: true });
 
         try {
-            const res = await axiosInstance.get("/voyage/voyages");
+            const res = await axiosInstance.get(`/voyage/voyages/${branchId}`);
 
             set({ voyages: res.data });
-
-            if (res.data.length === 0) {
-                toast("No active voyage found", { icon: "⚠️" });
-            }
 
         } catch (error) {
             console.error("Error fetching voyages", error.message);
@@ -50,11 +46,6 @@ export const useVoyageStore = create((set, get) => ({
             set({ completedVoyages: res.data });
 
             console.log("Completed Voyages:", res.data);
-
-
-            if (res.data.length === 0) {
-                toast("No completed voyages available", { icon: "ℹ️" });
-            }
 
         } catch (error) {
             console.error("Error fetching completed voyages", error.message);

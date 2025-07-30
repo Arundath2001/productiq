@@ -1,62 +1,68 @@
-import {create} from "zustand";
-import {axiosInstance} from "../lib/axios.js"
+import { create } from "zustand";
+import { axiosInstance } from "../lib/axios.js"
 import toast from "react-hot-toast";
-import{ io } from "socket.io-client";
+import { io } from "socket.io-client";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export const useAuthStore = create((set, get) => ({
     authUser: null,
     isSigningUp: false,
-    isLoggingIng: false,
+    isLoggingIn: false,
     isUpdatingProfile: false,
     isApprovingClient: false,
     isRejectingClient: false,
     isResubmittingClient: false,
-    usersData:{
-        employees:[],
-        clients:[]
+    usersData: {
+        employees: [],
+        clients: []
     },
     pendingClients: [],
     approvedClients: [],
     rejectedClients: [],
     socket: null,
-    
+
 
     isCheckingAuth: true,
 
-    checkAuth: async() => {
+    checkAuth: async () => {
         try {
             const res = await axiosInstance.get("/auth/check");
 
-            set({authUser : res.data })
+            set({ authUser: res.data })
 
             get().connectSocket();
-            
+
         } catch (error) {
-            set({authUser: null})
+            set({ authUser: null })
             console.log("Error in checkAuth", error);
-            
-        }finally{
-            set({isCheckingAuth: false})
+
+        } finally {
+            set({ isCheckingAuth: false })
         }
     },
 
-    login: async(data) => {
-        set({ isLoggingIng : true })
+    login: async (data) => {
+        set({ isLoggingIn: true })
         try {
-            const res = await axiosInstance.post("/auth/login", data); 
+            const res = await axiosInstance.post("/auth/adminlogin", data);
             set({ authUser: res.data });
-            toast.success("Login successfully");
+            toast.success("Admin login successful");
+
             get().connectSocket();
+
+            return res.data;
+
+
         } catch (error) {
-            toast.error(error.response.data.message);
-        }finally{
-            set({ isLoggingIng: false })
+            toast.error(error.response?.data?.message || "Login failed");
+            throw error;
+        } finally {
+            set({ isLoggingIn: false })
         }
     },
 
-    logout: async() => {
+    logout: async () => {
         try {
             await axiosInstance.post("/auth/logout");
             set({ authUser: null });
@@ -67,24 +73,23 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
-    getUsersData: async() => {
+    getUsersData: async () => {
         try {
             const res = await axiosInstance.get("/auth/usersdata");
             set({ usersData: res.data });
-            toast.success('Users data fetched successfully')
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to fetch users data");
             console.log("Error in getUsersData", error);
         }
     },
-    
+
     createUser: async (userData) => {
         set({ isSigningUp: true });
         try {
             const res = await axiosInstance.post("/auth/register", userData);
-            
+
             await useAuthStore.getState().getUsersData();
-    
+
             return res.data;
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to create user");
@@ -93,7 +98,7 @@ export const useAuthStore = create((set, get) => ({
             set({ isSigningUp: false });
         }
     },
-    
+
 
     deleteUser: async (userId, role) => {
         try {
@@ -118,26 +123,26 @@ export const useAuthStore = create((set, get) => ({
             console.log("Error in deleteUser", error);
         }
     },
-    
+
     editUser: async (userId, updatedData) => {
         set({ isUpdatingProfile: true });
         try {
             const res = await axiosInstance.put(`/auth/edit/${userId}`, updatedData);
-    
+
             set((state) => ({
                 usersData: {
                     ...state.usersData,
                     employees: updatedData.role === "employee"
-                        ? state.usersData.employees.map(user => 
+                        ? state.usersData.employees.map(user =>
                             user._id === userId ? { ...user, ...res.data.user } : user)
                         : state.usersData.employees,
                     clients: updatedData.role === "client"
-                        ? state.usersData.clients.map(user => 
+                        ? state.usersData.clients.map(user =>
                             user._id === userId ? { ...user, ...res.data.user } : user)
                         : state.usersData.clients,
                 },
             }));
-    
+
             toast.success("User updated successfully");
             return res.data.user;
         } catch (error) {
@@ -153,14 +158,14 @@ export const useAuthStore = create((set, get) => ({
         set({ isApprovingClient: true });
         try {
             const res = await axiosInstance.put(`/auth/approve-client/${userId}`, approvalData);
-            
+
             // Update local state - remove from pending, add to approved
             set((state) => ({
                 pendingClients: state.pendingClients.filter(client => client._id !== userId),
                 approvedClients: [...state.approvedClients, res.data.user],
                 usersData: {
                     ...state.usersData,
-                    clients: state.usersData.clients.map(client => 
+                    clients: state.usersData.clients.map(client =>
                         client._id === userId ? { ...client, ...res.data.user } : client
                     )
                 }
@@ -180,14 +185,14 @@ export const useAuthStore = create((set, get) => ({
         set({ isRejectingClient: true });
         try {
             const res = await axiosInstance.put(`/auth/reject-client/${userId}`, rejectionData);
-            
+
             // Update local state - remove from pending, add to rejected
             set((state) => ({
                 pendingClients: state.pendingClients.filter(client => client._id !== userId),
                 rejectedClients: [...state.rejectedClients, res.data.user],
                 usersData: {
                     ...state.usersData,
-                    clients: state.usersData.clients.map(client => 
+                    clients: state.usersData.clients.map(client =>
                         client._id === userId ? { ...client, ...res.data.user } : client
                     )
                 }
@@ -217,7 +222,7 @@ export const useAuthStore = create((set, get) => ({
     getClientsByStatus: async (status) => {
         try {
             const res = await axiosInstance.get(`/auth/clients/${status}`);
-            
+
             // Update the appropriate state based on status
             if (status === 'pending') {
                 set({ pendingClients: res.data.clients });
@@ -226,7 +231,7 @@ export const useAuthStore = create((set, get) => ({
             } else if (status === 'rejected') {
                 set({ rejectedClients: res.data.clients });
             }
-            
+
             return res.data.clients;
         } catch (error) {
             toast.error(error.response?.data?.message || `Failed to fetch ${status} clients`);
@@ -238,14 +243,14 @@ export const useAuthStore = create((set, get) => ({
         set({ isResubmittingClient: true });
         try {
             const res = await axiosInstance.put(`/auth/resubmit-client/${userId}`);
-            
+
             // Update local state - remove from rejected, add to pending
             set((state) => ({
                 rejectedClients: state.rejectedClients.filter(client => client._id !== userId),
                 pendingClients: [...state.pendingClients, res.data.user],
                 usersData: {
                     ...state.usersData,
-                    clients: state.usersData.clients.map(client => 
+                    clients: state.usersData.clients.map(client =>
                         client._id === userId ? { ...client, ...res.data.user } : client
                     )
                 }
@@ -275,21 +280,21 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
-    connectSocket : async () => {
+    connectSocket: async () => {
         const { authUser } = get();
-        if(!authUser || get().socket?.connected) return;
+        if (!authUser || get().socket?.connected) return;
         const socket = io(BASE_URL, {
             query: {
                 userId: authUser._id,
             }
-        } )
+        })
         socket.connect();
 
         set({ socket: socket });
     },
 
-    disconnectSocket : async () => {
-        if(get().socket?.connected) get().socket.disconnect();
+    disconnectSocket: async () => {
+        if (get().socket?.connected) get().socket.disconnect();
     }
-    
+
 }))

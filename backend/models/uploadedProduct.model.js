@@ -13,7 +13,7 @@ const uploadedProductSchema = mongoose.Schema({
         type: Number,
         required: true
     },
-    
+
     trackingNumber: {
         type: String,
         required: true,
@@ -25,6 +25,11 @@ const uploadedProductSchema = mongoose.Schema({
     voyageId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Voyage",
+        required: true
+    },
+    branchId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Branch',
         required: true
     },
     uploadedBy: {
@@ -56,7 +61,7 @@ const uploadedProductSchema = mongoose.Schema({
     timestamps: true
 });
 
-uploadedProductSchema.virtual('compositeCode').get(function() {
+uploadedProductSchema.virtual('compositeCode').get(function () {
     return `${this.productCode}|${this.sequenceNumber}|${this.voyageNumber}`;
 });
 
@@ -68,10 +73,10 @@ uploadedProductSchema.index({ productCode: 1 });
 uploadedProductSchema.index({ sequenceNumber: 1 });
 uploadedProductSchema.index({ voyageNumber: 1 });
 
-uploadedProductSchema.index({ 
-    productCode: 1, 
-    sequenceNumber: 1, 
-    voyageNumber: 1 
+uploadedProductSchema.index({
+    productCode: 1,
+    sequenceNumber: 1,
+    voyageNumber: 1
 }, { unique: true });
 
 uploadedProductSchema.set('toJSON', { virtuals: true });

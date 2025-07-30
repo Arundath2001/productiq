@@ -5,7 +5,8 @@ import { useAuthStore } from "../../store/useAuthStore.js";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 const LoginPage = () => {
-  const { login, isLoggingIng } = useAuthStore();
+  const { login, isLoggingIn } = useAuthStore();
+  const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,13 +21,16 @@ const LoginPage = () => {
     return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const success = validateLogin();
 
     if (success === true) {
-      login(formData);
+      try {
+        await login(formData);
+        navigate("/dashboard");
+      } catch (error) {}
     }
   };
 
@@ -99,9 +103,9 @@ const LoginPage = () => {
             <button
               className="w-full flex justify-center bg-black px-4 py-3 text-white mt-4 hover:bg-gray-800 transition cursor-pointer"
               type="submit"
-              disabled={isLoggingIng}
+              disabled={isLoggingIn}
             >
-              {isLoggingIng ? (
+              {isLoggingIn ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 "LOGIN"

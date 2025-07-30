@@ -38,17 +38,17 @@ const EmployeeList = () => {
   );
 
   const handleConfirm = (userId) => {
-    setSelectedUserId(userId)
-    setShowConfirm(true)
-  }
+    setSelectedUserId(userId);
+    setShowConfirm(true);
+  };
 
   const confirmDelete = async () => {
-    if(selectedUserId){
+    if (selectedUserId) {
       await deleteUser(selectedUserId, "employee");
       setShowConfirm(false);
       setSelectedUserId(null);
     }
-  }
+  };
 
   return (
     <div>
@@ -58,12 +58,12 @@ const EmployeeList = () => {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         showDateFilter={false}
-        placeholder='Search by employee username'
+        placeholder="Search by employee username"
       />
 
       <div className="mt-5 overflow-x-auto">
         <table className="min-w-full table-auto border-separate border-spacing-y-2">
-          <thead className="bg-white">
+          <thead className="bg-white shadow-sm">
             <tr>
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
                 #
@@ -88,7 +88,7 @@ const EmployeeList = () => {
               filteredEmployees.map((data, index) => (
                 <tr
                   key={data._id}
-                  className="bg-white rounded-xl overflow-hidden"
+                  className="bg-white rounded-xl overflow-hidden shadow-sm"
                 >
                   <td className="py-3 px-5 text-sm text-black">{index + 1}</td>
                   <td className="py-3 px-5 text-sm text-black">
@@ -152,12 +152,12 @@ const EmployeeList = () => {
       )}
       {showConfirm && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
-        <ConfirmAlert
-          alertInfo="You want to delete this user ?"
-          handleClose={() => setShowConfirm(false)}
-          handleSubmit={confirmDelete}
-        />
-      </div>
+          <ConfirmAlert
+            alertInfo="You want to delete this user ?"
+            handleClose={() => setShowConfirm(false)}
+            handleSubmit={confirmDelete}
+          />
+        </div>
       )}
     </div>
   );

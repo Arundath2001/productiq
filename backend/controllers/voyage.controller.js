@@ -9,7 +9,10 @@ import { io } from "../lib/socket.js";
 
 export const createVoyage = async (req, res) => {
     try {
-        const { voyageName, voyageNumber, year } = req.body;
+        const { voyageName, voyageNumber, year, branchId } = req.body;
+
+        console.log(req.body);
+
 
         if (req.user.role !== 'admin') {
             return res.status(400).json({ message: "Only admin can create voyages" })
@@ -23,6 +26,7 @@ export const createVoyage = async (req, res) => {
             voyageName,
             voyageNumber,
             year,
+            branchId,
             createdBy: req.user.id
         })
 
@@ -39,12 +43,12 @@ export const createVoyage = async (req, res) => {
 export const uploadVoyage = async (req, res) => {
     try {
         const { voyageNumber } = req.params;
-        const { productCode: fullProductCode, trackingNumber, clientCompany, weight } = req.body
+        const { productCode: fullProductCode, trackingNumber, clientCompany, weight, branchId } = req.body
 
         console.log("Voyage upload request body:", req.body);
         console.log(req.body, req.file);
 
-        if (!fullProductCode || !trackingNumber || !clientCompany || !req.file || !weight) {
+        if (!fullProductCode || !trackingNumber || !clientCompany || !req.file || !weight || !branchId) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -93,7 +97,8 @@ export const uploadVoyage = async (req, res) => {
             voyageId: voyage._id,
             image: imageUrl,
             uploadedBy: req.user._id,
-            weight
+            weight,
+            branchId
         });
 
         await newProduct.save();
@@ -110,6 +115,7 @@ export const uploadVoyage = async (req, res) => {
                 image: imageUrl,
                 uploadedBy: req.user._id,
                 weight,
+                branchId,
                 voyageId: voyage._id
             },
             updateType: 'upload'
@@ -221,7 +227,13 @@ export const getProductDetails = async (req, res) => {
 
 export const getVoyages = async (req, res) => {
     try {
-        const voyages = await Voyage.find({ status: "pending" }).sort({ createdAt: -1 });
+
+        const { branchId } = req.params;
+
+        console.log(branchId);
+
+
+        const voyages = await Voyage.find({ status: "pending", branchId: branchId }).sort({ createdAt: -1 });
 
         res.status(200).json(voyages);
 
@@ -517,9 +529,9 @@ export const deleteVoyageData = async (req, res) => {
 
 export const getVoyageByCompany = async (req, res) => {
     try {
-        const { companyCode } = req.params;
+        const { companyCode, branchId } = req.params;
 
-        const products = await UploadedProduct.find({ clientCompany: companyCode })
+        const products = await UploadedProduct.find({ clientCompany: companyCode, branchId: branchId })
             .populate('voyageId', 'voyageName voyageNumber year')
             .sort({ uploadedDate: -1 });
 
@@ -974,10 +986,88 @@ export const getCompletedVoyagesByCompany = async (req, res) => {
     }
 };
 
+export const getCompletedVoyagesByCompanyAndBranch = async (req, res) => {
+    try {
+        const { companyCode, branchId } = req.params;
+
+        // Find all completed voyages that have products for this company
+        const completedProducts = await UploadedProduct.find({
+            clientCompany: companyCode, branchId: branchId,
+            status: "completed"
+        })
+            .populate('voyageId', 'voyageName voyageNumber year exportedDate createdAt')
+            .sort({ exportedDate: -1 });
+
+        if (!completedProducts.length) {
+            return res.status(404).json({
+                message: `No completed voyages found for company ${companyCode}`
+            });
+        }
+
+        // Group products by voyage
+        const voyageMap = new Map();
+
+        completedProducts.forEach(product => {
+            const voyageId = product.voyageId._id.toString();
+
+            if (!voyageMap.has(voyageId)) {
+                voyageMap.set(voyageId, {
+                    voyageId: product.voyageId._id,
+                    voyageName: product.voyageId.voyageName,
+                    voyageNumber: product.voyageId.voyageNumber,
+                    year: product.voyageId.year,
+                    exportedDate: product.exportedDate || product.voyageId.exportedDate,
+                    createdDate: product.voyageId.createdAt,
+                    totalItems: 0,
+                    totalWeight: 0,
+                    products: []
+                });
+            }
+
+            const voyageData = voyageMap.get(voyageId);
+            voyageData.totalItems += 1;
+            voyageData.totalWeight += Number(product.weight) || 0;
+            voyageData.products.push(product);
+        });
+
+        // Convert map to array and format the response
+        const completedVoyages = Array.from(voyageMap.values()).map(voyage => ({
+            voyageId: voyage.voyageId,
+            voyageName: voyage.voyageName,
+            voyageNumber: voyage.voyageNumber,
+            year: voyage.year,
+            exportedDate: voyage.exportedDate,
+            createdDate: voyage.createdDate,
+            totalItems: voyage.totalItems,
+            totalWeight: Math.round(voyage.totalWeight * 100) / 100
+        }));
+
+        // Sort by exported date (most recent first)
+        completedVoyages.sort((a, b) => new Date(b.exportedDate) - new Date(a.exportedDate));
+
+        res.status(200).json({
+            companyCode,
+            completedVoyages,
+            totalVoyages: completedVoyages.length,
+            grandTotalItems: completedVoyages.reduce((sum, v) => sum + v.totalItems, 0),
+            grandTotalWeight: Math.round(completedVoyages.reduce((sum, v) => sum + v.totalWeight, 0) * 100) / 100
+        });
+
+    } catch (error) {
+        console.error("Error in getCompletedVoyagesByCompany controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 export const getAllPendingCompaniesSummary = async (req, res) => {
     try {
-        // Find all pending voyages
-        const pendingVoyages = await Voyage.find({ status: "pending" })
+
+        const { branchId } = req.params;
+
+        console.log(branchId);
+
+
+        const pendingVoyages = await Voyage.find({ status: "pending", branchId: branchId })
             .select("_id voyageName voyageNumber year createdAt")
             .sort({ createdAt: -1 });
 

@@ -31,7 +31,7 @@ function CustomerCodeCreation() {
       username: string;
     };
   }
-  
+
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [companyCode, setCompanyCode] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -66,12 +66,12 @@ function CustomerCodeCreation() {
         // Debug: Log the company ID before update
         console.log('Editing company:', editingCompany);
         console.log('Company ID:', editingCompany.id);
-        
+
         if (!editingCompany.id) {
           toast.error('Invalid company ID');
           return;
         }
-        
+
         await updateCompany(editingCompany.id, { companyCode: companyCode.trim() });
       } else {
         await createCompany({ companyCode: companyCode.trim() });
@@ -85,14 +85,14 @@ function CustomerCodeCreation() {
 
   const handleEdit = (company) => {
     console.log('Edit button clicked for company:', company);
-    
+
     // Validate company object and ID
     if (!company || !company.id) {
       toast.error('Invalid company data');
       console.error('Invalid company object:', company);
       return;
     }
-    
+
     setEditingCompany(company);
     setCompanyCode(company.companyCode);
     setIsModalOpen(true);
@@ -104,14 +104,14 @@ function CustomerCodeCreation() {
       console.error('Invalid company object for delete:', company);
       return;
     }
-    
+
     setCompanyToDelete(company);
     setShowDeleteConfirm(true);
   };
 
   const handleDeleteConfirm = async () => {
     if (!companyToDelete) return;
-    
+
     try {
       console.log('Deleting company with ID:', companyToDelete.id);
       await deleteCompany(companyToDelete.id);
@@ -149,20 +149,19 @@ function CustomerCodeCreation() {
   return (
     <div className="min-h-screen">
       {/* Page Header */}
-      <PageHead 
+      <PageHead
         mainHead="Customer Code Management"
         subText={`${companies.length} Customer Codes`}
-        placeholder="Search by customer code" 
-        onCreate={undefined} 
-        onExport={undefined} 
-        searchQuery={undefined} 
-        setSearchQuery={undefined} 
-        showDateFilter={undefined} 
-        startDate={undefined} 
-        setStartDate={undefined} 
-        endDate={undefined} 
-        setEndDate={undefined}      
-      />
+        placeholder="Search by customer code"
+        onCreate={undefined}
+        onExport={undefined}
+        searchQuery={undefined}
+        setSearchQuery={undefined}
+        showDateFilter={undefined}
+        startDate={undefined}
+        setStartDate={undefined}
+        endDate={undefined}
+        setEndDate={undefined} onCloseVoyage={undefined} />
 
       {/* Company List */}
       <div className="px-4 pb-20">
@@ -188,11 +187,11 @@ function CustomerCodeCreation() {
               if (!company.id) {
                 console.warn('Company without ID found:', company);
               }
-              
+
               return (
                 <div
                   key={company.id || company._id} // Fallback to _id if id is missing
-                  className="flex rounded-xl items-center justify-between bg-white px-4 py-2.5 mb-2.5"
+                  className="flex rounded-xl items-center shadow-sm justify-between bg-white px-4 py-2.5 mb-2.5"
                 >
                   <div className="flex flex-col">
                     <p className="text-sm font-medium">{company.companyCode}</p>
@@ -208,18 +207,18 @@ function CustomerCodeCreation() {
                         {company.createdBy?.username || 'N/A'}
                       </span>
                     </div>
-                    
+
                     <div
                       onClick={() => handleEdit(company)}
                       className="cursor-pointer"
                     >
                       <Pen size={15} className="text-gray-500 hover:text-blue-500 transition-colors duration-200" />
                     </div>
-                    
+
                     <div onClick={() => handleDeleteClick(company)} className="cursor-pointer">
-                      <Trash2 
-                        className="text-gray-500 hover:text-red-500 transition-colors duration-200" 
-                        size={15} 
+                      <Trash2
+                        className="text-gray-500 hover:text-red-500 transition-colors duration-200"
+                        size={15}
                       />
                     </div>
                   </div>
@@ -263,8 +262,8 @@ function CustomerCodeCreation() {
                   variant="outlined"
                   onClick={handleCloseModal}
                 />
-                <SolidButton 
-                  buttonName={isSubmitting ? (editingCompany ? 'Updating...' : 'Creating...') : (editingCompany ? 'Update' : 'Create')} 
+                <SolidButton
+                  buttonName={isSubmitting ? (editingCompany ? 'Updating...' : 'Creating...') : (editingCompany ? 'Update' : 'Create')}
                   type="submit"
                   onClick={!companyCode.trim() || isSubmitting ? undefined : undefined}
                 />

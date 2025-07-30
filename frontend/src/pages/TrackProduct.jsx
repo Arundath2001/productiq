@@ -7,7 +7,6 @@ import {
   Package,
   Search,
   X,
-  QrCode,
   ArrowUp,
   ArrowDown,
   XCircle,
@@ -35,7 +34,7 @@ const TrackProduct = () => {
 
   const handleClearInput = () => {
     setTrackingNumber("");
-    clearProductDetails(); // This will clear the product details
+    clearProductDetails();
   };
 
   const openImageModal = () => {

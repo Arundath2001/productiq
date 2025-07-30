@@ -6,9 +6,15 @@ import { useNavigate } from "react-router-dom";
 import { FaTrash } from "react-icons/fa";
 import ConfirmAlert from "../components/ConfirmAlert.jsx";
 import images from "../lib/images.js";
+import { useAuthStore } from "../store/useAuthStore.js";
 
 const Voyages = () => {
-  const { voyages, getVoyages, deleteVoyage } = useVoyageStore();
+  const { isVoyagesLoading, voyages, getVoyages, deleteVoyage } =
+    useVoyageStore();
+
+  const { authUser } = useAuthStore();
+
+  console.log(authUser.branchId);
 
   const [showCreateVoyage, setShowCreateVoyage] = useState(false);
 
@@ -23,8 +29,11 @@ const Voyages = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getVoyages();
-  }, []);
+    if (authUser && authUser.branchId) {
+      console.log("Fetching voyages for branchId:", authUser.branchId);
+      getVoyages(authUser.branchId);
+    }
+  }, [authUser, authUser?.branchId]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -35,7 +44,7 @@ const Voyages = () => {
   };
 
   const handleViewClick = (voyageId) => {
-    navigate(`/voyage/${voyageId}/companies`);
+    navigate(`/dashboard/voyage/${voyageId}/companies`);
   };
 
   const handleCreateVoyage = () => {
@@ -91,7 +100,7 @@ const Voyages = () => {
             {filteredVoyages.map((voyage, index) => (
               <div
                 key={index}
-                className="flex rounded-xl items-center justify-between bg-white px-4 py-2.5 mb-2.5"
+                className="flex rounded-xl items-center shadow-sm justify-between bg-white px-4 py-2.5 mb-2.5"
               >
                 <p className="text-black text-sm">
                   {voyage.voyageName} | VNo {voyage.voyageNumber}/{voyage.year}

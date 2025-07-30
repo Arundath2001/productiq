@@ -1322,10 +1322,68 @@ export const createUser = async (req, res) => {
         res.status(500).json({ message: "internal server error" });
     }
 }
+export const adminLogin = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        console.log("Admin login attempt:", req.body);
+
+        const userCheck = await User.findOne({ username });
+        if (!userCheck) return res.status(400).json({ message: "Invalid credentials" });
+
+        const isSuperAdmin = userCheck.adminRoles?.includes('superadmin');
+
+        const user = isSuperAdmin
+            ? userCheck
+            : await User.findOne({ username }).populate('branchId', 'branchName');
+
+        const hasAdminRoles = user.adminRoles && user.adminRoles.length > 0;
+        const adminRolesList = ['bl', 'invoice', 'approve', 'shipment', 'superadmin', 'air_cargo_admin', 'ship_cargo_admin'];
+        const hasValidAdminRole = user.adminRoles?.some(role => adminRolesList.includes(role));
+
+        if (!hasAdminRoles || !hasValidAdminRole) {
+            return res.status(403).json({
+                message: "Access denied. Admin privileges required."
+            });
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
+
+        const token = generateToken(user._id, res);
+
+        console.log("Admin login successful for:", user);
+
+        const responseData = {
+            _id: user._id,
+            username: user.username,
+            companyCode: user.companyCode,
+            role: user.role,
+            position: user.position,
+            location: user.location,
+            phoneNumber: user.phoneNumber,
+            email: user.email,
+            token,
+            adminRoles: user.adminRoles,
+            isAdmin: true,
+        };
+
+        if (!isSuperAdmin && user.branchId) {
+            responseData.branchId = user.branchId._id;
+            responseData.branchName = user.branchId.branchName;
+        }
+
+        res.status(200).json(responseData);
+
+    } catch (error) {
+        console.log("Error in admin login controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
 
 export const login = async (req, res) => {
     try {
-        const { username, password, companyCode } = req.body;
+        const { username, password } = req.body;
 
         console.log(req.body);
 
@@ -1362,6 +1420,84 @@ export const login = async (req, res) => {
     }
 };
 
+export const employeeLogin = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        console.log('Employee login attempt:', req.body);
+
+        const user = await User.findOne({ username }).populate('branchId', 'branchName');
+        if (!user) return res.status(400).json({ message: "Invalid credentials" });
+
+        if (user.role !== 'employee') {
+            return res.status(400).json({ message: "Only employee users can access this login" });
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
+
+        const token = generateToken(user._id, res);
+
+        console.log("Employee token generated:", token);
+
+        res.status(200).json({
+            _id: user._id,
+            username: user.username,
+            companyCode: user.companyCode,
+            role: user.role,
+            position: user.position,
+            location: user.location,
+            phoneNumber: user.phoneNumber,
+            email: user.email,
+            token,
+            branchId: user.branchId._id,
+            branchName: user.branchId.branchName,
+        });
+
+    } catch (error) {
+        console.log("Error in employeeLogin controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const clientLogin = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        console.log('Client login attempt:', req.body);
+
+        const user = await User.findOne({ username });
+        if (!user) return res.status(400).json({ message: "Invalid credentials" });
+
+        if (user.role !== 'client') {
+            return res.status(400).json({ message: "Only client users can access this login" });
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
+
+        const token = generateToken(user._id, res);
+
+        console.log("Client token generated:", token);
+
+        res.status(200).json({
+            _id: user._id,
+            username: user.username,
+            companyCode: user.companyCode,
+            role: user.role,
+            position: user.position,
+            location: user.location,
+            phoneNumber: user.phoneNumber,
+            email: user.email,
+            token,
+        });
+
+    } catch (error) {
+        console.log("Error in clientLogin controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 export const logout = async (req, res) => {
     try {
         res.cookie("jwt", "", { maxAge: 0 });
@@ -1389,20 +1525,36 @@ export const getCompanyCode = async (req, res) => {
 
 export const checkAuth = (req, res) => {
     try {
-        res.status(200).json(req.user);
+        const userResponse = {
+            _id: req.user._id,
+            username: req.user.username,
+            companyCode: req.user.companyCode,
+            role: req.user.role,
+            position: req.user.position,
+            phoneNumber: req.user.phoneNumber,
+            email: req.user.email,
+            adminRoles: req.user.adminRoles,
+            approvalStatus: req.user.approvalStatus,
+            branchId: req.user.branchId?._id,
+            branchName: req.user.branchId?.branchName,
+            createdAt: req.user.createdAt,
+            updatedAt: req.user.updatedAt
+        };
+
+        res.status(200).json(userResponse);
     } catch (error) {
-        console.log("Error in checkAuth controller");
-        res.status(500).json("Internal server error");
+        console.log("Error in checkAuth controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
     }
-}
+};
 
 export const getUserData = async (req, res) => {
     try {
         const employees = await User.find({ role: "employee" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });
         const clients = await User.find({ role: "client" }, "-password")
             .populate("createdBy", "username")
-            .populate("approvedBy", "username")    // Add this line
-            .populate("rejectedBy", "username")    // Add this line
+            .populate("approvedBy", "username")
+            .populate("rejectedBy", "username")
             .sort({ createdAt: -1 });
 
         res.status(200).json({

@@ -37,7 +37,7 @@ const VoyageByCompany = () => {
   };
 
   const handleViewClick = (companyCode) => {
-    navigate(`/voyage/${voyageId}/companies/${companyCode}`);
+    navigate(`/dashboard/voyage/${voyageId}/companies/${companyCode}`);
   };
 
   const handleExport = () => {

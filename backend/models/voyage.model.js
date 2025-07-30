@@ -14,6 +14,11 @@ const voyageSchema = mongoose.Schema({
         type: Number,
         required: true
     },
+    branchId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Branch',
+        required: true
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

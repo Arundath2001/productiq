@@ -35,7 +35,7 @@ const CompletedVoyages = () => {
 
   const handleViewClick = (voyageId) => {
     // Navigate to completed voyage details (similar to active voyages)
-    navigate(`/completed-voyage/${voyageId}/companies`);
+    navigate(`/dashboard/completed/${voyageId}/companies`);
   };
 
   const handleShowConfirm = (voyageId) => {
