@@ -92,7 +92,7 @@ export const useBranch = create((set, get) => ({
     },
 
     createBranchWithAdmins: async (branchData) => {
-        const { branchName, admins } = branchData;
+        const { branchName, admins, countryCode } = branchData;
 
         set({ isLoading: true, error: null });
 
@@ -117,7 +117,8 @@ export const useBranch = create((set, get) => ({
 
             const response = await axiosInstance.post('/branch/create-with-admins', {
                 branchName,
-                admins
+                admins,
+                countryCode
             });
 
             const { branch, createdAdmins } = response.data;

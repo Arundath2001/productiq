@@ -72,9 +72,9 @@ const VoyageByCompany = () => {
     }
   };
 
-  const confirmCloseVoyage = async () => {
+  const confirmCloseVoyage = async (daysToDestination) => {
     try {
-      await closeVoyage(voyageId);
+      await closeVoyage(voyageId, daysToDestination);
       setShowCloseVoyageConfirm(false);
       window.location.href = "/completed";
     } catch (error) {
@@ -164,13 +164,15 @@ const VoyageByCompany = () => {
         </div>
       )}
 
-      {/* Close Voyage Confirmation Modal */}
       {showCloseVoyageConfirm && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
           <ConfirmAlert
             alertInfo="Closing this voyage will reset all product quantities to zero, send notifications to clients, and move it to Completed Voyages. This action cannot be undone."
             handleClose={() => setShowCloseVoyageConfirm(false)}
             handleSubmit={confirmCloseVoyage}
+            showDaysInput={true}
+            daysLabel="Days to reach destination"
+            daysPlaceholder="Enter number of days"
           />
         </div>
       )}

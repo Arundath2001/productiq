@@ -231,16 +231,20 @@ export const useVoyageStore = create((set, get) => ({
         }
     },
 
-    closeVoyage: async (voyageId) => {
+    closeVoyage: async (voyageId, daysToDestination) => {
         try {
-            await axiosInstance.put(`/voyage/close/${voyageId}`);
+            // Include days in the API call
+            await axiosInstance.put(`/voyage/close/${voyageId}`, {
+                daysToDestination: daysToDestination
+            });
 
             set((state) => ({
                 voyages: state.voyages.map((voyage) =>
                     voyage._id === voyageId ? {
                         ...voyage,
                         status: "completed",
-                        completedDate: new Date().toISOString()
+                        completedDate: new Date().toISOString(),
+                        daysToDestination: daysToDestination
                     } : voyage
                 ),
                 voyageStatus: "completed",
@@ -250,14 +254,14 @@ export const useVoyageStore = create((set, get) => ({
                         ...state.companiesSummary,
                         voyageInfo: {
                             ...state.companiesSummary.voyageInfo,
-                            status: "completed"
+                            status: "completed",
+                            daysToDestination: daysToDestination
                         }
                     }
                     : state.companiesSummary
             }));
 
-            toast.success("Voyage closed successfully! Notifications sent to clients.");
-
+            toast.success(`Voyage closed successfully! Estimated ${daysToDestination} days to destination. Notifications sent to clients.`);
         } catch (error) {
             console.error("Error closing voyage", error.message);
             toast.error(error.response?.data?.message || "Failed to close voyage");

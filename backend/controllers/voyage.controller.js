@@ -6,6 +6,94 @@ import PrintedQr from "../models/printedQr.model.js";
 import axios from "axios";
 import { Expo } from 'expo-server-sdk';
 import { io } from "../lib/socket.js";
+import cron from 'node-cron';
+
+
+
+export const setupVoyageAutomation = (ioInstance) => {
+    console.log('Setting up voyage automation cron job...');
+
+    const task = cron.schedule('0 */3 * * *', async () => {
+        console.log('Running voyage status check every minute...', new Date().toISOString());
+        await checkAndUpdateVoyageStatus(ioInstance);
+    }, {
+        scheduled: true,
+        timezone: "UTC"
+    });
+
+    console.log('Cron job scheduled successfully');
+
+    task.start();
+
+    return task;
+};
+
+const checkAndUpdateVoyageStatus = async (ioInstance) => {
+    try {
+        const now = new Date();
+
+        const voyagesToUpdate = await Voyage.find({
+            status: "completed",
+            trackingStatus: { $in: ["dispatched", "delayed"] },
+            expectedDate: { $lte: now, $exists: true, $ne: null }
+        }).populate('branchId', 'branchName');
+
+        console.log(`Found ${voyagesToUpdate.length} voyages to update to received status`);
+
+        for (const voyage of voyagesToUpdate) {
+            await updateVoyageToReceived(voyage, ioInstance);
+        }
+
+    } catch (error) {
+        console.error('Error in automated voyage status check:', error);
+    }
+};
+
+const updateVoyageToReceived = async (voyage, ioInstance) => {
+    try {
+        const now = new Date();
+
+        voyage.trackingStatus = "received";
+        voyage.receivedDate = now;
+        await voyage.save();
+
+        const products = await UploadedProduct.find({ voyageId: voyage._id });
+        const companyCodes = [...new Set(products.map(data => data.clientCompany))];
+
+        const clients = await User.find({
+            role: "client",
+            companyCode: { $in: companyCodes }
+        });
+
+        const allTokens = [];
+        for (let client of clients) {
+            if (client.expoPushTokens && client.expoPushTokens.length > 0) {
+                const activeTokens = client.expoPushTokens.map(tokenObj => tokenObj.token);
+                allTokens.push(...activeTokens);
+            }
+        }
+
+        const branchName = voyage.branchId?.branchName || 'Unknown Branch';
+        const notificationMessage = `Your items from Voyage ${voyage.voyageNumber} (${branchName}) have been successfully received and are ready for collection.`;
+
+        if (allTokens.length > 0) {
+            await sendPushNotificationToMultiple(allTokens, notificationMessage);
+        }
+
+        io.emit('voyage-status-updated', {
+            voyageId: voyage._id,
+            trackingStatus: 'received',
+            updateType: 'auto-received'
+        });
+
+        console.log(`Voyage ${voyage.voyageNumber} automatically updated to received status`);
+
+    } catch (error) {
+        console.error(`Error updating voyage ${voyage.voyageNumber} to received:`, error);
+    }
+};
+
+
 
 export const createVoyage = async (req, res) => {
     try {
@@ -410,8 +498,9 @@ export const exportVoyageData = async (req, res) => {
 export const closeVoyage = async (req, res) => {
     try {
         const { voyageId } = req.params;
+        const { daysToDestination } = req.body;
 
-        const voyage = await Voyage.findById(voyageId);
+        const voyage = await Voyage.findById(voyageId).populate('branchId', 'branchName');
         if (!voyage) {
             return res.status(404).json({ message: "Voyage not found" });
         }
@@ -422,9 +511,20 @@ export const closeVoyage = async (req, res) => {
 
         const now = new Date();
 
+        let expectedDate = null;
+        if (daysToDestination && daysToDestination > 0) {
+            expectedDate = new Date(now);
+            expectedDate.setDate(expectedDate.getDate() + daysToDestination);
+        }
+
         voyage.status = "completed";
+        voyage.trackingStatus = "dispatched";
         voyage.lastPrintedCounts = new Map();
         voyage.completedDate = now;
+        voyage.dispatchDate = now;
+        if (expectedDate) {
+            voyage.expectedDate = expectedDate;
+        }
         await voyage.save();
 
         const updatedProducts = await UploadedProduct.updateMany(
@@ -455,18 +555,27 @@ export const closeVoyage = async (req, res) => {
             }
         }
 
+        const branchName = voyage.branchId?.branchName || 'Unknown Branch';
+        let notificationMessage = `Your items from Voyage ${voyage.voyageNumber} (${branchName}) have been dispatched and are now on their way.`;
+        if (expectedDate) {
+            const expectedDateStr = expectedDate.toLocaleDateString();
+            notificationMessage += ` Expected delivery: ${expectedDateStr}`;
+        }
+
         if (allTokens.length > 0) {
             await sendPushNotificationToMultiple(
                 allTokens,
-                `Your items from Voyage ${voyage.voyageNumber} have been dispatched and are now on their way.`
+                notificationMessage
             );
         }
 
-        io.emit('voyage-data-updated', { voyageId, newProduct: products, updateType: 'export' });
+        io.emit('voyage-data-updated', { voyageId, newProduct: products, updateType: 'export', branchId: voyage.branchId._id });
+
 
         res.status(200).json({
             message: "Voyage closed successfully and notifications sent",
-            voyage: voyage
+            voyage: voyage,
+            expectedDeliveryDate: expectedDate
         });
 
     } catch (error) {
@@ -528,6 +637,25 @@ export const deleteVoyageData = async (req, res) => {
 };
 
 export const getVoyageByCompany = async (req, res) => {
+    try {
+        const { companyCode } = req.params;
+
+        const products = await UploadedProduct.find({ clientCompany: companyCode })
+            .populate('voyageId', 'voyageName voyageNumber year')
+            .sort({ uploadedDate: -1 });
+
+        if (!products.length) {
+            return res.status(404).json({ message: `No uploaded data found for company ${companyCode}` });
+        }
+
+        res.status(200).json({ companyCode, uploadedData: products });
+    } catch (error) {
+        console.error("Error in getVoyageByCompany controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const getVoyageByCompanyAndBranch = async (req, res) => {
     try {
         const { companyCode, branchId } = req.params;
 
@@ -911,13 +1039,11 @@ export const getCompletedCompanyDetailsByVoyage = async (req, res) => {
     }
 };
 
-// Add this new controller function to your voyage controller file
 
 export const getCompletedVoyagesByCompany = async (req, res) => {
     try {
         const { companyCode } = req.params;
 
-        // Find all completed voyages that have products for this company
         const completedProducts = await UploadedProduct.find({
             clientCompany: companyCode,
             status: "completed"
@@ -926,12 +1052,16 @@ export const getCompletedVoyagesByCompany = async (req, res) => {
             .sort({ exportedDate: -1 });
 
         if (!completedProducts.length) {
-            return res.status(404).json({
-                message: `No completed voyages found for company ${companyCode}`
+            return res.status(200).json({
+                message: `No completed voyages found for company ${companyCode}`,
+                companyCode,
+                completedVoyages: [],
+                totalVoyages: 0,
+                grandTotalItems: 0,
+                grandTotalWeight: 0
             });
         }
 
-        // Group products by voyage
         const voyageMap = new Map();
 
         completedProducts.forEach(product => {
@@ -957,7 +1087,6 @@ export const getCompletedVoyagesByCompany = async (req, res) => {
             voyageData.products.push(product);
         });
 
-        // Convert map to array and format the response
         const completedVoyages = Array.from(voyageMap.values()).map(voyage => ({
             voyageId: voyage.voyageId,
             voyageName: voyage.voyageName,
@@ -969,7 +1098,6 @@ export const getCompletedVoyagesByCompany = async (req, res) => {
             totalWeight: Math.round(voyage.totalWeight * 100) / 100
         }));
 
-        // Sort by exported date (most recent first)
         completedVoyages.sort((a, b) => new Date(b.exportedDate) - new Date(a.exportedDate));
 
         res.status(200).json({
@@ -979,6 +1107,8 @@ export const getCompletedVoyagesByCompany = async (req, res) => {
             grandTotalItems: completedVoyages.reduce((sum, v) => sum + v.totalItems, 0),
             grandTotalWeight: Math.round(completedVoyages.reduce((sum, v) => sum + v.totalWeight, 0) * 100) / 100
         });
+
+        console.log(completedVoyages, "playstore data completed");
 
     } catch (error) {
         console.error("Error in getCompletedVoyagesByCompany controller:", error.message);
@@ -990,71 +1120,141 @@ export const getCompletedVoyagesByCompanyAndBranch = async (req, res) => {
     try {
         const { companyCode, branchId } = req.params;
 
-        // Find all completed voyages that have products for this company
-        const completedProducts = await UploadedProduct.find({
-            clientCompany: companyCode, branchId: branchId,
-            status: "completed"
-        })
-            .populate('voyageId', 'voyageName voyageNumber year exportedDate createdAt')
-            .sort({ exportedDate: -1 });
+        console.log('Controller hit with params:', req.params);
+        console.log('Request URL:', req.originalUrl);
 
-        if (!completedProducts.length) {
-            return res.status(404).json({
-                message: `No completed voyages found for company ${companyCode}`
+        if (!companyCode || !branchId) {
+            return res.status(400).json({
+                message: "Missing required parameters: companyCode and branchId are required"
             });
         }
 
-        // Group products by voyage
-        const voyageMap = new Map();
+        if (typeof companyCode !== 'string' || companyCode.trim() === '') {
+            return res.status(400).json({
+                message: "Invalid companyCode parameter"
+            });
+        }
 
-        completedProducts.forEach(product => {
-            const voyageId = product.voyageId._id.toString();
+        const totalVoyagesForBranch = await Voyage.countDocuments({ branchId: branchId });
+        const completedVoyagesCount = await Voyage.countDocuments({
+            branchId: branchId,
+            status: "completed"
+        });
+        const allStatusesForBranch = await Voyage.distinct("status", { branchId: branchId });
 
-            if (!voyageMap.has(voyageId)) {
-                voyageMap.set(voyageId, {
-                    voyageId: product.voyageId._id,
-                    voyageName: product.voyageId.voyageName,
-                    voyageNumber: product.voyageId.voyageNumber,
-                    year: product.voyageId.year,
-                    exportedDate: product.exportedDate || product.voyageId.exportedDate,
-                    createdDate: product.voyageId.createdAt,
-                    totalItems: 0,
-                    totalWeight: 0,
-                    products: []
-                });
-            }
+        console.log(`Debug info for branch ${branchId}:`);
+        console.log(`- Total voyages: ${totalVoyagesForBranch}`);
+        console.log(`- Completed voyages: ${completedVoyagesCount}`);
+        console.log(`- All statuses found: ${JSON.stringify(allStatusesForBranch)}`);
 
-            const voyageData = voyageMap.get(voyageId);
-            voyageData.totalItems += 1;
-            voyageData.totalWeight += Number(product.weight) || 0;
-            voyageData.products.push(product);
+        const completedVoyages = await Voyage.find({
+            branchId: branchId,
+            status: "completed"
+        }).populate('branchId', 'branchName').sort({ createdAt: -1 });
+
+        console.log(`Found ${completedVoyages.length} completed voyages for branch ${branchId}`);
+
+        if (!completedVoyages.length) {
+            return res.status(200).json({
+                companyCode,
+                completedVoyages: [],
+                totalVoyages: 0,
+                delayedVoyages: 0,
+                grandTotalItems: 0,
+                grandTotalWeight: 0
+            });
+        }
+
+
+        const voyageIds = completedVoyages.map(voyage => voyage._id);
+
+        const completedProducts = await UploadedProduct.find({
+            voyageId: { $in: voyageIds },
+            clientCompany: companyCode,
+            status: "completed"
         });
 
-        // Convert map to array and format the response
-        const completedVoyages = Array.from(voyageMap.values()).map(voyage => ({
-            voyageId: voyage.voyageId,
-            voyageName: voyage.voyageName,
-            voyageNumber: voyage.voyageNumber,
-            year: voyage.year,
-            exportedDate: voyage.exportedDate,
-            createdDate: voyage.createdDate,
-            totalItems: voyage.totalItems,
-            totalWeight: Math.round(voyage.totalWeight * 100) / 100
-        }));
+        console.log(`Found ${completedProducts.length} completed products for company ${companyCode}`);
 
-        // Sort by exported date (most recent first)
-        completedVoyages.sort((a, b) => new Date(b.exportedDate) - new Date(a.exportedDate));
+        const voyageMap = new Map();
+
+        completedVoyages.forEach(voyage => {
+            voyageMap.set(voyage._id.toString(), {
+                voyageId: voyage._id,
+                voyageName: voyage.voyageName,
+                voyageNumber: voyage.voyageNumber,
+                year: voyage.year,
+                exportedDate: voyage.exportedDate,
+                createdDate: voyage.createdAt,
+                dispatchDate: voyage.dispatchDate,
+                transitDate: voyage.transitDate,
+                originalExpectedDate: voyage.originalExpectedDate,
+                expectedDate: voyage.expectedDate,
+                delayDate: voyage.delayDate,
+                delayMessage: voyage.delayMessage,
+                delayDays: voyage.delayDays,
+                isDelayed: voyage.isDelayed,
+                location: voyage.location,
+                branchName: voyage.branchId?.branchName || "Unknown",
+                trackingStatus: voyage.trackingStatus,
+                totalItems: 0,
+                totalWeight: 0
+            });
+        });
+
+        completedProducts.forEach(product => {
+            const voyageId = product.voyageId.toString();
+            if (voyageMap.has(voyageId)) {
+                const voyageData = voyageMap.get(voyageId);
+                voyageData.totalItems += 1;
+                voyageData.totalWeight += Number(product.weight) || 0;
+
+                if (product.exportedDate && !voyageData.exportedDate) {
+                    voyageData.exportedDate = product.exportedDate;
+                }
+            }
+        });
+
+        const responseVoyages = Array.from(voyageMap.values())
+            .filter(voyage => voyage.totalItems > 0)
+            .map(voyage => ({
+                voyageId: voyage.voyageId,
+                voyageName: voyage.voyageName,
+                voyageNumber: voyage.voyageNumber,
+                year: voyage.year,
+                exportedDate: voyage.exportedDate,
+                createdDate: voyage.createdDate,
+                dispatchDate: voyage.dispatchDate,
+                transitDate: voyage.transitDate,
+                originalExpectedDate: voyage.originalExpectedDate,
+                expectedDate: voyage.expectedDate,
+                delayDate: voyage.delayDate,
+                delayMessage: voyage.delayMessage,
+                delayDays: voyage.delayDays,
+                isDelayed: voyage.isDelayed,
+                location: voyage.location,
+                branchName: voyage.branchName,
+                trackingStatus: voyage.trackingStatus,
+                totalItems: voyage.totalItems,
+                totalWeight: Math.round(voyage.totalWeight * 100) / 100
+            }));
+
+        responseVoyages.sort((a, b) => new Date(b.exportedDate) - new Date(a.exportedDate));
+
+        console.log(`Returning ${responseVoyages.length} voyages with products`);
 
         res.status(200).json({
             companyCode,
-            completedVoyages,
-            totalVoyages: completedVoyages.length,
-            grandTotalItems: completedVoyages.reduce((sum, v) => sum + v.totalItems, 0),
-            grandTotalWeight: Math.round(completedVoyages.reduce((sum, v) => sum + v.totalWeight, 0) * 100) / 100
+            completedVoyages: responseVoyages,
+            totalVoyages: responseVoyages.length,
+            delayedVoyages: responseVoyages.filter(v => v.isDelayed).length,
+            grandTotalItems: responseVoyages.reduce((sum, v) => sum + v.totalItems, 0),
+            grandTotalWeight: Math.round(responseVoyages.reduce((sum, v) => sum + v.totalWeight, 0) * 100) / 100
         });
 
     } catch (error) {
-        console.error("Error in getCompletedVoyagesByCompany controller:", error.message);
+        console.error("Error in getCompletedVoyagesByCompanyAndBranch controller:", error.message);
+        console.error("Full error:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };

@@ -1,6 +1,63 @@
 import React, { useState, useEffect } from "react";
-import { Plus, X, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Plus, X, Eye, EyeOff, Loader2, ChevronDown } from "lucide-react";
 import { useBranch } from "../store/useBranchStore";
+
+// Country data with flags and codes
+const countries = [
+  { code: "US", name: "United States", flag: "🇺🇸" },
+  { code: "GB", name: "United Kingdom", flag: "🇬🇧" },
+  { code: "CA", name: "Canada", flag: "🇨🇦" },
+  { code: "AU", name: "Australia", flag: "🇦🇺" },
+  { code: "DE", name: "Germany", flag: "🇩🇪" },
+  { code: "FR", name: "France", flag: "🇫🇷" },
+  { code: "IT", name: "Italy", flag: "🇮🇹" },
+  { code: "ES", name: "Spain", flag: "🇪🇸" },
+  { code: "NL", name: "Netherlands", flag: "🇳🇱" },
+  { code: "BE", name: "Belgium", flag: "🇧🇪" },
+  { code: "CH", name: "Switzerland", flag: "🇨🇭" },
+  { code: "AT", name: "Austria", flag: "🇦🇹" },
+  { code: "SE", name: "Sweden", flag: "🇸🇪" },
+  { code: "NO", name: "Norway", flag: "🇳🇴" },
+  { code: "DK", name: "Denmark", flag: "🇩🇰" },
+  { code: "FI", name: "Finland", flag: "🇫🇮" },
+  { code: "PL", name: "Poland", flag: "🇵🇱" },
+  { code: "CZ", name: "Czech Republic", flag: "🇨🇿" },
+  { code: "HU", name: "Hungary", flag: "🇭🇺" },
+  { code: "PT", name: "Portugal", flag: "🇵🇹" },
+  { code: "GR", name: "Greece", flag: "🇬🇷" },
+  { code: "IE", name: "Ireland", flag: "🇮🇪" },
+  { code: "LU", name: "Luxembourg", flag: "🇱🇺" },
+  { code: "MT", name: "Malta", flag: "🇲🇹" },
+  { code: "CY", name: "Cyprus", flag: "🇨🇾" },
+  { code: "IN", name: "India", flag: "🇮🇳" },
+  { code: "CN", name: "China", flag: "🇨🇳" },
+  { code: "JP", name: "Japan", flag: "🇯🇵" },
+  { code: "KR", name: "South Korea", flag: "🇰🇷" },
+  { code: "SG", name: "Singapore", flag: "🇸🇬" },
+  { code: "HK", name: "Hong Kong", flag: "🇭🇰" },
+  { code: "TW", name: "Taiwan", flag: "🇹🇼" },
+  { code: "MY", name: "Malaysia", flag: "🇲🇾" },
+  { code: "TH", name: "Thailand", flag: "🇹🇭" },
+  { code: "PH", name: "Philippines", flag: "🇵🇭" },
+  { code: "ID", name: "Indonesia", flag: "🇮🇩" },
+  { code: "VN", name: "Vietnam", flag: "🇻🇳" },
+  { code: "BR", name: "Brazil", flag: "🇧🇷" },
+  { code: "MX", name: "Mexico", flag: "🇲🇽" },
+  { code: "AR", name: "Argentina", flag: "🇦🇷" },
+  { code: "CL", name: "Chile", flag: "🇨🇱" },
+  { code: "CO", name: "Colombia", flag: "🇨🇴" },
+  { code: "PE", name: "Peru", flag: "🇵🇪" },
+  { code: "ZA", name: "South Africa", flag: "🇿🇦" },
+  { code: "EG", name: "Egypt", flag: "🇪🇬" },
+  { code: "NG", name: "Nigeria", flag: "🇳🇬" },
+  { code: "KE", name: "Kenya", flag: "🇰🇪" },
+  { code: "AE", name: "United Arab Emirates", flag: "🇦🇪" },
+  { code: "SA", name: "Saudi Arabia", flag: "🇸🇦" },
+  { code: "IL", name: "Israel", flag: "🇮🇱" },
+  { code: "TR", name: "Turkey", flag: "🇹🇷" },
+  { code: "RU", name: "Russia", flag: "🇷🇺" },
+  { code: "NZ", name: "New Zealand", flag: "🇳🇿" },
+];
 
 const SolidButton = ({
   buttonName,
@@ -61,6 +118,99 @@ const InputLine = ({
   );
 };
 
+const CountryDropdown = ({
+  label,
+  value,
+  onChange,
+  error = null,
+  disabled = false,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const selectedCountry = countries.find((country) => country.code === value);
+
+  const filteredCountries = countries.filter(
+    (country) =>
+      country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      country.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSelect = (countryCode) => {
+    onChange(countryCode);
+    setIsOpen(false);
+    setSearchTerm("");
+  };
+
+  return (
+    <div className="w-full flex flex-col relative">
+      <label className="text-gray-400 text-[12px]">{label}</label>
+      <div className="relative">
+        <div
+          className={`w-full cursor-pointer flex items-center justify-between px-4 py-2 border-b ${
+            error ? "border-red-500" : "border-gray-500"
+          } focus-within:border-black focus-within:border-b-2 ${
+            disabled ? "bg-gray-100 cursor-not-allowed" : ""
+          }`}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+        >
+          <div className="flex items-center gap-2">
+            {selectedCountry ? (
+              <>
+                <span className="text-lg">{selectedCountry.flag}</span>
+                <span>{selectedCountry.name}</span>
+                <span className="text-gray-500 text-sm">
+                  ({selectedCountry.code})
+                </span>
+              </>
+            ) : (
+              <span className="text-gray-400">Select a country</span>
+            )}
+          </div>
+          <ChevronDown
+            size={16}
+            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
+        </div>
+
+        {isOpen && !disabled && (
+          <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-hidden">
+            <div className="p-2 border-b">
+              <input
+                type="text"
+                placeholder="Search countries..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded focus:outline-none focus:border-blue-500"
+                autoFocus
+              />
+            </div>
+            <div className="overflow-y-auto max-h-48">
+              {filteredCountries.map((country) => (
+                <div
+                  key={country.code}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => handleSelect(country.code)}
+                >
+                  <span className="text-lg">{country.flag}</span>
+                  <span className="flex-1">{country.name}</span>
+                  <span className="text-gray-500 text-sm">{country.code}</span>
+                </div>
+              ))}
+              {filteredCountries.length === 0 && (
+                <div className="px-4 py-3 text-gray-500 text-center">
+                  No countries found
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      {error && <span className="text-red-500 text-xs mt-1">{error}</span>}
+    </div>
+  );
+};
+
 const CreateBranch = ({
   setShowCreateBranch,
   editMode = false,
@@ -68,6 +218,7 @@ const CreateBranch = ({
   onEditComplete = null,
 }) => {
   const [branchName, setBranchName] = useState("");
+  const [countryCode, setCountryCode] = useState("");
   const [administrators, setAdministrators] = useState([]);
   const [errors, setErrors] = useState({});
 
@@ -117,6 +268,7 @@ const CreateBranch = ({
   useEffect(() => {
     if (editMode && editData) {
       setBranchName(editData.branchName || "");
+      setCountryCode(editData.countryCode || "");
 
       if (editData.admin) {
         const adminRoles = parseAdminRoles(editData.admin.adminRoles);
@@ -232,6 +384,10 @@ const CreateBranch = ({
       newErrors.branchName = "Branch name is required";
     }
 
+    if (!countryCode) {
+      newErrors.countryCode = "Country selection is required";
+    }
+
     if (administrators.length === 0) {
       newErrors.administrators = "At least one administrator is required";
     }
@@ -276,6 +432,7 @@ const CreateBranch = ({
 
           await onEditComplete({
             branchName: branchName.trim(),
+            countryCode: countryCode,
             admin: formattedAdmins[0],
           });
         }
@@ -288,11 +445,13 @@ const CreateBranch = ({
 
         await createBranchWithAdmins({
           branchName: branchName.trim(),
+          countryCode: countryCode,
           admins: formattedAdmins,
         });
       }
 
       setBranchName("");
+      setCountryCode("");
       setAdministrators([]);
       setErrors({});
       resetStates();
@@ -310,6 +469,7 @@ const CreateBranch = ({
 
   const handleCancel = () => {
     setBranchName("");
+    setCountryCode("");
     setAdministrators([]);
     setErrors({});
     clearError();
@@ -341,20 +501,36 @@ const CreateBranch = ({
       )}
 
       <div className="mb-6">
-        <div className="flex flex-col mb-4">
-          <InputLine
-            label="Branch Name"
-            placeholder="Branch Name"
-            value={branchName}
-            onChange={(e) => {
-              setBranchName(e.target.value);
-              if (errors.branchName) {
-                setErrors((prev) => ({ ...prev, branchName: null }));
-              }
-            }}
-            error={errors.branchName}
-            disabled={editMode}
-          />
+        <div className="grid grid-cols-2 gap-6">
+          <div className="flex flex-col mb-4">
+            <InputLine
+              label="Branch Name"
+              placeholder="Branch Name"
+              value={branchName}
+              onChange={(e) => {
+                setBranchName(e.target.value);
+                if (errors.branchName) {
+                  setErrors((prev) => ({ ...prev, branchName: null }));
+                }
+              }}
+              error={errors.branchName}
+              disabled={editMode}
+            />
+          </div>
+          <div className="flex flex-col mb-4">
+            <CountryDropdown
+              label="Country"
+              value={countryCode}
+              onChange={(code) => {
+                setCountryCode(code);
+                if (errors.countryCode) {
+                  setErrors((prev) => ({ ...prev, countryCode: null }));
+                }
+              }}
+              error={errors.countryCode}
+              disabled={editMode}
+            />
+          </div>
         </div>
       </div>
 

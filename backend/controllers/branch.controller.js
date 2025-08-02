@@ -92,10 +92,21 @@ export const createBranchWithAdmins = async (req, res) => {
     const session = await mongoose.startSession();
 
     try {
-        const { branchName, admins } = req.body;
+        const { branchName, admins, countryCode } = req.body;
 
         if (!branchName) {
             return res.status(400).json({ message: "Branch name is required!" });
+        }
+
+        if (!countryCode) {
+            return res.status(400).json({ message: "Country code is required!" });
+        }
+
+        // Validate country code format
+        if (!/^[A-Za-z]{2,3}$/.test(countryCode)) {
+            return res.status(400).json({
+                message: "Country code must be 2-3 letters (ISO format)!"
+            });
         }
 
         if (!admins || !Array.isArray(admins) || admins.length === 0) {
@@ -145,10 +156,17 @@ export const createBranchWithAdmins = async (req, res) => {
 
         session.startTransaction();
 
-        const existingBranch = await Branch.findOne({ branchName }).session(session);
+        // Check if branch already exists with same name and country code
+        const existingBranch = await Branch.findOne({
+            branchName,
+            countryCode: countryCode.toUpperCase()
+        }).session(session);
+
         if (existingBranch) {
             await session.abortTransaction();
-            return res.status(400).json({ message: "Branch already exists!" });
+            return res.status(400).json({
+                message: `Branch "${branchName}" already exists in ${countryCode.toUpperCase()}!`
+            });
         }
 
         const existingUsers = await User.find({
@@ -164,8 +182,10 @@ export const createBranchWithAdmins = async (req, res) => {
             });
         }
 
+        // Create new branch with country code
         const newBranch = new Branch({
             branchName,
+            countryCode: countryCode.toUpperCase(), // Ensure uppercase
             createdBy: createdBy,
         });
 
@@ -193,14 +213,21 @@ export const createBranchWithAdmins = async (req, res) => {
         await session.commitTransaction();
 
         res.status(201).json({
-            message: `Branch "${branchName}" created successfully with ${createdAdmins.length} administrator(s)`,
-            branch: savedBranch,
+            message: `Branch "${branchName}" created successfully in ${savedBranch.countryCode} with ${createdAdmins.length} administrator(s)`,
+            branch: {
+                id: savedBranch._id,
+                branchName: savedBranch.branchName,
+                countryCode: savedBranch.countryCode,
+                createdBy: savedBranch.createdBy,
+                createdAt: savedBranch.createdAt,
+                updatedAt: savedBranch.updatedAt
+            },
             createdAdmins: createdAdmins.map(user => ({
                 id: user._id,
                 username: user.username,
                 role: user.role,
                 adminRoles: user.adminRoles,
-                branch: user.branch
+                branchId: user.branchId
             }))
         });
 

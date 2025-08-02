@@ -1,5 +1,5 @@
 import express from "express";
-import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllVoyageProducts, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompletedCompaniesSummaryByVoyage, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyages, getProductDetails, getVoyage, getVoyageByCompany, getVoyageNumber, getVoyages, uploadVoyage } from "../controllers/voyage.controller.js";
+import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllVoyageProducts, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompletedCompaniesSummaryByVoyage, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyages, getProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageNumber, getVoyages, uploadVoyage } from "../controllers/voyage.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import upload from "../lib/multer.js";
 
@@ -29,7 +29,9 @@ router.delete("/:voyageId", protectRoute, deleteVoyage);
 
 router.delete("/:voyageId/data/:dataId", protectRoute, deleteVoyageData);
 
-router.get("/company/:companyCode/:branchId", protectRoute, getVoyageByCompany);
+router.get("/company/:companyCode", protectRoute, getVoyageByCompany);
+
+router.get("/company/:companyCode/:branchId", protectRoute, getVoyageByCompanyAndBranch);
 
 router.get('/:voyageId/companies', getCompaniesSummaryByVoyage);
 
