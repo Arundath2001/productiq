@@ -9,7 +9,7 @@ router.post("/create", protectRoute, createVoyage);
 
 router.post("/:voyageNumber/upload", protectRoute, upload.single('image'), uploadVoyage);
 
-router.get("/voyagenumber", protectRoute, getVoyageNumber);
+router.get("/voyagenumber/:branchId", protectRoute, getVoyageNumber);
 
 router.get("/voyages/:branchId", protectRoute, getVoyages);
 

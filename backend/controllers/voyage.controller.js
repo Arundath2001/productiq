@@ -9,7 +9,6 @@ import { io } from "../lib/socket.js";
 import cron from 'node-cron';
 
 
-
 export const setupVoyageAutomation = (ioInstance) => {
     console.log('Setting up voyage automation cron job...');
 
@@ -262,7 +261,13 @@ export const getVoyage = async (req, res) => {
 
 export const getVoyageNumber = async (req, res) => {
     try {
-        const voyages = await Voyage.find({ status: 'pending' }, "voyageNumber");
+
+        const { branchId } = req.params;
+
+        console.log(branchId, "getVoyageNumber");
+
+
+        const voyages = await Voyage.find({ status: 'pending', branchId: branchId }, "voyageNumber");
 
         const voyageNumbers = [...new Set(voyages.map(voyage => voyage.voyageNumber))];
 
