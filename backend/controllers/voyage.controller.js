@@ -338,7 +338,7 @@ export const getVoyages = async (req, res) => {
 
 export const getCompletedVoyages = async (req, res) => {
     try {
-        const voyages = await Voyage.find({ status: "completed" }).sort({ createdAt: -1 });
+        const voyages = await Voyage.find({ status: "completed" }).populate('branchId', 'branchName').sort({ createdAt: -1 });
 
         if (!voyages.length) {
             return res.status(200).json([]);
@@ -392,7 +392,18 @@ export const getCompletedVoyages = async (req, res) => {
             exportedDate: voyage.exportedDate,
             totalItems: voyage.totalItems,
             totalWeight: Math.round(voyage.totalWeight * 100) / 100,
-            totalCompanies: voyage.companies.size
+            totalCompanies: voyage.companies.size,
+            dispatchDate: voyage.dispatchDate,
+            transitDate: voyage.transitDate,
+            originalExpectedDate: voyage.originalExpectedDate,
+            expectedDate: voyage.expectedDate,
+            delayDate: voyage.delayDate,
+            delayMessage: voyage.delayMessage,
+            delayDays: voyage.delayDays,
+            isDelayed: voyage.isDelayed,
+            location: voyage.location,
+            branchName: voyage.branchId?.branchName || "Unknown",
+            trackingStatus: voyage.trackingStatus,
         }));
 
         // Sort by creation date (most recent first)
