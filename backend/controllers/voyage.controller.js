@@ -363,11 +363,12 @@ export const getCompletedVoyages = async (req, res) => {
                 totalItems: 0,
                 totalWeight: 0,
                 totalCompanies: 0,
-                companies: new Set()
+                companies: new Set(),
+                exportedDate: voyage.exportedDate // Initialize with voyage's exportedDate
             });
         });
 
-        // Calculate statistics from products
+        // Calculate statistics from products and get exportedDate
         products.forEach(product => {
             const voyageId = product.voyageId.toString();
             const voyageStats = voyageStatsMap.get(voyageId);
@@ -376,6 +377,11 @@ export const getCompletedVoyages = async (req, res) => {
                 voyageStats.totalItems += 1;
                 voyageStats.totalWeight += Number(product.weight) || 0;
                 voyageStats.companies.add(product.clientCompany);
+
+                // Get exportedDate from product if voyage doesn't have one
+                if (product.exportedDate && !voyageStats.exportedDate) {
+                    voyageStats.exportedDate = product.exportedDate;
+                }
             }
         });
 
@@ -389,7 +395,7 @@ export const getCompletedVoyages = async (req, res) => {
             createdBy: voyage.createdBy,
             createdAt: voyage.createdAt,
             updatedAt: voyage.updatedAt,
-            exportedDate: voyage.exportedDate,
+            exportedDate: voyage.exportedDate, // This now includes exportedDate from products
             totalItems: voyage.totalItems,
             totalWeight: Math.round(voyage.totalWeight * 100) / 100,
             totalCompanies: voyage.companies.size,
@@ -406,8 +412,14 @@ export const getCompletedVoyages = async (req, res) => {
             trackingStatus: voyage.trackingStatus,
         }));
 
-        // Sort by creation date (most recent first)
-        completedVoyages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        console.log(completedVoyages);
+
+        // Sort by exportedDate (most recent first), fallback to createdAt if no exportedDate
+        completedVoyages.sort((a, b) => {
+            const dateA = new Date(a.exportedDate || a.createdAt);
+            const dateB = new Date(b.exportedDate || b.createdAt);
+            return dateB - dateA;
+        });
 
         return res.status(200).json(completedVoyages);
 
