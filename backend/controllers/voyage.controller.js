@@ -689,7 +689,7 @@ export const getVoyageByCompanyAndBranch = async (req, res) => {
 
         const products = await UploadedProduct.find({ clientCompany: companyCode, branchId: branchId })
             .populate('voyageId', 'voyageName voyageNumber year')
-            .sort({ uploadedDate: -1 });
+            .sort({ productCode: 1 });
 
         if (!products.length) {
             return res.status(404).json({ message: `No uploaded data found for company ${companyCode}` });
