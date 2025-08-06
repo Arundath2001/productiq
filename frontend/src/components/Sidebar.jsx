@@ -37,7 +37,10 @@ const Sidebar = ({ setSelectedTab }) => {
     ship_cargo_admin: [
       { path: "shipment", label: "Shipments", icon: ShipIcon },
     ],
-    approve: [{ path: "clients", label: "Clients", icon: Building2 }],
+    approve: [
+      { path: "clients", label: "Clients", icon: Building2 },
+      { path: "customercode", label: "Customer Code", icon: UserPlus },
+    ],
   };
 
   const userRole = Array.isArray(authUser?.adminRoles)
