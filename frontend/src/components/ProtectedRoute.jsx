@@ -58,6 +58,10 @@ const ProtectedRoute = ({
       return <Navigate to="/dashboard/shipment" replace />;
     }
 
+    if (userRoles.includes("approve")) {
+      return <Navigate to="/dashboard/clients" replace />;
+    }
+
     return <Navigate to="/dashboard/voyage" replace />;
   }
 

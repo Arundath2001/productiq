@@ -23,6 +23,7 @@ const Sidebar = ({ setSelectedTab }) => {
     superadmin: [
       { path: "branches", label: "Branches", icon: LayoutDashboard },
       { path: "clients", label: "Clients", icon: Building2 },
+      { path: "customercode", label: "Customer Code", icon: UserPlus },
     ],
     air_cargo_admin: [
       { path: "voyage", label: "Voyages", icon: PlaneTakeoff },
@@ -36,6 +37,7 @@ const Sidebar = ({ setSelectedTab }) => {
     ship_cargo_admin: [
       { path: "shipment", label: "Shipments", icon: ShipIcon },
     ],
+    approve: [{ path: "clients", label: "Clients", icon: Building2 }],
   };
 
   const userRole = Array.isArray(authUser?.adminRoles)

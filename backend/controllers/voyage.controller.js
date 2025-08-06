@@ -620,7 +620,6 @@ export const closeVoyage = async (req, res) => {
 };
 
 
-
 export const deleteVoyage = async (req, res) => {
     try {
         const { voyageId } = req.params;
