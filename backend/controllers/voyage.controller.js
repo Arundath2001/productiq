@@ -591,7 +591,7 @@ export const closeVoyage = async (req, res) => {
         }
 
         const branchName = voyage.branchId?.branchName || 'Unknown Branch';
-        let notificationMessage = `Your items from Voyage ${voyage.voyageNumber} (${branchName}) have been dispatched and are now on their way.`;
+        let notificationMessage = `Your items from Voyage ${voyage.voyageNumber} (${branchName}) have been dispatched to Libya and are now on their way.`;
         if (expectedDate) {
             const expectedDateStr = expectedDate.toLocaleDateString();
             notificationMessage += ` Expected delivery: ${expectedDateStr}`;
