@@ -7,6 +7,7 @@ import axios from "axios";
 import { Expo } from 'expo-server-sdk';
 import { io } from "../lib/socket.js";
 import cron from 'node-cron';
+import Branch from "../models/branch.model.js";
 
 
 export const setupVoyageAutomation = (ioInstance) => {
@@ -171,6 +172,12 @@ export const uploadVoyage = async (req, res) => {
             return res.status(400).json({ message: "Product code with this sequence and voyage number already exists" });
         }
 
+        // Fetch branch information to get branch name
+        const branch = await Branch.findById(branchId);
+        if (!branch) {
+            return res.status(400).json({ message: "Branch not found" });
+        }
+
         const imageUrl = `${process.env.BASE_URL}/uploads/${req.file.filename}`;
 
         console.log(process.env.BASE_URL);
@@ -223,7 +230,7 @@ export const uploadVoyage = async (req, res) => {
         if (allTokens.length > 0) {
             await sendPushNotificationToMultiple(
                 allTokens,
-                `A new item with product code ${productCode} (Qty: ${sequenceNumber}) has been received.`
+                `A new item with product code ${productCode} (Qty: ${sequenceNumber}) has been received at ${branch.branchName}`
             );
         }
 
