@@ -73,7 +73,7 @@ const updateVoyageToReceived = async (voyage, ioInstance) => {
         }
 
         const branchName = voyage.branchId?.branchName || 'Unknown Branch';
-        const notificationMessage = `Your items from Voyage ${voyage.voyageNumber} (${branchName}) have been successfully received and are ready for collection.`;
+        const notificationMessage = `Your items from Voyage ${voyage.voyageNumber} (${branchName}) have been successfully received at Libya`;
 
         if (allTokens.length > 0) {
             await sendPushNotificationToMultiple(allTokens, notificationMessage);
