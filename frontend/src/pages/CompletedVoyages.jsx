@@ -32,7 +32,7 @@ const CompletedVoyages = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getCompletedVoyages(authUser.branchId);
+    getCompletedVoyages();
   }, []);
 
   const formatDate = (dateString) => {
@@ -70,7 +70,7 @@ const CompletedVoyages = () => {
 
       setShowVoyageForm(false);
 
-      await getCompletedVoyages(authUser.branchId);
+      await getCompletedVoyages();
 
       setSelectedVoyageData(null);
     } catch (error) {

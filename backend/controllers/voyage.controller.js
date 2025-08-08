@@ -346,9 +346,7 @@ export const getVoyages = async (req, res) => {
 export const getCompletedVoyages = async (req, res) => {
     try {
 
-        const { branchId } = req.params;
-
-        const voyages = await Voyage.find({ status: "completed", branchId: branchId }).populate('branchId', 'branchName').sort({ createdAt: -1 });
+        const voyages = await Voyage.find({ status: "completed" }).populate('branchId', 'branchName').sort({ createdAt: -1 });
 
         if (!voyages.length) {
             return res.status(200).json([]);

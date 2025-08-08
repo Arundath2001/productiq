@@ -15,7 +15,7 @@ router.get("/voyages/:branchId", protectRoute, getVoyages);
 
 router.get("/pending-voyages", protectRoute, getPendingVoyages);
 
-router.get("/completed-voyages/:branchId", protectRoute, getCompletedVoyages);
+router.get("/completed-voyages", protectRoute, getCompletedVoyages);
 
 router.get("/getproducts/:productCode", protectRoute, getProductDetails)
 

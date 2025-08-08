@@ -4,7 +4,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronLeft,
   Loader,
-  Loader2,
   Pen,
   PencilIcon,
   Plus,
@@ -122,7 +121,7 @@ const BranchDetails = () => {
   if (isLoading && !currentBranch) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="size-15 animate-spin" />
+        <Loader className="size-15 animate-spin" />
       </div>
     );
   }
@@ -234,7 +233,7 @@ const BranchDetails = () => {
                       disabled={deletingAdmin}
                     >
                       {deletingAdmin && adminToDelete?._id === admin._id ? (
-                        <Loader2 className="size-5 animate-spin" />
+                        <Loader className="size-5 animate-spin" />
                       ) : (
                         <Trash2Icon className="size-5" />
                       )}
@@ -250,7 +249,7 @@ const BranchDetails = () => {
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
-                      <Loader2 className="size-4 animate-spin mr-2" />
+                      <Loader className="size-4 animate-spin mr-2" />
                       Loading administrators...
                     </div>
                   ) : (
