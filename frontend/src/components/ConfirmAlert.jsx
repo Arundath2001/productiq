@@ -4,38 +4,57 @@ const ConfirmAlert = ({
   alertInfo,
   handleClose,
   handleSubmit,
-  showDaysInput = false,
-  daysLabel = "Days to reach destination",
-  daysPlaceholder = "Enter number of days",
-  onDaysChange = null,
+  showDateInput = false,
+  dateLabel = "Destination arrival date",
+  datePlaceholder = "Select arrival date",
+  onDateChange = null,
 }) => {
-  const [days, setDays] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
   const [error, setError] = useState("");
 
-  const handleDaysInputChange = (e) => {
+  const handleDateInputChange = (e) => {
     const value = e.target.value;
+    const dateObj = new Date(value);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // Allow only positive numbers
-    if (value === "" || (Number(value) > 0 && !isNaN(value))) {
-      setDays(value);
+    if (dateObj < today) {
+      setError("Please select a future date");
+    } else {
       setError("");
-      if (onDaysChange) {
-        onDaysChange(value);
-      }
+    }
+
+    setSelectedDate(value);
+    if (onDateChange) {
+      onDateChange(value);
     }
   };
 
   const handleSubmitClick = () => {
-    if (showDaysInput) {
-      if (!days || days <= 0) {
-        setError("Please enter a valid number of days");
+    if (showDateInput) {
+      if (!selectedDate) {
+        setError("Please select a date");
         return;
       }
-      // Pass the days value to the submit handler
-      handleSubmit(Number(days));
+
+      const dateObj = new Date(selectedDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (dateObj < today) {
+        setError("Please select a future date");
+        return;
+      }
+
+      handleSubmit(dateObj);
     } else {
       handleSubmit();
     }
+  };
+
+  const getTodayString = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
   };
 
   return (
@@ -46,17 +65,17 @@ const ConfirmAlert = ({
       <div className="h-0.5 bg-black mb-1.5" />
       <p className="text-center mb-4 text-xs">{alertInfo}</p>
 
-      {showDaysInput && (
+      {showDateInput && (
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-            {daysLabel}
+            {dateLabel}
           </label>
           <input
-            type="number"
-            value={days}
-            onChange={handleDaysInputChange}
-            placeholder={daysPlaceholder}
-            min="1"
+            type="date"
+            value={selectedDate}
+            onChange={handleDateInputChange}
+            placeholder={datePlaceholder}
+            min={getTodayString()}
             className={`w-full px-3 py-2 border rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               error ? "border-red-500" : "border-gray-300"
             }`}

@@ -3,16 +3,26 @@ import PageHeader from "../components/PageHeader";
 import { useVoyageStore } from "../store/useVoyageStore.js";
 import CreateVoyage from "../components/CreateVoyage.jsx";
 import { useNavigate } from "react-router-dom";
-import { FaTrash } from "react-icons/fa";
+import { FaCalendarCheck, FaExclamationCircle, FaTrash } from "react-icons/fa";
 import ConfirmAlert from "../components/ConfirmAlert.jsx";
 import images from "../lib/images.js";
+import VoyageStatusForm from "../components/VoyageStatusForm.jsx";
+import { useAuthStore } from "../store/useAuthStore.js";
 
 const CompletedVoyages = () => {
-  const { completedVoyages, getCompletedVoyages, deleteVoyage } =
-    useVoyageStore();
+  const {
+    completedVoyages,
+    getCompletedVoyages,
+    deleteVoyage,
+    updateCompletedVyageStatus,
+  } = useVoyageStore();
+
+  const { authUser } = useAuthStore();
 
   const [showCreateVoyage, setShowCreateVoyage] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showVoyageForm, setShowVoyageForm] = useState(false);
+  const [selectedVoyageData, setSelectedVoyageData] = useState(null);
   const [selectedVoyageId, setSelectedVoyageId] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -22,7 +32,7 @@ const CompletedVoyages = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getCompletedVoyages();
+    getCompletedVoyages(authUser.branchId);
   }, []);
 
   const formatDate = (dateString) => {
@@ -34,13 +44,38 @@ const CompletedVoyages = () => {
   };
 
   const handleViewClick = (voyageId) => {
-    // Navigate to completed voyage details (similar to active voyages)
     navigate(`/dashboard/completed/${voyageId}/companies`);
   };
 
   const handleShowConfirm = (voyageId) => {
     setSelectedVoyageId(voyageId);
     setShowConfirm(true);
+  };
+
+  const handleShowForm = (voyageId) => {
+    const voyage = completedVoyages.find((v) => v._id === voyageId);
+
+    if (voyage) {
+      setSelectedVoyageData(voyage);
+    }
+    setShowVoyageForm(true);
+  };
+
+  const handleVoyageUpdate = async (updateData) => {
+    try {
+      await updateCompletedVyageStatus({
+        updatedData: updateData,
+        voyageId: selectedVoyageData._id,
+      });
+
+      setShowVoyageForm(false);
+
+      await getCompletedVoyages(authUser.branchId);
+
+      setSelectedVoyageData(null);
+    } catch (error) {
+      console.error("Failed to update voyage:", error);
+    }
   };
 
   const handleDeleteVoyage = async () => {
@@ -91,20 +126,57 @@ const CompletedVoyages = () => {
             {filteredVoyages.map((voyage, index) => (
               <div
                 key={index}
-                className="flex rounded-xl items-center justify-between bg-white px-4 py-2.5 mb-2.5"
+                className="flex rounded-xl items-center shadow-sm justify-between bg-white px-4 py-2.5 mb-2.5"
               >
-                <p className="text-black text-sm">
-                  {voyage.voyageName} | VNo {voyage.voyageNumber}/{voyage.year}
-                </p>
+                <div className="flex-col">
+                  <p className="text-black text-sm font-medium">
+                    {voyage.voyageName} | VNo {voyage.voyageNumber}/
+                    {voyage.year}
+                  </p>
+                  <div className="flex items-center mt-1 space-x-3">
+                    <div className="flex items-center">
+                      <p className="text-xs text-gray-500 mr-1">
+                        Expected Date :
+                      </p>
+                      <p className="text-xs text-blue-400 bg-blue-100 px-2 py-0.5 rounded-md">
+                        {formatDate(voyage.expectedDate)}
+                      </p>
+                    </div>
+
+                    {voyage.delayMessage && (
+                      <div className="border-r-2 border-gray-400 h-4" />
+                    )}
+
+                    {voyage.delayMessage && (
+                      <div className="flex items-center">
+                        <p className="text-xs text-gray-500 mr-1">
+                          Delay Message :
+                        </p>
+                        <p className="text-xs text-orange-400 bg-orange-100 px-2 py-0.5 rounded-md">
+                          {voyage.delayMessage}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 <div className="flex gap-3 items-center">
-                  <p>Created Date: {formatDate(voyage.createdAt)}</p>
+                  <p className="text-xs text-gray-600">
+                    Created Date: {formatDate(voyage.createdAt)}
+                  </p>
 
                   <div
                     onClick={() => handleViewClick(voyage._id)}
                     className="rounded-xl border px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 transition-colors"
                   >
                     View
+                  </div>
+
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => handleShowForm(voyage._id)}
+                  >
+                    <FaCalendarCheck color="gray" />
                   </div>
 
                   <div
@@ -131,6 +203,18 @@ const CompletedVoyages = () => {
           </div>
         )}
       </div>
+
+      {showVoyageForm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
+          <VoyageStatusForm
+            voyageName={selectedVoyageData.voyageName}
+            expectedDate={selectedVoyageData.expectedDate}
+            delayMessage={selectedVoyageData.delayMessage}
+            onClose={() => setShowVoyageForm(false)}
+            onUpdate={handleVoyageUpdate}
+          />
+        </div>
+      )}
 
       {showCreateVoyage && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">

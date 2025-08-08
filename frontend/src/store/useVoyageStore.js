@@ -37,11 +37,11 @@ export const useVoyageStore = create((set, get) => ({
     },
 
 
-    getCompletedVoyages: async () => {
+    getCompletedVoyages: async (branchId) => {
         set({ isVoyagesLoading: true });
 
         try {
-            const res = await axiosInstance.get("/voyage/completed-voyages");
+            const res = await axiosInstance.get(`/voyage/completed-voyages/${branchId}`);
 
             set({ completedVoyages: res.data });
 
@@ -231,12 +231,14 @@ export const useVoyageStore = create((set, get) => ({
         }
     },
 
-    closeVoyage: async (voyageId, daysToDestination) => {
+    closeVoyage: async (voyageId, destinationDate) => {
         try {
-            // Include days in the API call
+
             await axiosInstance.put(`/voyage/close/${voyageId}`, {
-                daysToDestination: daysToDestination
+                destinationDate: destinationDate
             });
+
+            const formattedDate = new Date(destinationDate).toLocaleDateString();
 
             set((state) => ({
                 voyages: state.voyages.map((voyage) =>
@@ -244,7 +246,7 @@ export const useVoyageStore = create((set, get) => ({
                         ...voyage,
                         status: "completed",
                         completedDate: new Date().toISOString(),
-                        daysToDestination: daysToDestination
+                        destinationDate: destinationDate
                     } : voyage
                 ),
                 voyageStatus: "completed",
@@ -255,13 +257,13 @@ export const useVoyageStore = create((set, get) => ({
                         voyageInfo: {
                             ...state.companiesSummary.voyageInfo,
                             status: "completed",
-                            daysToDestination: daysToDestination
+                            destinationDate: destinationDate
                         }
                     }
                     : state.companiesSummary
             }));
 
-            toast.success(`Voyage closed successfully! Estimated ${daysToDestination} days to destination. Notifications sent to clients.`);
+            toast.success(`Voyage closed successfully! Estimated ${destinationDate} days to destination. Notifications sent to clients.`);
         } catch (error) {
             console.error("Error closing voyage", error.message);
             toast.error(error.response?.data?.message || "Failed to close voyage");
@@ -301,6 +303,24 @@ export const useVoyageStore = create((set, get) => ({
         } catch (error) {
             console.error("Error deleting voyage data", error.message);
             toast.error(error.response?.data?.message || "Failed to delete voyage data");
+        }
+    },
+
+    updateCompletedVyageStatus: async ({ updatedData, voyageId }) => {
+        try {
+
+            const response = await axiosInstance.put(`/voyage/completed-voyage/update/${voyageId}`, { updatedData });
+
+            const successMessage = response.data?.message || "Voyage updated successfully!";
+            toast.success(successMessage);
+
+
+        } catch (error) {
+
+            const errorMessage = error.response?.data?.message || "Failed to update voyage";
+            toast.error(errorMessage);
+            throw error;
+
         }
     }
 

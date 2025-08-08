@@ -345,7 +345,10 @@ export const getVoyages = async (req, res) => {
 
 export const getCompletedVoyages = async (req, res) => {
     try {
-        const voyages = await Voyage.find({ status: "completed" }).populate('branchId', 'branchName').sort({ createdAt: -1 });
+
+        const { branchId } = req.params;
+
+        const voyages = await Voyage.find({ status: "completed", branchId: branchId }).populate('branchId', 'branchName').sort({ createdAt: -1 });
 
         if (!voyages.length) {
             return res.status(200).json([]);
@@ -418,8 +421,6 @@ export const getCompletedVoyages = async (req, res) => {
             branchName: voyage.branchId?.branchName || "Unknown",
             trackingStatus: voyage.trackingStatus,
         }));
-
-        console.log(completedVoyages);
 
         // Sort by exportedDate (most recent first), fallback to createdAt if no exportedDate
         completedVoyages.sort((a, b) => {
@@ -533,7 +534,12 @@ export const exportVoyageData = async (req, res) => {
 export const closeVoyage = async (req, res) => {
     try {
         const { voyageId } = req.params;
-        const { daysToDestination } = req.body;
+        const { destinationDate } = req.body;
+
+        console.log("Destination Date:", destinationDate);
+        console.log("Voyage ID:", voyageId);
+
+
 
         const voyage = await Voyage.findById(voyageId).populate('branchId', 'branchName');
         if (!voyage) {
@@ -546,11 +552,8 @@ export const closeVoyage = async (req, res) => {
 
         const now = new Date();
 
-        let expectedDate = null;
-        if (daysToDestination && daysToDestination > 0) {
-            expectedDate = new Date(now);
-            expectedDate.setDate(expectedDate.getDate() + daysToDestination);
-        }
+        const expectedDate = destinationDate ? new Date(destinationDate) : null;
+
 
         voyage.status = "completed";
         voyage.trackingStatus = "dispatched";
@@ -1397,3 +1400,73 @@ export const getAllPendingCompaniesSummary = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const updateCompletedVoyageStatus = async (req, res) => {
+    try {
+        const { updatedData } = req.body;
+        const { voyageId } = req.params;
+
+        console.log(updatedData, voyageId);
+
+
+        if (!voyageId) {
+            return res.status(400).json({ message: "Voyage ID is required!" });
+        }
+
+        if (!updatedData || Object.keys(updatedData).length === 0) {
+            return res.status(400).json({
+                message: "Updated data is required"
+            });
+        }
+
+        const voyage = await Voyage.findById(voyageId);
+        if (!voyage) {
+            return res.status(404).json({
+                message: "Voyage not found"
+            });
+        }
+
+        const allowedUpdates = {};
+
+        if (updatedData.expectedDate) {
+            allowedUpdates.expectedDate = new Date(updatedData.expectedDate);
+        }
+
+        if (updatedData.delayMessage !== undefined) {
+            allowedUpdates.delayMessage = updatedData.delayMessage || null;
+            allowedUpdates.trackingStatus = "delayed";
+        }
+
+        console.log("Allowed Updates:", allowedUpdates);
+
+        if (Object.keys(allowedUpdates).length === 0) {
+            return res.status(400).json({
+                message: "No valid fields to update"
+            });
+        }
+
+        const updatedVoyageStatus = await Voyage.findByIdAndUpdate(voyageId, { $set: allowedUpdates },
+            {
+                new: true,
+                runValidators: true
+            },
+        ).populate('branchId', 'branchName')
+            .populate('createdBy', 'username');
+
+        if (!updatedVoyageStatus) {
+            return res.status(404).json({
+                message: "Failed to update voyage"
+            });
+        }
+
+        res.status(200).json({
+            message: "Voyage updated successfully",
+            voyage: updatedVoyageStatus
+        });
+
+
+    } catch (error) {
+        console.error("Error in updateCompletedVoyageStatus controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}

@@ -1,5 +1,5 @@
 import express from "express";
-import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllVoyageProducts, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompletedCompaniesSummaryByVoyage, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyages, getProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageNumber, getVoyages, uploadVoyage } from "../controllers/voyage.controller.js";
+import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllVoyageProducts, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompletedCompaniesSummaryByVoyage, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyages, getProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageNumber, getVoyages, updateCompletedVoyageStatus, uploadVoyage } from "../controllers/voyage.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import upload from "../lib/multer.js";
 
@@ -15,7 +15,7 @@ router.get("/voyages/:branchId", protectRoute, getVoyages);
 
 router.get("/pending-voyages", protectRoute, getPendingVoyages);
 
-router.get("/completed-voyages", protectRoute, getCompletedVoyages);
+router.get("/completed-voyages/:branchId", protectRoute, getCompletedVoyages);
 
 router.get("/getproducts/:productCode", protectRoute, getProductDetails)
 
@@ -49,5 +49,6 @@ router.get('/completed-company/:companyCode/branch/:branchId', protectRoute, get
 
 router.get('/companies/pending/:branchId', protectRoute, getAllPendingCompaniesSummary);
 
+router.put('/completed-voyage/update/:voyageId', protectRoute, updateCompletedVoyageStatus);
 
 export default router; 
