@@ -8,6 +8,7 @@ import ConfirmAlert from "../components/ConfirmAlert.jsx";
 import images from "../lib/images.js";
 import VoyageStatusForm from "../components/VoyageStatusForm.jsx";
 import { useAuthStore } from "../store/useAuthStore.js";
+import { AlertTriangle, Calendar, CheckCircle, TruckIcon } from "lucide-react";
 
 const CompletedVoyages = () => {
   const {
@@ -134,21 +135,51 @@ const CompletedVoyages = () => {
                       {voyage.voyageName}
                     </p>
                     <span className="text-xs text-gray-500">
-                      | VNo {voyage.voyageNumber}/{voyage.year}
+                      VNo {voyage.voyageNumber}/{voyage.year}
                     </span>
                     {voyage.trackingStatus && (
-                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">
-                        {voyage.trackingStatus}
-                      </span>
+                      <div
+                        className={`flex gap-0.5 px-2 py-0.5 rounded-full 
+      ${
+        voyage.trackingStatus === "delayed"
+          ? "bg-yellow-100 text-yellow-600"
+          : ""
+      }
+      ${
+        voyage.trackingStatus === "dispatched"
+          ? "bg-blue-100 text-blue-600"
+          : ""
+      }
+      ${
+        voyage.trackingStatus === "received"
+          ? "bg-green-100 text-green-600"
+          : ""
+      }`}
+                      >
+                        {voyage.trackingStatus === "delayed" && (
+                          <AlertTriangle size={15} strokeWidth={3} />
+                        )}
+                        {voyage.trackingStatus === "dispatched" && (
+                          <TruckIcon size={15} strokeWidth={3} />
+                        )}
+                        {voyage.trackingStatus === "received" && (
+                          <CheckCircle size={15} strokeWidth={3} />
+                        )}
+
+                        <span className="text-xs font-semibold">
+                          {voyage.trackingStatus}
+                        </span>
+                      </div>
                     )}
                   </div>
 
                   <div className="flex items-center mt-1 space-x-3">
                     <div className="flex items-center">
+                      <Calendar size={12} color="gray" className="mr-0.5" />
                       <p className="text-xs text-gray-500 mr-1">
                         Expected Date :
                       </p>
-                      <p className="text-xs text-blue-400 bg-blue-100 px-2 py-0.5 rounded-md">
+                      <p className="text-xs text-black bg-gray-100 px-2 py-0.5 rounded-md">
                         {formatDate(voyage.expectedDate)}
                       </p>
                     </div>
@@ -158,11 +189,11 @@ const CompletedVoyages = () => {
                     )}
 
                     {voyage.delayMessage && (
-                      <div className="flex items-center">
-                        <p className="text-xs text-gray-500 mr-1">
+                      <div className="flex items-center bg-red-100 px-2 py-0.5 rounded-md">
+                        <p className="text-xs text-red-400 mr-1 font-semibold">
                           Delay Message :
                         </p>
-                        <p className="text-xs text-orange-400 bg-orange-100 px-2 py-0.5 rounded-md">
+                        <p className="text-xs text-red-400 ">
                           {voyage.delayMessage}
                         </p>
                       </div>
