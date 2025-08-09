@@ -129,10 +129,20 @@ const CompletedVoyages = () => {
                 className="flex rounded-xl items-center shadow-sm justify-between bg-white px-4 py-2.5 mb-2.5"
               >
                 <div className="flex-col">
-                  <p className="text-black text-sm font-medium">
-                    {voyage.voyageName} | VNo {voyage.voyageNumber}/
-                    {voyage.year}
-                  </p>
+                  <div className="flex items-center flex-wrap gap-2">
+                    <p className="text-black text-sm font-semibold">
+                      {voyage.voyageName}
+                    </p>
+                    <span className="text-xs text-gray-500">
+                      | VNo {voyage.voyageNumber}/{voyage.year}
+                    </span>
+                    {voyage.trackingStatus && (
+                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">
+                        {voyage.trackingStatus}
+                      </span>
+                    )}
+                  </div>
+
                   <div className="flex items-center mt-1 space-x-3">
                     <div className="flex items-center">
                       <p className="text-xs text-gray-500 mr-1">
