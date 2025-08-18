@@ -147,9 +147,9 @@ export const uploadVoyage = async (req, res) => {
 
         const productCode = productCodeParts[0].trim();
         const sequenceNumber = parseInt(productCodeParts[1].trim());
-        const productVoyageNumber = parseInt(productCodeParts[2].trim());
+        const productVoyageNumber = productCodeParts[2].trim();
 
-        if (isNaN(sequenceNumber) || isNaN(productVoyageNumber)) {
+        if (isNaN(sequenceNumber)) {
             return res.status(400).json({ message: "Sequence number and voyage number must be valid numbers" });
         }
 

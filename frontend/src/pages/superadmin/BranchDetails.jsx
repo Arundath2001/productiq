@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import CreateBranch from "../../components/CreateBranch.jsx";
 import ConfirmAlert from "../../components/ConfirmAlert.jsx";
+import BranchForm from "../../components/BranchForm.jsx";
 
 const BranchDetails = () => {
   const { branchId } = useParams();
@@ -19,6 +20,8 @@ const BranchDetails = () => {
   const [showEditAdmin, setShowEditAdmin] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [deletingAdmin, setDeletingAdmin] = useState(false);
+
+  const [showAddAdmin, setShowAddAdmin] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [adminToDelete, setAdminToDelete] = useState(null);
@@ -103,6 +106,10 @@ const BranchDetails = () => {
     setAdminToDelete(null);
   };
 
+  const handleAddAdmin = () => {
+    setShowAddAdmin(true);
+  };
+
   const handleDeleteConfirm = async () => {
     if (adminToDelete) {
       try {
@@ -137,6 +144,14 @@ const BranchDetails = () => {
         }}
         onEditComplete={handleEditComplete}
       />
+    );
+  }
+
+  if (showAddAdmin) {
+    return (
+      <div className="">
+        <BranchForm setShowBranchForm={setShowAddAdmin} />
+      </div>
     );
   }
 
@@ -191,7 +206,10 @@ const BranchDetails = () => {
           <div className="flex justify-between">
             <p className="text-sm font-semibold">Branch Administrators</p>
           </div>
-          <div className="flex gap-1 items-center cursor-pointer">
+          <div
+            className="flex gap-1 items-center cursor-pointer"
+            onClick={handleAddAdmin}
+          >
             <Plus className="text-blue-500 size-5" />
             <p className="text-blue-500 text-sm">Add New Administrator</p>
           </div>

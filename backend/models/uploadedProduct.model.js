@@ -10,7 +10,7 @@ const uploadedProductSchema = mongoose.Schema({
         required: true
     },
     voyageNumber: {
-        type: Number,
+        type: String,
         required: true
     },
 
