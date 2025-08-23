@@ -36,30 +36,30 @@ export const getSavedProductCode = async (req, res) => {
     try {
         const savedCodes = await SavedCode.find({}).populate("savedBy", "username");
 
-        if(!savedCodes.length){
-            return res.status(400).json({message: "No saved product code found"})
+        if (!savedCodes.length) {
+            return res.status(400).json({ message: "No saved product code found" })
         }
 
         const codesWithSummary = await Promise.all(savedCodes.map(async (code) => {
             const productCode = code.productCode;
-            
+
             const voyageStatusCounts = await PrintedQr.aggregate([
                 { $match: { productCode } },
-                { 
-                    $group: { 
+                {
+                    $group: {
                         _id: { status: "$printStatus", voyage: "$voyageNumber" },
-                        count: { $sum: 1 } 
-                    } 
+                        count: { $sum: 1 }
+                    }
                 },
                 { $sort: { "_id.voyage": 1 } }
             ]);
-            
+
             const voyageSummaries = {};
-            
+
             voyageStatusCounts.forEach(item => {
                 const voyage = item._id.voyage;
                 const status = item._id.status;
-                
+
                 if (!voyageSummaries[voyage]) {
                     voyageSummaries[voyage] = {
                         voyageNumber: voyage,
@@ -68,7 +68,7 @@ export const getSavedProductCode = async (req, res) => {
                         failed: 0
                     };
                 }
-                
+
                 if (status === "generated") {
                     voyageSummaries[voyage].generated = item.count;
                 } else if (status === "printed") {
@@ -77,7 +77,7 @@ export const getSavedProductCode = async (req, res) => {
                     voyageSummaries[voyage].failed = item.count;
                 }
             });
-            
+
             return {
                 ...code.toObject(),
                 voyageSummaries: Object.values(voyageSummaries)
@@ -88,7 +88,7 @@ export const getSavedProductCode = async (req, res) => {
 
     } catch (error) {
         console.log("Error in getSavedProductCode controller", error.message);
-        res.status(500).json({message: "Internal server error"});
+        res.status(500).json({ message: "Internal server error" });
     }
 }
 

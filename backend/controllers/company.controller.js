@@ -1,12 +1,10 @@
 import Company from "../models/company.model.js";
 
-// Create a new company
 export const createCompany = async (req, res) => {
     try {
         const { companyCode } = req.body;
-        const createdBy = req.user.id; // Assuming user ID comes from auth middleware
+        const createdBy = req.user.id;
 
-        // Validate required fields
         if (!companyCode) {
             return res.status(400).json({
                 success: false,
@@ -14,7 +12,6 @@ export const createCompany = async (req, res) => {
             });
         }
 
-        // Check if company code already exists
         const existingCompany = await Company.findOne({ companyCode });
         if (existingCompany) {
             return res.status(409).json({
@@ -23,20 +20,18 @@ export const createCompany = async (req, res) => {
             });
         }
 
-        // Create new company
         const newCompany = await Company.create({
             companyCode,
             createdBy
         });
 
-        // Populate createdBy for consistent response
         await newCompany.populate('createdBy', 'username');
 
         res.status(201).json({
             success: true,
             message: "Company created successfully",
             data: {
-                id: newCompany._id, // Transform _id to id
+                id: newCompany._id,
                 companyCode: newCompany.companyCode,
                 createdBy: newCompany.createdBy,
                 createdAt: newCompany.createdAt,
@@ -54,7 +49,6 @@ export const createCompany = async (req, res) => {
     }
 };
 
-// Get all companies
 export const getAllCompanies = async (req, res) => {
     try {
         const companies = await Company.find()
@@ -62,7 +56,6 @@ export const getAllCompanies = async (req, res) => {
             .select('companyCode createdBy createdAt updatedAt')
             .sort({ createdAt: -1 });
 
-        // Transform _id to id for frontend consistency
         const transformedCompanies = companies.map(company => ({
             id: company._id,
             companyCode: company.companyCode,
@@ -88,15 +81,13 @@ export const getAllCompanies = async (req, res) => {
     }
 };
 
-// Update company
 export const updateCompany = async (req, res) => {
     try {
         const { id } = req.params;
         const { companyCode } = req.body;
 
         console.log("Updating company with ID:", id, "New company code:", companyCode);
-        
-        // Validate ID parameter
+
         if (!id || id === 'undefined') {
             return res.status(400).json({
                 success: false,
@@ -104,7 +95,6 @@ export const updateCompany = async (req, res) => {
             });
         }
 
-        // Validate required fields
         if (!companyCode) {
             return res.status(400).json({
                 success: false,
@@ -112,7 +102,6 @@ export const updateCompany = async (req, res) => {
             });
         }
 
-        // Check if company exists
         const company = await Company.findById(id);
         if (!company) {
             return res.status(404).json({
@@ -121,11 +110,10 @@ export const updateCompany = async (req, res) => {
             });
         }
 
-        // Check if new company code already exists (if changed)
         if (company.companyCode !== companyCode) {
-            const existingCompany = await Company.findOne({ 
+            const existingCompany = await Company.findOne({
                 companyCode,
-                _id: { $ne: id } // Exclude current company from check
+                _id: { $ne: id }
             });
             if (existingCompany) {
                 return res.status(409).json({
@@ -135,7 +123,6 @@ export const updateCompany = async (req, res) => {
             }
         }
 
-        // Update company
         const updatedCompany = await Company.findByIdAndUpdate(
             id,
             { companyCode },
@@ -146,7 +133,7 @@ export const updateCompany = async (req, res) => {
             success: true,
             message: "Company updated successfully",
             data: {
-                id: updatedCompany._id, // Transform _id to id
+                id: updatedCompany._id,
                 companyCode: updatedCompany.companyCode,
                 createdBy: updatedCompany.createdBy,
                 createdAt: updatedCompany.createdAt,
@@ -164,12 +151,10 @@ export const updateCompany = async (req, res) => {
     }
 };
 
-// Delete company
 export const deleteCompany = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Validate ID parameter
         if (!id || id === 'undefined') {
             return res.status(400).json({
                 success: false,
@@ -177,7 +162,6 @@ export const deleteCompany = async (req, res) => {
             });
         }
 
-        // Check if company exists
         const company = await Company.findById(id);
         if (!company) {
             return res.status(404).json({
@@ -186,14 +170,13 @@ export const deleteCompany = async (req, res) => {
             });
         }
 
-        // Delete company
         await Company.findByIdAndDelete(id);
 
         res.status(200).json({
             success: true,
             message: "Company deleted successfully",
             data: {
-                id: company._id, // Transform _id to id
+                id: company._id,
                 companyCode: company.companyCode
             }
         });

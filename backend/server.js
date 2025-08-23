@@ -84,6 +84,8 @@ import contactRoutes from "./routers/contact.routes.js";
 import companyRoutes from "./routers/company.route.js";
 import branchRoutes from "./routers/branch.route.js";
 import trackproductRoutes from "./routers/trackproduct.route.js";
+import goniRoutes from "./routers/goni.route.js";
+import packageRoutes from "./routers/package.route.js";
 import cors from "cors";
 import path from "path";
 import { app, server, io } from "./lib/socket.js";
@@ -127,6 +129,8 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/companycode", companyRoutes);
 app.use("/api/branch", branchRoutes);
 app.use("/api/trackproduct", trackproductRoutes);
+app.use("/api/goni", goniRoutes);
+app.use("/api/package", packageRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

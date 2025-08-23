@@ -63,7 +63,7 @@ const MainContent = () => {
       case "/client":
         return <ClientInfo />;
       case "/allBills":
-      case "/allbills": // Handle both cases
+      case "/allbills":
         return <AllBills />;
       case "/sendNotification":
         return <SendNotification />;
