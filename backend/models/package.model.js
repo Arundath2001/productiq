@@ -22,10 +22,6 @@ const packageSchema = mongoose.Schema({
     packagedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-    },
-    packagedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
         required: true
     },
     status: {

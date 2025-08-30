@@ -1468,3 +1468,42 @@ export const updateCompletedVoyageStatus = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 }
+
+export const getUploadedProductDetails = async (req, res) => {
+    try {
+        const { fullProductCode } = req.body;
+
+        if (!fullProductCode) {
+            return res.status(400).json({ message: "Product Code is required!" });
+        }
+
+        const productCodeParts = fullProductCode.split('|');
+
+        const productCode = productCodeParts[0].trim();
+        const sequenceNumber = parseInt(productCodeParts[1].trim());
+        const voyageNumber = productCodeParts[2].trim();
+
+        console.log(
+            "productCode:", typeof productCode, productCode,
+            "| sequenceNumber:", typeof sequenceNumber, sequenceNumber,
+            "| voyageNumber:", typeof voyageNumber, voyageNumber
+        );
+
+
+        if (isNaN(sequenceNumber)) {
+            return res.status(400).json({ message: "Invalid sequence number" });
+        }
+
+        const existingProduct = await UploadedProduct.findOne({ productCode, sequenceNumber, voyageNumber }, { productCode: 1, sequenceNumber: 1, _id: 1 });
+
+        if (!existingProduct) {
+            return res.status(400).json({ message: "Product does not exisit on database!" });
+        }
+
+        res.status(200).json({ message: "Product fetched successfully", product: existingProduct });
+
+    } catch (error) {
+        console.log('Error in getUploadedProductDetails controller:', error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
