@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 
 /**
- * Export packages data to Excel format using ExcelJS
+ * Export packages data to Excel format using ExcelJS (Single Sheet Version)
  * @param {Array} packages - Array of package objects
  * @param {string} companyName - Selected company name
  * @param {string} voyageName - Selected voyage name
@@ -18,24 +18,23 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
     workbook.lastModifiedBy = 'System';
     workbook.created = new Date();
 
-    for (let i = 0; i < packages.length; i++) {
-        const pkg = packages[i];
+    // Create single worksheet for all packages
+    const worksheet = workbook.addWorksheet('Package Details');
 
-        // Create worksheet for each package
-        const sheetName = `${pkg.goniId.goniName}_${pkg.goniNumber}`.substring(0, 31);
-        const worksheet = workbook.addWorksheet(sheetName);
+    // Set column widths
+    worksheet.columns = [
+        { header: 'Product Code', key: 'productCode', width: 20 },
+        { header: 'QTY', key: 'qty', width: 10 },
+        { header: 'Tracking No', key: 'trackingNo', width: 20 }
+    ];
 
-        // Set column widths
-        worksheet.columns = [
-            { header: 'Product Code', key: 'productCode', width: 20 },
-            { header: 'QTY', key: 'qty', width: 10 },
-            { header: 'Tracking No', key: 'trackingNo', width: 20 }
-        ];
+    let currentRow = 1;
 
+    packages.forEach((pkg, packageIndex) => {
         // Add package header
         const packageHeader = `${pkg.goniId.goniName} - ${pkg.goniNumber}`;
-        worksheet.mergeCells('A1:C1');
-        const headerCell = worksheet.getCell('A1');
+        worksheet.mergeCells(`A${currentRow}:C${currentRow}`);
+        const headerCell = worksheet.getCell(`A${currentRow}`);
         headerCell.value = packageHeader;
         headerCell.font = {
             bold: true,
@@ -46,26 +45,18 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
             horizontal: 'center',
             vertical: 'middle'
         };
-        headerCell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFE6E6FA' }
-        };
+        // Removed background color from header
         headerCell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' }
         };
+        currentRow++;
 
-        // Add column headers in row 2 (no gap)
+        // Add column headers (no gap)
         const columnHeaderRow = worksheet.addRow(['Product Code', 'QTY', 'Tracking No']);
         columnHeaderRow.font = { bold: true };
-        columnHeaderRow.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFD3D3D3' }
-        };
         columnHeaderRow.alignment = {
             horizontal: 'center',
             vertical: 'middle'
@@ -80,6 +71,7 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
                 right: { style: 'thin' }
             };
         });
+        currentRow++;
 
         // Sort products by sequence number for better organization
         const sortedProducts = pkg.products.sort((a, b) => a.sequenceNumber - b.sequenceNumber);
@@ -105,6 +97,7 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
                     vertical: 'middle'
                 };
             });
+            currentRow++;
         });
 
         // Add total pieces row immediately after products (no gap)
@@ -119,11 +112,6 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
         const mergedCell = worksheet.getCell(`A${totalRowIndex}`);
         mergedCell.value = 'Total No of Pieces:';
         mergedCell.font = { bold: true };
-        mergedCell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFD3D3D3' } // Light grey like header
-        };
         mergedCell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -137,11 +125,6 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
 
         // Style the third column (total number)
         totalRow.getCell(3).font = { bold: true, color: { argb: 'FF000000' } }; // Black text
-        totalRow.getCell(3).fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFD3D3D3' } // Light grey like header
-        };
         totalRow.getCell(3).border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -152,7 +135,14 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
             horizontal: 'center',
             vertical: 'middle'
         };
-    }
+        currentRow++;
+
+        // Add gap between packages (only if not the last package)
+        if (packageIndex < packages.length - 1) {
+            worksheet.addRow([]);
+            currentRow++;
+        }
+    });
 
     // Generate filename with timestamp
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
@@ -218,11 +208,7 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
             horizontal: 'center',
             vertical: 'middle'
         };
-        packageHeaderCell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFFFE4B5' }
-        };
+        // Removed background color from header
         packageHeaderCell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
@@ -234,11 +220,6 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
         // Add column headers (no gap)
         const columnHeaderRow = worksheet.addRow(['Product Code', 'QTY', 'Tracking No']);
         columnHeaderRow.font = { bold: true };
-        columnHeaderRow.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFD3D3D3' }
-        };
         columnHeaderRow.alignment = {
             horizontal: 'center',
             vertical: 'middle'
