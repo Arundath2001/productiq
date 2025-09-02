@@ -18,6 +18,7 @@ import ClientInfo from "../pages/ClientInfo";
 import Shipment from "../pages/ship-cargo/Shipment";
 import BranchDetails from "../pages/superadmin/BranchDetails";
 import Packages from "../pages/Packages";
+import PackageProducts from "../pages/PackageProducts";
 
 const router = createBrowserRouter([
   {
@@ -167,6 +168,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Packages />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "packages/:packageId/package-details",
+        element: (
+          <ProtectedRoute>
+            <PackageProducts />
           </ProtectedRoute>
         ),
       },

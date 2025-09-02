@@ -53,7 +53,7 @@ const SearchableDropdown = ({ label, placeholder, options = [], onSelect }) => {
               <input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search countries"
+                placeholder="Search"
                 className="w-full outline-none px-2 text-sm"
                 autoFocus
               />

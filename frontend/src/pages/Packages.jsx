@@ -1,62 +1,13 @@
 import React, { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
-import ConfirmAlert from "../components/ConfirmAlert";
+import CreatePackages from "../components/CreatePackages";
 import { useGoni } from "../store/useGoniStore";
-import {
-  ArrowRightCircle,
-  ChevronRight,
-  Loader,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
-import Tooltip from "../components/Tooltip";
-import CreatePackageForm from "../components/CreatePackageForm";
+import PackageDetails from "../components/PackageDetails";
 
 const Packages = () => {
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
-  const [selectedGoni, setSelectedGoni] = useState(null);
+  const [activeTab, setActiveTab] = useState("created");
+
   const { goniDetails, isLoading, error, getGonies, deleteGoni } = useGoni();
-
-  useEffect(() => {
-    getGonies();
-  }, []);
-
-  const handleDeleteGoni = (goni) => {
-    setSelectedGoni(goni);
-    setShowDelete(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (selectedGoni) {
-      try {
-        await deleteGoni({ goniId: selectedGoni._id });
-
-        setShowDelete(false);
-        setSelectedGoni(null);
-      } catch (error) {
-        console.error("Delete failed:", error);
-      }
-    }
-  };
-
-  const formatDate = (isoString) => {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader className="size-8 animate-spin text-blue-500" />
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -64,68 +15,39 @@ const Packages = () => {
         mainHead="Created Packages"
         subText={`${goniDetails.length} Packages`}
       />
-      <div className="mt-5">
-        {goniDetails &&
-          goniDetails.map((goni) => (
-            <div
-              key={goni._id}
-              className="flex items-center rounded-xl bg-white shadow-sm px-4 py-2 mb-2.5 justify-between cursor-pointer  hover:shadow-gray-400"
-            >
-              <div className="">
-                <p className="font-medium">{goni.goniName}</p>
-                <div className="mt-1 flex items-center">
-                  <span className="text-xs text-gray-500 mr-1">Company : </span>{" "}
-                  <span className="text-sm font-medium text-blue-600 bg-blue-50 px-1 py-0.5 rounded-md">
-                    {goni.companyId.companyCode}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Tooltip text="Edit Package">
-                  <Pencil
-                    size={20}
-                    className="text-gray-500 hover:text-blue-500 cursor-pointer"
-                  />
-                </Tooltip>
-                <Tooltip text="Delete Package">
-                  <Trash2
-                    size={20}
-                    className="text-gray-500 hover:text-red-500 cursor-pointer"
-                    onClick={() => handleDeleteGoni(goni)}
-                  />
-                </Tooltip>
-                <Tooltip text="View Package">
-                  <ChevronRight
-                    size={20}
-                    className="text-black cursor-pointer"
-                  />
-                </Tooltip>
-              </div>
-            </div>
-          ))}
+
+      <div className="w-full flex mt-2.5">
+        <div className="flex-1">
+          <button
+            onClick={() => setActiveTab("created")}
+            className={`w-full text-center p-2.5 ${
+              activeTab === "created"
+                ? "bg-blue-300 border-1 border-gray-200 text-lg font-medium text-white"
+                : "text-gray-500 cursor-pointer"
+            }`}
+          >
+            Created Packages
+          </button>
+        </div>
+        <div className="flex-1">
+          <button
+            onClick={() => setActiveTab("details")}
+            className={`w-full text-center p-2.5 ${
+              activeTab === "details"
+                ? "bg-blue-300 border-1 border-gray-200 text-lg font-medium text-white"
+                : "text-gray-500 cursor-pointer"
+            }`}
+          >
+            Package Details
+          </button>
+        </div>
       </div>
-      <button
-        onClick={() => setShowCreateForm(true)}
-        className="fixed right-10 bottom-10 bg-black text-white p-3 rounded-full cursor-pointer hover:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-200 z-40"
-      >
-        <Plus size={24} />
-      </button>
 
-      {showCreateForm && (
-        <div className="fixed flex inset-0 items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
-          <CreatePackageForm setShowCreateForm={setShowCreateForm} />
-        </div>
-      )}
+      <div className="mt-4">
+        {activeTab === "created" && <CreatePackages />}
 
-      {showDelete && selectedGoni && (
-        <div className="fixed flex inset-0 items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
-          <ConfirmAlert
-            alertInfo={`Do you want to delete ${selectedGoni.goniName}?`}
-            handleClose={() => setShowDelete(false)}
-            handleSubmit={handleConfirmDelete}
-          />
-        </div>
-      )}
+        {activeTab === "details" && <PackageDetails />}
+      </div>
     </div>
   );
 };

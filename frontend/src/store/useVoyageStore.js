@@ -5,6 +5,7 @@ import { useAuthStore } from "./useAuthStore.js";
 
 export const useVoyageStore = create((set, get) => ({
     voyages: [],
+    allVoyagesByBranch: [],
     isVoyagesLoading: false,
     isCreateVoyage: false,
     voyageDetails: null,
@@ -321,6 +322,20 @@ export const useVoyageStore = create((set, get) => ({
             toast.error(errorMessage);
             throw error;
 
+        }
+    },
+
+    getAllVoyagesByBranch: async (branchId) => {
+        set({ isVoyagesLoading: true });
+        try {
+            const response = await axiosInstance.get(`voyage/${branchId}/get-all-voyage`);
+
+            set({ allVoyagesByBranch: response.data, isVoyagesLoading: false, error: null })
+
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || "Failed to get voyage details";
+            toast.error(errorMessage);
+            throw error;
         }
     }
 

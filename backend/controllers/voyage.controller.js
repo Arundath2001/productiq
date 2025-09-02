@@ -1507,3 +1507,20 @@ export const getUploadedProductDetails = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 }
+
+export const getAllVoyagesByBranch = async (req, res) => {
+    try {
+
+        const { branchId } = req.params;
+
+
+        const voyages = await Voyage.find({ branchId: branchId }).sort({ createdAt: -1 });
+
+        res.status(200).json(voyages);
+
+
+    } catch (error) {
+        console.error("Error fetching getVoyages details:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
