@@ -28,29 +28,36 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
 
     // Smart product code sorting function
     const smartProductCodeSort = (a, b) => {
-        const extractNumericPart = (code) => {
-            // Handle formats like MK-005, MK-0100, etc.
+        const extractParts = (code) => {
             const parts = code.split('-');
-            return parts[parts.length - 1]; // Get the part after the last dash
+            return {
+                prefix: parts[0], // MK, ROZA, etc.
+                number: parts[parts.length - 1] // The numeric part after the last dash
+            };
         };
 
-        const aNum = extractNumericPart(a.productCode);
-        const bNum = extractNumericPart(b.productCode);
+        const aParts = extractParts(a.productCode);
+        const bParts = extractParts(b.productCode);
 
-        // First priority: Sort by digit length (groups 3-digit, 4-digit, 5-digit together)
-        if (aNum.length !== bNum.length) {
-            return aNum.length - bNum.length;
+        // First priority: Sort by prefix (MK before ROZA)
+        if (aParts.prefix !== bParts.prefix) {
+            return aParts.prefix.localeCompare(bParts.prefix);
         }
 
-        // Second priority: Within same length, sort numerically
-        const aNumValue = parseInt(aNum, 10);
-        const bNumValue = parseInt(bNum, 10);
+        // Second priority: Sort by digit length (groups 3-digit, 4-digit, 5-digit together)
+        if (aParts.number.length !== bParts.number.length) {
+            return aParts.number.length - bParts.number.length;
+        }
+
+        // Third priority: Within same prefix and length, sort numerically
+        const aNumValue = parseInt(aParts.number, 10);
+        const bNumValue = parseInt(bParts.number, 10);
 
         if (aNumValue !== bNumValue) {
             return aNumValue - bNumValue;
         }
 
-        // Fallback: If numbers are same, sort alphabetically by full code
+        // Fallback: If everything is same, sort alphabetically by full code
         return a.productCode.localeCompare(b.productCode);
     };
 
