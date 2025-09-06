@@ -246,6 +246,9 @@ export const getVoyage = async (req, res) => {
     try {
         const { voyageId } = req.params;
 
+        console.log("voayge id", voyageId);
+
+
         const voyage = await Voyage.findById(voyageId)
             .populate("createdBy", "username")
             .populate("uploadedProducts");
