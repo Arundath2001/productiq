@@ -78,14 +78,14 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
     };
 
     const customCompanySort = (a, b) => {
-        const specialCompanies = ['FL', 'Black Tiger'];
+        const specialCompanies = ['FL', 'BLACK TIGER'];
 
         const aIsSpecial = specialCompanies.includes(a);
         const bIsSpecial = specialCompanies.includes(b);
 
         if (aIsSpecial && bIsSpecial) {
-            if (a === 'FL' && b === 'Black Tiger') return -1;
-            if (a === 'Black Tiger' && b === 'FL') return 1;
+            if (a === 'FL' && b === 'BLACK TIGER') return -1;
+            if (a === 'BLACK TIGER' && b === 'FL') return 1;
             return 0;
         }
 
