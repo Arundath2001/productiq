@@ -26,6 +26,34 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         return acc;
     }, {});
 
+    // Smart product code sorting function
+    const smartProductCodeSort = (a, b) => {
+        const extractNumericPart = (code) => {
+            // Handle formats like MK-005, MK-0100, etc.
+            const parts = code.split('-');
+            return parts[parts.length - 1]; // Get the part after the last dash
+        };
+
+        const aNum = extractNumericPart(a.productCode);
+        const bNum = extractNumericPart(b.productCode);
+
+        // First priority: Sort by digit length (groups 3-digit, 4-digit, 5-digit together)
+        if (aNum.length !== bNum.length) {
+            return aNum.length - bNum.length;
+        }
+
+        // Second priority: Within same length, sort numerically
+        const aNumValue = parseInt(aNum, 10);
+        const bNumValue = parseInt(bNum, 10);
+
+        if (aNumValue !== bNumValue) {
+            return aNumValue - bNumValue;
+        }
+
+        // Fallback: If numbers are same, sort alphabetically by full code
+        return a.productCode.localeCompare(b.productCode);
+    };
+
     // Convert to flat array grouped by company
     const filteredData = [];
     Object.keys(groupedByCompany)
@@ -36,7 +64,7 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
                     ...item,
                     weight: Math.round(item.weight * 100) / 100
                 }))
-                .sort((a, b) => a.productCode.localeCompare(b.productCode));
+                .sort(smartProductCodeSort); // Use smart sorting instead of localeCompare
 
             filteredData.push(...companyProducts);
         });
@@ -45,7 +73,7 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Voyage Data');
 
-    // Define columns with Arabic headers including Client Company
+    // Define columns with Arabic headers - removed 'NO:' column
     worksheet.columns = [
         { header: 'SL', key: 'sl', width: 5 },
         // { header: 'CLIENT\nCOMPANY\n(شركة العميل)', key: 'clientCompany', width: 15 },
@@ -53,7 +81,6 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         { header: 'PART NO', key: 'partNo', width: 15 },
         { header: 'DESC. (وصف)', key: 'desc', width: 20 },
         { header: 'QTY(\nكمية)', key: 'qty', width: 8 },
-        { header: 'NO:', key: 'no', width: 8 },
         { header: 'BSH/REF\nNO: (فاتورة أسواق)\nرقم', key: 'bshRef', width: 15 },
         { header: 'ASWAQ INV\n(الوزن بالكيلو)', key: 'aswaqInv', width: 12 },
         { header: 'WEIGHT IN KG\n(السعر\nللكيلو)', key: 'weight', width: 12 },
@@ -109,7 +136,6 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
                 partNo: '',
                 desc: '',
                 qty: '',
-                no: '',
                 bshRef: '',
                 aswaqInv: '',
                 weight: '',
@@ -143,7 +169,7 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         // Update current company
         currentCompany = item.clientCompany;
 
-        // Add the data row
+        // Add the data row - removed 'no' field
         const dataRow = worksheet.addRow({
             sl: serialNumber++,
             // clientCompany: item.clientCompany,
@@ -151,7 +177,6 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
             partNo: '',
             desc: '',
             qty: item.quantity,
-            no: '',
             bshRef: '',
             aswaqInv: '',
             weight: item.weight,
