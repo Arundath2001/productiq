@@ -1,11 +1,29 @@
-// Install: npm install exceljs
 import ExcelJS from 'exceljs';
 
 export const exportVoyageData = async (data, voyageName = null, voyageId = null) => {
-    // First group by clientCompany, then by productCode
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        console.error('Invalid or empty data provided');
+        return;
+    }
+
     const groupedByCompany = data.reduce((acc, item) => {
-        const company = item.clientCompany || 'Unknown';
-        const productCode = item.productCode;
+        let company = (item.clientCompany || 'Unknown').toString().trim();
+        const productCode = (item.productCode || '').toString().trim();
+
+        if (!productCode) {
+            return acc;
+        }
+
+        // FIXED: Remove the T-Series grouping logic - keep each company separate
+        // This was causing T336 and T2898 to be grouped together
+        // if (company === productCode && (company.startsWith('T') || /^[A-Z]\d+$/.test(company))) {
+        //     company = 'T-Series';
+        // }
+
+        // Instead, if company equals productCode, use the productCode as the company name
+        if (company === productCode) {
+            company = productCode;
+        }
 
         if (!acc[company]) {
             acc[company] = {};
@@ -26,80 +44,116 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         return acc;
     }, {});
 
-    // Smart product code sorting function
     const smartProductCodeSort = (a, b) => {
-        const codeA = a.productCode;
-        const codeB = b.productCode;
+        const codeA = a.productCode.toString().trim();
+        const codeB = b.productCode.toString().trim();
 
-        // First priority: Sort by character length (shorter first)
-        if (codeA.length !== codeB.length) {
-            return codeA.length - codeB.length;
+        // Extract the first alphabetical character
+        const firstCharA = codeA.charAt(0).toUpperCase();
+        const firstCharB = codeB.charAt(0).toUpperCase();
+
+        // First sort by the first character (A, B, C, ..., Z)
+        if (firstCharA !== firstCharB) {
+            return firstCharA.localeCompare(firstCharB);
         }
 
-        // Second priority: Within same length, sort alphabetically
-        return codeA.localeCompare(codeB);
+        // If same first character, extract the numeric part for proper sorting
+        const numericPartA = codeA.substring(1); // Get everything after first character
+        const numericPartB = codeB.substring(1);
+
+        // Convert to numbers for comparison if they're numeric
+        const numA = parseInt(numericPartA, 10);
+        const numB = parseInt(numericPartB, 10);
+
+        // If both are valid numbers, sort numerically
+        if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB;
+        }
+
+        // If not numeric, fall back to string comparison
+        return codeA.localeCompare(codeB, undefined, {
+            sensitivity: 'base',  // Case insensitive
+            numeric: true         // Handle mixed alphanumeric codes
+        });
     };
 
-    // Custom company sorting function
     const customCompanySort = (a, b) => {
-        // Define the special companies that should be at the bottom
         const specialCompanies = ['FL', 'Black Tiger'];
 
         const aIsSpecial = specialCompanies.includes(a);
         const bIsSpecial = specialCompanies.includes(b);
 
-        // If both are special companies, sort FL before Black Tiger
         if (aIsSpecial && bIsSpecial) {
             if (a === 'FL' && b === 'Black Tiger') return -1;
             if (a === 'Black Tiger' && b === 'FL') return 1;
             return 0;
         }
 
-        // If only one is special, put the special one at the end
         if (aIsSpecial && !bIsSpecial) return 1;
         if (!aIsSpecial && bIsSpecial) return -1;
 
-        // If neither is special, sort alphabetically
-        return a.localeCompare(b);
+        // For non-special companies, apply the same smart sorting logic
+        // Extract the first alphabetical character
+        const firstCharA = a.charAt(0).toUpperCase();
+        const firstCharB = b.charAt(0).toUpperCase();
+
+        // First sort by the first character (A, B, C, ..., Z)
+        if (firstCharA !== firstCharB) {
+            return firstCharA.localeCompare(firstCharB);
+        }
+
+        // If same first character, extract the numeric part for proper sorting
+        const numericPartA = a.substring(1);
+        const numericPartB = b.substring(1);
+
+        // Convert to numbers for comparison if they're numeric
+        const numA = parseInt(numericPartA, 10);
+        const numB = parseInt(numericPartB, 10);
+
+        // If both are valid numbers, sort numerically (T336 before T2898)
+        if (!isNaN(numA) && !isNaN(numB)) {
+            return numA - numB;
+        }
+
+        // If not numeric, fall back to string comparison
+        return a.localeCompare(b, undefined, {
+            sensitivity: 'base',
+            numeric: true
+        });
     };
 
-    // Convert to flat array grouped by company with custom sorting
     const filteredData = [];
-    Object.keys(groupedByCompany)
-        .sort(customCompanySort) // Use custom sorting instead of default sort
-        .forEach(company => {
-            const companyProducts = Object.values(groupedByCompany[company])
-                .map(item => ({
-                    ...item,
-                    weight: Math.round(item.weight * 100) / 100
-                }))
-                .sort(smartProductCodeSort); // Use smart sorting instead of localeCompare
+    const sortedCompanies = Object.keys(groupedByCompany).sort(customCompanySort);
 
-            filteredData.push(...companyProducts);
-        });
+    sortedCompanies.forEach(company => {
+        const companyProducts = Object.values(groupedByCompany[company])
+            .map(item => ({
+                ...item,
+                weight: Math.round(item.weight * 100) / 100
+            }))
+            .sort(smartProductCodeSort);
 
-    // Create workbook and worksheet
+        filteredData.push(...companyProducts);
+    });
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Voyage Data');
 
-    // Define columns with Arabic headers - removed 'NO:' column
     worksheet.columns = [
         { header: 'SL', key: 'sl', width: 5 },
-        // { header: 'CLIENT\nCOMPANY\n(شركة العميل)', key: 'clientCompany', width: 15 },
         { header: 'MARK\n(علامة)', key: 'mark', width: 12 },
         { header: 'PART NO', key: 'partNo', width: 15 },
         { header: 'DESC. (وصف)', key: 'desc', width: 20 },
         { header: 'QTY(\nكمية)', key: 'qty', width: 8 },
         { header: 'BSH/REF\nNO: (فاتورة أسواق)\nرقم', key: 'bshRef', width: 15 },
         { header: 'ASWAQ INV\n(الوزن بالكيلو)', key: 'aswaqInv', width: 12 },
-        { header: 'WEIGHT IN KG\n(السعر\nللكيلو)', key: 'weight', width: 12 },
+        { header: 'WEIGHT IN KG\n(الوزن بالكيلو)', key: 'weight', width: 12 },
         { header: 'PRICE PER\nKG(السعر\nللكيلو)', key: 'pricePerKg', width: 12 },
         { header: 'SHIPPING\nCOST (إجمالي\nتكلفة الشحن)', key: 'shippingCost', width: 12 },
         { header: 'TOTAL\nCTN\nNO:(رقم\nالكرتون)', key: 'totalCtn', width: 10 },
         { header: 'TOTAL NO\nOF\nCTN:(العدد\nالإجمالي\nللكرتون)', key: 'totalNoCtn', width: 12 }
     ];
 
-    // Style the header row
     const headerRow = worksheet.getRow(1);
     headerRow.height = 60;
 
@@ -107,13 +161,13 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         cell.font = {
             bold: true,
             size: 10,
-            name: 'Arial' // Good for Arabic text
+            name: 'Arial'
         };
         cell.alignment = {
             horizontal: 'center',
             vertical: 'middle',
             wrapText: true,
-            readingOrder: 'contextDependent' // Important for mixed RTL/LTR
+            readingOrder: 'contextDependent'
         };
         cell.border = {
             top: { style: 'thin' },
@@ -124,11 +178,10 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         cell.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FFFFFFFF' } // White background
+            fgColor: { argb: 'FFFFFFFF' }
         };
     });
 
-    // Add data rows grouped by company with blank rows between companies
     let currentCompany = null;
     let serialNumber = 1;
 
@@ -140,7 +193,6 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         if (isNewCompany && currentCompany !== null) {
             const blankRow = worksheet.addRow({
                 sl: '',
-                // clientCompany: '',
                 mark: '',
                 partNo: '',
                 desc: '',
@@ -178,10 +230,9 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         // Update current company
         currentCompany = item.clientCompany;
 
-        // Add the data row - removed 'no' field
+        // Add the data row
         const dataRow = worksheet.addRow({
             sl: serialNumber++,
-            // clientCompany: item.clientCompany,
             mark: item.productCode,
             partNo: '',
             desc: '',
@@ -216,7 +267,6 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         });
     });
 
-    // Generate filename
     let filename = 'voyage_data.xlsx';
     if (voyageName) {
         const cleanVoyageName = voyageName.replace(/[<>:"/\\|?*]/g, '_');
@@ -225,14 +275,20 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         filename = `voyage_${voyageId}_data.xlsx`;
     }
 
-    // Write file
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    try {
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
-    // Download file
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(link.href);
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+
+        console.log('Excel file downloaded successfully:', filename);
+    } catch (error) {
+        console.error('Error generating Excel file:', error);
+    }
 };
