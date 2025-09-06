@@ -2,7 +2,6 @@ import ExcelJS from 'exceljs';
 
 export const exportVoyageData = async (data, voyageName = null, voyageId = null) => {
     if (!data || !Array.isArray(data) || data.length === 0) {
-        console.error('Invalid or empty data provided');
         return;
     }
 
@@ -14,13 +13,6 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
             return acc;
         }
 
-        // FIXED: Remove the T-Series grouping logic - keep each company separate
-        // This was causing T336 and T2898 to be grouped together
-        // if (company === productCode && (company.startsWith('T') || /^[A-Z]\d+$/.test(company))) {
-        //     company = 'T-Series';
-        // }
-
-        // Instead, if company equals productCode, use the productCode as the company name
         if (company === productCode) {
             company = productCode;
         }
@@ -48,74 +40,56 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         const codeA = a.productCode.toString().trim();
         const codeB = b.productCode.toString().trim();
 
-        // Extract the first alphabetical character
         const firstCharA = codeA.charAt(0).toUpperCase();
         const firstCharB = codeB.charAt(0).toUpperCase();
 
-        // First sort by the first character (A, B, C, ..., Z)
         if (firstCharA !== firstCharB) {
             return firstCharA.localeCompare(firstCharB);
         }
 
-        // If same first character, extract the numeric part for proper sorting
-        const numericPartA = codeA.substring(1); // Get everything after first character
-        const numericPartB = codeB.substring(1);
-
-        // Convert to numbers for comparison if they're numeric
-        const numA = parseInt(numericPartA, 10);
-        const numB = parseInt(numericPartB, 10);
-
-        // If both are valid numbers, sort numerically
-        if (!isNaN(numA) && !isNaN(numB)) {
-            return numA - numB;
+        if (codeA.length !== codeB.length) {
+            return codeA.length - codeB.length;
         }
 
-        // If not numeric, fall back to string comparison
         return codeA.localeCompare(codeB, undefined, {
-            sensitivity: 'base',  // Case insensitive
-            numeric: true         // Handle mixed alphanumeric codes
+            sensitivity: 'base',
+            numeric: true,
+            caseFirst: 'upper'
         });
     };
 
     const customCompanySort = (a, b) => {
-        const specialCompanies = ['FL', 'BLACK TIGER'];
+        const specialCompanies = ['FL', 'Black Tiger'];
 
         const aIsSpecial = specialCompanies.includes(a);
         const bIsSpecial = specialCompanies.includes(b);
 
         if (aIsSpecial && bIsSpecial) {
-            if (a === 'FL' && b === 'BLACK TIGER') return -1;
-            if (a === 'BLACK TIGER' && b === 'FL') return 1;
+            if (a === 'FL' && b === 'Black Tiger') return -1;
+            if (a === 'Black Tiger' && b === 'FL') return 1;
             return 0;
         }
 
         if (aIsSpecial && !bIsSpecial) return 1;
         if (!aIsSpecial && bIsSpecial) return -1;
 
-        // For non-special companies, apply the same smart sorting logic
-        // Extract the first alphabetical character
         const firstCharA = a.charAt(0).toUpperCase();
         const firstCharB = b.charAt(0).toUpperCase();
 
-        // First sort by the first character (A, B, C, ..., Z)
         if (firstCharA !== firstCharB) {
             return firstCharA.localeCompare(firstCharB);
         }
 
-        // If same first character, extract the numeric part for proper sorting
         const numericPartA = a.substring(1);
         const numericPartB = b.substring(1);
 
-        // Convert to numbers for comparison if they're numeric
         const numA = parseInt(numericPartA, 10);
         const numB = parseInt(numericPartB, 10);
 
-        // If both are valid numbers, sort numerically (T336 before T2898)
         if (!isNaN(numA) && !isNaN(numB)) {
             return numA - numB;
         }
 
-        // If not numeric, fall back to string comparison
         return a.localeCompare(b, undefined, {
             sensitivity: 'base',
             numeric: true
@@ -186,10 +160,8 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
     let serialNumber = 1;
 
     filteredData.forEach((item, index) => {
-        // Check if we're starting a new company group
         const isNewCompany = currentCompany !== item.clientCompany;
 
-        // Add blank row before new company (except for the first company)
         if (isNewCompany && currentCompany !== null) {
             const blankRow = worksheet.addRow({
                 sl: '',
@@ -206,7 +178,6 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
                 totalNoCtn: ''
             });
 
-            // Style blank row
             blankRow.height = 20;
             blankRow.eachCell((cell) => {
                 cell.border = {
@@ -227,10 +198,8 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
             });
         }
 
-        // Update current company
         currentCompany = item.clientCompany;
 
-        // Add the data row
         const dataRow = worksheet.addRow({
             sl: serialNumber++,
             mark: item.productCode,
@@ -246,7 +215,6 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
             totalNoCtn: ''
         });
 
-        // Style data rows
         dataRow.height = 25;
         dataRow.eachCell((cell) => {
             cell.border = {
@@ -286,9 +254,7 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
-
-        console.log('Excel file downloaded successfully:', filename);
     } catch (error) {
-        console.error('Error generating Excel file:', error);
+        throw new Error(`Failed to generate Excel file: ${error.message}`);
     }
 };
