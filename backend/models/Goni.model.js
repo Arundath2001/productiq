@@ -15,6 +15,11 @@ const goniSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true,
         ref: 'User'
+    },
+    branchId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'Branch'
     }
 }, {
     timestamps: true

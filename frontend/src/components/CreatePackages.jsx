@@ -5,22 +5,25 @@ import {
   ArrowRightCircle,
   ChevronRight,
   Loader,
+  PackageX,
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
 import Tooltip from "./Tooltip";
 import CreatePackageForm from "./CreatePackageForm";
+import { useAuthStore } from "../store/useAuthStore";
 
 const CreatePackages = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [selectedGoni, setSelectedGoni] = useState(null);
   const { goniDetails, isLoading, error, getGonies, deleteGoni } = useGoni();
+  const { authUser } = useAuthStore();
 
   useEffect(() => {
-    getGonies();
-  }, []);
+    getGonies(authUser.branchId);
+  }, [authUser]);
 
   const handleDeleteGoni = (goni) => {
     setSelectedGoni(goni);
@@ -30,7 +33,10 @@ const CreatePackages = () => {
   const handleConfirmDelete = async () => {
     if (selectedGoni) {
       try {
-        await deleteGoni({ goniId: selectedGoni._id });
+        await deleteGoni({
+          goniId: selectedGoni._id,
+          branchId: authUser.branchId,
+        });
 
         setShowDelete(false);
         setSelectedGoni(null);
@@ -60,7 +66,7 @@ const CreatePackages = () => {
   return (
     <div>
       <div className="mt-5">
-        {goniDetails &&
+        {goniDetails && goniDetails.length > 0 ? (
           goniDetails.map((goni) => (
             <div
               key={goni._id}
@@ -97,7 +103,25 @@ const CreatePackages = () => {
                 </Tooltip> */}
               </div>
             </div>
-          ))}
+          ))
+        ) : (
+          <div className="flex flex-col min-h-[70vh] justify-center items-center">
+            <PackageX size={64} className="text-gray-400 mb-4" />
+            <h2 className="text-lg font-semibold text-gray-700">
+              No Packages Found
+            </h2>
+            <p className="text-sm text-gray-500 mb-4">
+              You haven’t created any packages yet. Click below to get started.
+            </p>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="flex items-center gap-2 cursor-pointer bg-black text-white px-4 py-2 rounded-lg shadow hover:bg-gray-800 transition-all duration-200"
+            >
+              <Plus className="text-white" size={20} />
+              Create Package
+            </button>
+          </div>
+        )}
       </div>
       <button
         onClick={() => setShowCreateForm(true)}

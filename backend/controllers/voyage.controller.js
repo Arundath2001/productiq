@@ -1527,3 +1527,24 @@ export const getAllVoyagesByBranch = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const getPendingVoyageDetails = async (req, res) => {
+    try {
+        const { branchId } = req.params;
+
+        const pendingVoyageDetails = await Voyage.find({ status: 'pending', branchId: branchId }, { _id: 1, voyageNumber: 1 });
+
+        if (!pendingVoyageDetails) {
+            return res.status(400).json({ message: 'There is no pending voyages in this branch' });
+        }
+
+        res.status(200).json({ message: 'Pending voyages fetched successfully for this branch', pendingVoyageDetails });
+
+    } catch (error) {
+
+        console.log("Error in getPendingVoyageDetails controller", error.message);
+
+        res.status(500).json({ message: "Inernal server error" });
+
+    }
+}

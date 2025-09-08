@@ -1,7 +1,13 @@
 import { ChevronDown, XCircleIcon } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 
-const SearchableDropdown = ({ label, placeholder, options = [], onSelect }) => {
+const SearchableDropdown = ({
+  label,
+  placeholder,
+  options = [],
+  onSelect,
+  LabelIcon,
+}) => {
   const [dropOpen, setDropOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItem, setSelectedItem] = useState("");
@@ -30,7 +36,10 @@ const SearchableDropdown = ({ label, placeholder, options = [], onSelect }) => {
 
   return (
     <div className="w-full flex flex-col" ref={dropdownRef}>
-      <label className="text-[12px] text-gray-400">{label}</label>
+      <div className="flex items-center gap-2 font-medium text-sm text-gray-500">
+        {LabelIcon && <LabelIcon className="w-4 h-4 text-blue-500" />}
+        {label}
+      </div>
       <div className="relative">
         <div
           onClick={() => setDropOpen(!dropOpen)}

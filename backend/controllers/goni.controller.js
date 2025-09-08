@@ -2,9 +2,9 @@ import Goni from "../models/Goni.model.js";
 
 export const createGoni = async (req, res) => {
     try {
-        const { goniName, companyId } = req.body;
+        const { goniName, companyId, branchId } = req.body;
 
-        if (!goniName || !companyId) {
+        if (!goniName || !companyId || !branchId) {
             return res.status(400).json({ message: "Goni Name and Company Code are required field!" });
         }
 
@@ -17,7 +17,8 @@ export const createGoni = async (req, res) => {
         const newGoni = new Goni({
             goniName,
             companyId,
-            createdBy: req.user._id
+            createdBy: req.user._id,
+            branchId: branchId
         });
 
         await newGoni.save();
@@ -32,7 +33,10 @@ export const createGoni = async (req, res) => {
 
 export const getGoniDetails = async (req, res) => {
     try {
-        const gonies = await Goni.find().populate('createdBy', 'username').populate('companyId', 'companyCode');
+        const { branchId } = req.params;
+        console.log(branchId);
+
+        const gonies = await Goni.find({ branchId }).populate('createdBy', 'username').populate('companyId', 'companyCode');
 
         res.status(200).json({ message: "Goni fetched successfully", gonies });
     } catch (error) {

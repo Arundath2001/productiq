@@ -21,13 +21,13 @@ export const getPackagesByGoniAndVoyage = async (req, res) => {
 
 export const createPackage = async (req, res) => {
     try {
-        const { voyageId, goniId, goniNumber } = req.body;
+        const { voyageId, goniId, goniNumber, branchId } = req.body;
 
-        if (!voyageId || !goniId || !goniNumber) {
+        if (!voyageId || !goniId || !goniNumber || !branchId) {
             return res.status(400).json({ message: "All are required fields!" });
         }
 
-        const exisitngPackage = await Package.findOne({ voyageId, goniId, goniNumber }).populate('goniId', 'goniName');
+        const exisitngPackage = await Package.findOne({ voyageId, goniId, goniNumber, branchId }).populate('goniId', 'goniName');
 
         if (exisitngPackage) {
             return res.status(400).json({ message: `${exisitngPackage.goniId.goniName} with Goni ${goniNumber} already exists for this voyage` });
@@ -38,7 +38,8 @@ export const createPackage = async (req, res) => {
             goniId,
             goniNumber: parseInt(goniNumber),
             packagedBy: req.user.id,
-            products: []
+            products: [],
+            branchId
         });
 
         await newPackage.save();
@@ -160,3 +161,40 @@ export const packageDetailsByVoyageAndCompany = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const removeProductFromPackage = async (req, res) => {
+    try {
+        const { packageId } = req.params;
+        const { productId } = req.body;
+
+        console.log(packageId, "packageidddddddddddd", productId, "productiddddddddddddd");
+
+
+        if (!productId) {
+            return res.status(400).json({ message: "ProductId is required!" });
+        }
+
+        const product = await UploadedProduct.findById(productId);
+
+        if (!product) {
+            return res.status(400).json({ message: "Product not found!" });
+        }
+
+        const updatedPackage = await Package.findOneAndUpdate(
+            { _id: packageId, products: productId },
+            { $pull: { products: productId } },
+            { new: true }
+        ).populate('products', 'productCode sequenceNumber trackingNumber')
+            .populate('goniId', 'goniName')
+            .populate('voyageId');
+
+        res.status(200).json({
+            message: "Product removed from package successfully",
+            package: updatedPackage
+        });
+
+    } catch (error) {
+        console.log("Error in removeProductFromPackage controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}

@@ -7,12 +7,12 @@ export const useGoni = create((set, get) => ({
     isLoading: true,
     error: null,
 
-    getGonies: async () => {
+    getGonies: async (branchId) => {
 
         set({ isLoading: true });
 
         try {
-            const response = await axiosInstance.get('/goni/goni-details');
+            const response = await axiosInstance.get(`/goni/${branchId}/goni-details`);
 
             set({
                 goniDetails: response.data.gonies,
@@ -44,7 +44,7 @@ export const useGoni = create((set, get) => ({
 
             const response = await axiosInstance.post('/goni/create', goniData);
 
-            await get().getGonies();
+            await get().getGonies(goniData.branchId);
 
             set({
                 isLoading: false,
@@ -67,13 +67,13 @@ export const useGoni = create((set, get) => ({
         }
     },
 
-    deleteGoni: async ({ goniId }) => {
+    deleteGoni: async ({ goniId, branchId }) => {
         set({ isLoading: true });
 
         try {
             const response = await axiosInstance.delete(`/goni/${goniId}/delete`);
 
-            await get().getGonies();
+            await get().getGonies(branchId);
 
             set({
                 isLoading: false,

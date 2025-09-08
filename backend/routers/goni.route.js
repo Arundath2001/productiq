@@ -6,7 +6,7 @@ import { protectRoute } from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 router.post('/create', protectRoute, createGoni);
-router.get('/goni-details', protectRoute, getGoniDetails);
+router.get('/:branchId/goni-details', protectRoute, getGoniDetails);
 router.delete('/:goniId/delete', protectRoute, deleteGoni);
 
 export default router;

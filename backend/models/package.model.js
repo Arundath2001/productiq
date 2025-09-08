@@ -11,6 +11,11 @@ const packageSchema = mongoose.Schema({
         ref: "Goni",
         required: true
     },
+    branchId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Branch",
+        required: true
+    },
     goniNumber: {
         type: Number,
         required: true

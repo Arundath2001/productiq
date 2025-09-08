@@ -4,7 +4,15 @@ import { useCompanyStore } from "../store/useCompanyStore";
 import { useVoyageStore } from "../store/useVoyageStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { usePackage } from "../store/usePackageStore";
-import { ChevronRight, Download, FileSpreadsheet, Loader } from "lucide-react";
+import {
+  Building,
+  Building2,
+  ChevronRight,
+  Download,
+  FileSpreadsheet,
+  Loader,
+  PlaneTakeoff,
+} from "lucide-react";
 import Tooltip from "./Tooltip";
 import { useNavigate } from "react-router-dom";
 import {
@@ -80,27 +88,37 @@ const PackageDetails = () => {
   return (
     <div>
       <div className="flex gap-2.5 bg-white p-5 shadow-sm items-center">
-        <SearchableDropdown
-          label="Client Company"
-          placeholder="Select client"
-          options={companyOptions}
-          onSelect={handleSelectCompany}
-          value={selectedCompany}
-        />
-        <SearchableDropdown
-          label="Voyage Number"
-          placeholder="Select Voyage"
-          options={VoyageOptions}
-          onSelect={handleSelectVoyage}
-          value={selectedVoyage}
-        />
-        <Tooltip text="Export to Excel">
+        <div className="flex-1">
+          <SearchableDropdown
+            label="Client Company"
+            placeholder="Select client"
+            options={companyOptions}
+            onSelect={handleSelectCompany}
+            value={selectedCompany}
+            LabelIcon={Building2}
+          />
+        </div>
+
+        <div className="flex-1">
+          <SearchableDropdown
+            label="Voyage Number"
+            placeholder="Select Voyage"
+            options={VoyageOptions}
+            onSelect={handleSelectVoyage}
+            value={selectedVoyage}
+            LabelIcon={PlaneTakeoff}
+          />
+        </div>
+
+        <Tooltip text="Export packages to Excel">
           <button
             onClick={handleExportToExcel}
             disabled={!packages || packages.length === 0}
-            className="text-green-500 hover:text-green-700 cursor-pointer"
+            className="flex items-center gap-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg px-2 py-4 font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-600 hover:to-emerald-600 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <FileSpreadsheet size={30} />
+            <FileSpreadsheet size={20} />
+            <span>Export Excel</span>
+            <Download size={20} />
           </button>
         </Tooltip>
       </div>

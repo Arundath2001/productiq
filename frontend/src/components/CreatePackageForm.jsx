@@ -6,11 +6,13 @@ import SolidButton from "./SolidButton";
 import Tooltip from "./Tooltip";
 import { useCompanyStore } from "../store/useCompanyStore";
 import { useGoni } from "../store/useGoniStore";
+import { useAuthStore } from "../store/useAuthStore";
 
 const CreatePackageForm = ({ setShowCreateForm }) => {
   const { companies, getAllCompanies } = useCompanyStore();
   const { createGoni, isLoading } = useGoni();
   // const { selectedCompany, setSelectedCompany } = useCompanyStore();
+  const { authUser } = useAuthStore();
 
   const [packageName, setPackageName] = useState("");
   const [selectedCompany, setSelectedCompany] = useState("");
@@ -33,6 +35,7 @@ const CreatePackageForm = ({ setShowCreateForm }) => {
       await createGoni({
         goniName: packageName,
         companyId: selectedCompany.id,
+        branchId: authUser.branchId,
       });
 
       setShowCreateForm(false);
