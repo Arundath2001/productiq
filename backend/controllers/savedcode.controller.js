@@ -34,7 +34,7 @@ export const saveProductCode = async (req, res) => {
 
 export const getSavedProductCode = async (req, res) => {
     try {
-        const savedCodes = await SavedCode.find({}).populate("savedBy", "username");
+        const savedCodes = await SavedCode.find({}).populate("savedBy", "username").sort({ productCode: 1 });
 
         if (!savedCodes.length) {
             return res.status(400).json({ message: "No saved product code found" })
