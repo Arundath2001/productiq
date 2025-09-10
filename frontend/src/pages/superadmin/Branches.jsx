@@ -4,6 +4,7 @@ import { Loader } from "lucide-react";
 import PageHeader from "../../components/PageHeader.jsx";
 import CreateBranch from "../../components/CreateBranch.jsx";
 import { useNavigate } from "react-router-dom";
+import BranchForm from "../../components/BranchForm.jsx";
 
 const Branches = () => {
   const { branchDetails, getBranches, error, isLoading } = useBranch();
@@ -72,7 +73,7 @@ const Branches = () => {
       </div>
       {showCreateBranch && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
-          <CreateBranch setShowCreateBranch={setShowCreateBranch} />
+          <BranchForm setShowCreateBranch={setShowCreateBranch} />
         </div>
       )}
     </div>

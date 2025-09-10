@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
 import { useVoyageStore } from "../store/useVoyageStore.js";
-import { Loader } from "lucide-react";
+import { Image, Loader } from "lucide-react";
 import { FaTrash } from "react-icons/fa";
 import ConfirmAlert from "../components/ConfirmAlert.jsx";
 import images from "../lib/images.js";
+import ImagePreview from "../components/ImagePreview.jsx";
 
 const VoyageDetails = () => {
   const { voyageId, companyCode } = useParams();
@@ -18,6 +19,10 @@ const VoyageDetails = () => {
   } = useVoyageStore();
 
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedProductCode, setSelectedProductCode] = useState(null);
+  const [selectedQuantityNumber, setSelectedQuantityNumber] = useState(null);
   const [selectedDataId, setSelectedDataId] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,12 +67,19 @@ const VoyageDetails = () => {
     setShowConfirm(true);
   };
 
+  const handleShowImagePreview = (image, productCode, quantityNumber) => {
+    setSelectedImage(image);
+    setSelectedProductCode(productCode);
+    setSelectedQuantityNumber(quantityNumber);
+    setShowImagePreview(true);
+  };
+
   const handleDeleteVoyageData = async () => {
     if (selectedDataId) {
-        await deleteVoyageData(voyageId, selectedDataId);
-        setShowConfirm(false);
+      await deleteVoyageData(voyageId, selectedDataId);
+      setShowConfirm(false);
     }
-};
+  };
 
   const getTotalWeight = () => {
     const total = companyDetails.items.reduce(
@@ -91,7 +103,6 @@ const VoyageDetails = () => {
   });
 
   console.log(companyDetails);
-  
 
   return (
     <div>
@@ -139,6 +150,9 @@ const VoyageDetails = () => {
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
                 Created By
               </th>
+              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
+                Image
+              </th>
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600"></th>
             </tr>
           </thead>
@@ -170,6 +184,20 @@ const VoyageDetails = () => {
                   </td>
                   <td className="py-3 px-5 text-sm text-black">
                     {data.uploadedBy.username}
+                  </td>
+                  <td className="py-3 px-5 text-sm text-black">
+                    <button
+                      onClick={() =>
+                        handleShowImagePreview(
+                          data.image,
+                          data.productCode,
+                          data.sequenceNumber
+                        )
+                      }
+                      className="cursor-pointer"
+                    >
+                      <Image />
+                    </button>
                   </td>
                   <td className="py-3 px-5 text-sm text-black">
                     <div
@@ -210,6 +238,20 @@ const VoyageDetails = () => {
             alertInfo="You want to delete this voyage data?"
             handleClose={() => setShowConfirm(false)}
             handleSubmit={handleDeleteVoyageData}
+          />
+        </div>
+      )}
+
+      {showImagePreview && (
+        <div
+          className="fixed inset-0 flex items-center justify-center  bg-opacity-50 z-50"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}
+        >
+          <ImagePreview
+            selectedImage={selectedImage}
+            productCode={selectedProductCode}
+            quantityNumber={selectedQuantityNumber}
+            onClose={() => setShowImagePreview(false)}
           />
         </div>
       )}

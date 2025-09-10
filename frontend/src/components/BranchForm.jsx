@@ -5,6 +5,8 @@ import SearchableDropdown from "./SearchableDropdown ";
 import { countries } from "../lib/countries.js";
 import PasswordField from "./PasswordField.jsx";
 import CheckDropdown from "./CheckDropdown.jsx";
+import Tooltip from "./Tooltip.jsx";
+import SquareButton from "./SquareButton.jsx";
 
 const BranchForm = ({ setShowBranchForm }) => {
   const [showAdministrators, setShowAdministrators] = useState(false);
@@ -36,13 +38,14 @@ const BranchForm = ({ setShowBranchForm }) => {
     <div className="flex flex-col p-6 bg-white rounded-lg shadow-lg max-w-5xl mx-auto w-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-center flex-1">Create New Branch</h3>
-        <button
-          onClick={() => handleCloseForm()}
-          className="text-gray-400 hover:text-gray-600 cursor-pointer"
-          title="close"
-        >
-          <X size={20} />
-        </button>
+        <Tooltip text="close">
+          <button
+            onClick={() => handleCloseForm()}
+            className="text-gray-400 hover:text-gray-600 cursor-pointer"
+          >
+            <X size={20} />
+          </button>
+        </Tooltip>
       </div>
 
       <div className="border-b mb-4" />
@@ -108,6 +111,10 @@ const BranchForm = ({ setShowBranchForm }) => {
           </div>
         </div>
       )}
+      <div className="flex mt-10 gap-2.5 justify-end">
+        <SquareButton buttonName="Cancel" variant="cancel" />
+        <SquareButton buttonName="Save" />
+      </div>
     </div>
   );
 };
