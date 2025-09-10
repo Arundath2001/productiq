@@ -34,8 +34,8 @@ const Sidebar = ({ setSelectedTab }) => {
       { path: "employee", label: "Employee List", icon: Users },
       { path: "clients", label: "Clients", icon: Building2 },
       { path: "customercode", label: "Customer Code", icon: UserPlus },
-      { path: "allbill", label: "All Bills", icon: FileText },
-      { path: "packages", label: "Packages", icon: Package },
+      { path: "allbill", label: "Bill of Lading(BOL)", icon: FileText },
+      { path: "packages", label: "Packing List", icon: Package },
     ],
     ship_cargo_admin: [
       { path: "shipment", label: "Shipments", icon: ShipIcon },
