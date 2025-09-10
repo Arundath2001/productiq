@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import PageHeader from "../components/PageHeader";
 import { useNavigate, useParams } from "react-router-dom";
 import { useVoyageStore } from "../store/useVoyageStore.js";
-import { Loader } from "lucide-react";
+import { Image, Loader } from "lucide-react";
 import images from "../lib/images.js";
+import ImagePreview from "../components/ImagePreview.jsx";
 
 const CompletedVoyageDetails = () => {
   const { voyageId, companyCode } = useParams();
@@ -13,6 +14,11 @@ const CompletedVoyageDetails = () => {
     isCompletedCompanyDetailsLoading,
     getCompletedCompanyDetailsByVoyage,
   } = useVoyageStore();
+
+  const [showImagePreview, setShowImagePreview] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedProductCode, setSelectedProductCode] = useState(null);
+  const [selectedQuantityNumber, setSelectedQuantityNumber] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -43,6 +49,13 @@ const CompletedVoyageDetails = () => {
     );
   }
 
+  const handleShowImagePreview = (image, productCode, quantityNumber) => {
+    setSelectedImage(image);
+    setSelectedProductCode(productCode);
+    setSelectedQuantityNumber(quantityNumber);
+    setShowImagePreview(true);
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return `${String(date.getDate()).padStart(2, "0")}-${String(
@@ -70,7 +83,9 @@ const CompletedVoyageDetails = () => {
           completedCompanyDetails.companyCode || "Company"
         } (Completed)`}
         subText={`${filteredData.length} Products`}
-        weight={filteredData.length > 0 ? completedCompanyDetails.totalWeight : null}
+        weight={
+          filteredData.length > 0 ? completedCompanyDetails.totalWeight : null
+        }
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         showDateFilter={true}
@@ -111,6 +126,9 @@ const CompletedVoyageDetails = () => {
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
                 Created By
               </th>
+              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
+                Image
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -142,6 +160,20 @@ const CompletedVoyageDetails = () => {
                   <td className="py-3 px-5 text-sm text-black">
                     {data.uploadedBy.username}
                   </td>
+                  <td className="py-3 px-5 text-sm text-black">
+                    <button
+                      onClick={() =>
+                        handleShowImagePreview(
+                          data.image,
+                          data.productCode,
+                          data.sequenceNumber
+                        )
+                      }
+                      className="cursor-pointer"
+                    >
+                      <Image />
+                    </button>
+                  </td>
                 </tr>
               ))
             ) : (
@@ -166,6 +198,19 @@ const CompletedVoyageDetails = () => {
           </tbody>
         </table>
       </div>
+      {showImagePreview && (
+        <div
+          className="fixed inset-0 flex items-center justify-center  bg-opacity-50 z-50"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.75)" }}
+        >
+          <ImagePreview
+            selectedImage={selectedImage}
+            productCode={selectedProductCode}
+            quantityNumber={selectedQuantityNumber}
+            onClose={() => setShowImagePreview(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };
