@@ -54,7 +54,7 @@ export const getAllCompanies = async (req, res) => {
         const companies = await Company.find()
             .populate('createdBy', 'username')
             .select('companyCode createdBy createdAt updatedAt')
-            .sort({ createdAt: -1 });
+            .sort({ companyCode: 1 });
 
         const transformedCompanies = companies.map(company => ({
             id: company._id,
