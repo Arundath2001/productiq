@@ -90,6 +90,22 @@ export const uploadToPackage = async (req, res) => {
             });
         }
 
+        const packageWithCompany = await Package.findById(packageId).populate({
+            path: 'goniId',
+            populate: {
+                path: 'companyId',
+                model: 'Company'
+            }
+        });
+
+        const packageClientCompany = packageWithCompany.goniId.companyId.companyCode;
+
+        if (packageClientCompany !== product.clientCompany) {
+            return res.status(400).json({
+                message: `Cannot add product. Client company mismatch. Package belongs to "${packageClientCompany}" but product belongs to "${product.clientCompany}"`
+            });
+        }
+
         packageData.products.push(productId);
         await packageData.save();
 
