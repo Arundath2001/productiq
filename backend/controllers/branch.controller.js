@@ -88,157 +88,157 @@ export const checkUsernames = async (req, res) => {
     }
 };
 
-export const createBranchWithAdmins = async (req, res) => {
-    const session = await mongoose.startSession();
+// export const createBranchWithAdmins = async (req, res) => {
+//     const session = await mongoose.startSession();
 
-    try {
-        const { branchName, admins, countryCode } = req.body;
+//     try {
+//         const { branchName, admins, countryCode } = req.body;
 
-        if (!branchName) {
-            return res.status(400).json({ message: "Branch name is required!" });
-        }
+//         if (!branchName) {
+//             return res.status(400).json({ message: "Branch name is required!" });
+//         }
 
-        if (!countryCode) {
-            return res.status(400).json({ message: "Country code is required!" });
-        }
+//         if (!countryCode) {
+//             return res.status(400).json({ message: "Country code is required!" });
+//         }
 
-        // Validate country code format
-        if (!/^[A-Za-z]{2,3}$/.test(countryCode)) {
-            return res.status(400).json({
-                message: "Country code must be 2-3 letters (ISO format)!"
-            });
-        }
+//         // Validate country code format
+//         if (!/^[A-Za-z]{2,3}$/.test(countryCode)) {
+//             return res.status(400).json({
+//                 message: "Country code must be 2-3 letters (ISO format)!"
+//             });
+//         }
 
-        if (!admins || !Array.isArray(admins) || admins.length === 0) {
-            return res.status(400).json({
-                message: "Admins array is required and must contain at least one admin!"
-            });
-        }
+//         if (!admins || !Array.isArray(admins) || admins.length === 0) {
+//             return res.status(400).json({
+//                 message: "Admins array is required and must contain at least one admin!"
+//             });
+//         }
 
-        const createdBy = req.user ? req.user._id : null;
-        if (!createdBy) {
-            return res.status(400).json({
-                message: "Unauthorized: Missing creator information."
-            });
-        }
+//         const createdBy = req.user ? req.user._id : null;
+//         if (!createdBy) {
+//             return res.status(400).json({
+//                 message: "Unauthorized: Missing creator information."
+//             });
+//         }
 
-        const validationErrors = [];
-        const usernames = [];
+//         const validationErrors = [];
+//         const usernames = [];
 
-        for (let i = 0; i < admins.length; i++) {
-            const admin = admins[i];
-            const { username, password, adminRoles } = admin;
+//         for (let i = 0; i < admins.length; i++) {
+//             const admin = admins[i];
+//             const { username, password, adminRoles } = admin;
 
-            if (!username || !password || !adminRoles) {
-                validationErrors.push(`Admin ${i + 1}: All fields are required`);
-                continue;
-            }
+//             if (!username || !password || !adminRoles) {
+//                 validationErrors.push(`Admin ${i + 1}: All fields are required`);
+//                 continue;
+//             }
 
-            if (password.length < 8) {
-                validationErrors.push(`Admin ${i + 1}: Password must be at least 8 characters`);
-                continue;
-            }
+//             if (password.length < 8) {
+//                 validationErrors.push(`Admin ${i + 1}: Password must be at least 8 characters`);
+//                 continue;
+//             }
 
-            if (usernames.includes(username)) {
-                validationErrors.push(`Admin ${i + 1}: Duplicate username in request - ${username}`);
-                continue;
-            }
+//             if (usernames.includes(username)) {
+//                 validationErrors.push(`Admin ${i + 1}: Duplicate username in request - ${username}`);
+//                 continue;
+//             }
 
-            usernames.push(username);
-        }
+//             usernames.push(username);
+//         }
 
-        if (validationErrors.length > 0) {
-            return res.status(400).json({
-                message: "Validation errors",
-                errors: validationErrors
-            });
-        }
+//         if (validationErrors.length > 0) {
+//             return res.status(400).json({
+//                 message: "Validation errors",
+//                 errors: validationErrors
+//             });
+//         }
 
-        session.startTransaction();
+//         session.startTransaction();
 
-        // Check if branch already exists with same name and country code
-        const existingBranch = await Branch.findOne({
-            branchName,
-            countryCode: countryCode.toUpperCase()
-        }).session(session);
+//         // Check if branch already exists with same name and country code
+//         const existingBranch = await Branch.findOne({
+//             branchName,
+//             countryCode: countryCode.toUpperCase()
+//         }).session(session);
 
-        if (existingBranch) {
-            await session.abortTransaction();
-            return res.status(400).json({
-                message: `Branch "${branchName}" already exists in ${countryCode.toUpperCase()}!`
-            });
-        }
+//         if (existingBranch) {
+//             await session.abortTransaction();
+//             return res.status(400).json({
+//                 message: `Branch "${branchName}" already exists in ${countryCode.toUpperCase()}!`
+//             });
+//         }
 
-        const existingUsers = await User.find({
-            username: { $in: usernames }
-        }).select('username').session(session);
+//         const existingUsers = await User.find({
+//             username: { $in: usernames }
+//         }).select('username').session(session);
 
-        if (existingUsers.length > 0) {
-            await session.abortTransaction();
-            const existingUsernames = existingUsers.map(user => user.username);
-            return res.status(400).json({
-                message: "Some usernames already exist",
-                existingUsernames
-            });
-        }
+//         if (existingUsers.length > 0) {
+//             await session.abortTransaction();
+//             const existingUsernames = existingUsers.map(user => user.username);
+//             return res.status(400).json({
+//                 message: "Some usernames already exist",
+//                 existingUsernames
+//             });
+//         }
 
-        // Create new branch with country code
-        const newBranch = new Branch({
-            branchName,
-            countryCode: countryCode.toUpperCase(), // Ensure uppercase
-            createdBy: createdBy,
-        });
+//         // Create new branch with country code
+//         const newBranch = new Branch({
+//             branchName,
+//             countryCode: countryCode.toUpperCase(), // Ensure uppercase
+//             createdBy: createdBy,
+//         });
 
-        const savedBranch = await newBranch.save({ session });
+//         const savedBranch = await newBranch.save({ session });
 
-        const usersToCreate = [];
-        for (const admin of admins) {
-            const { username, password, adminRoles } = admin;
+//         const usersToCreate = [];
+//         for (const admin of admins) {
+//             const { username, password, adminRoles } = admin;
 
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
+//             const salt = await bcrypt.genSalt(10);
+//             const hashedPassword = await bcrypt.hash(password, salt);
 
-            usersToCreate.push({
-                username,
-                password: hashedPassword,
-                role: 'admin',
-                adminRoles,
-                branchId: savedBranch._id,
-                createdBy: createdBy
-            });
-        }
+//             usersToCreate.push({
+//                 username,
+//                 password: hashedPassword,
+//                 role: 'admin',
+//                 adminRoles,
+//                 branchId: savedBranch._id,
+//                 createdBy: createdBy
+//             });
+//         }
 
-        const createdAdmins = await User.insertMany(usersToCreate, { session });
+//         const createdAdmins = await User.insertMany(usersToCreate, { session });
 
-        await session.commitTransaction();
+//         await session.commitTransaction();
 
-        res.status(201).json({
-            message: `Branch "${branchName}" created successfully in ${savedBranch.countryCode} with ${createdAdmins.length} administrator(s)`,
-            branch: {
-                id: savedBranch._id,
-                branchName: savedBranch.branchName,
-                countryCode: savedBranch.countryCode,
-                createdBy: savedBranch.createdBy,
-                createdAt: savedBranch.createdAt,
-                updatedAt: savedBranch.updatedAt
-            },
-            createdAdmins: createdAdmins.map(user => ({
-                id: user._id,
-                username: user.username,
-                role: user.role,
-                adminRoles: user.adminRoles,
-                branchId: user.branchId
-            }))
-        });
+//         res.status(201).json({
+//             message: `Branch "${branchName}" created successfully in ${savedBranch.countryCode} with ${createdAdmins.length} administrator(s)`,
+//             branch: {
+//                 id: savedBranch._id,
+//                 branchName: savedBranch.branchName,
+//                 countryCode: savedBranch.countryCode,
+//                 createdBy: savedBranch.createdBy,
+//                 createdAt: savedBranch.createdAt,
+//                 updatedAt: savedBranch.updatedAt
+//             },
+//             createdAdmins: createdAdmins.map(user => ({
+//                 id: user._id,
+//                 username: user.username,
+//                 role: user.role,
+//                 adminRoles: user.adminRoles,
+//                 branchId: user.branchId
+//             }))
+//         });
 
-    } catch (error) {
-        await session.abortTransaction();
-        console.log("Error in createBranchWithAdmins controller", error.message);
-        res.status(500).json({ message: "Internal server error" });
-    } finally {
-        session.endSession();
-    }
-};
+//     } catch (error) {
+//         await session.abortTransaction();
+//         console.log("Error in createBranchWithAdmins controller", error.message);
+//         res.status(500).json({ message: "Internal server error" });
+//     } finally {
+//         session.endSession();
+//     }
+// };
 
 export const updateBranch = async (req, res) => {
     try {
@@ -480,3 +480,18 @@ export const removeAdminFromBranch = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const createBranchWithAdmins = async (req, res) => {
+    try {
+        const { branchData, adminsData } = req.body;
+
+        if (!branchData || !adminsData || adminsData.legth === 0) {
+            return res.status(400).json({ message: "Branch data and at least one admin are required" });
+        }
+
+        const { branchName, country } = branchData;
+
+    } catch (error) {
+
+    }
+}

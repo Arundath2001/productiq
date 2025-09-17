@@ -8,7 +8,7 @@ import CheckDropdown from "./CheckDropdown.jsx";
 import Tooltip from "./Tooltip.jsx";
 import SquareButton from "./SquareButton.jsx";
 
-const BranchForm = ({ setShowBranchForm }) => {
+const BranchForm = ({ setShowCreateBranch }) => {
   const [showAdministrators, setShowAdministrators] = useState(false);
   const [administrators, setAdministrators] = useState([]);
 
@@ -31,7 +31,7 @@ const BranchForm = ({ setShowBranchForm }) => {
   };
 
   const handleCloseForm = () => {
-    setShowBranchForm(false);
+    setShowCreateBranch(false);
   };
 
   return (
@@ -112,7 +112,11 @@ const BranchForm = ({ setShowBranchForm }) => {
         </div>
       )}
       <div className="flex mt-10 gap-2.5 justify-end">
-        <SquareButton buttonName="Cancel" variant="cancel" />
+        <SquareButton
+          onClick={() => setShowCreateBranch(false)}
+          buttonName="Cancel"
+          variant="cancel"
+        />
         <SquareButton buttonName="Save" />
       </div>
     </div>

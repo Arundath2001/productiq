@@ -24,7 +24,7 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
     // Set column widths
     worksheet.columns = [
         { header: 'Product Code', key: 'productCode', width: 20 },
-        { header: 'QTY', key: 'qty', width: 10 },
+        { header: 'Ctn No', key: 'ctnNo', width: 10 },
         { header: 'Tracking No', key: 'trackingNo', width: 20 }
     ];
 
@@ -45,52 +45,65 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
             horizontal: 'center',
             vertical: 'middle'
         };
-        // Removed background color from header
+        // Medium border for package header
         headerCell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
+            top: { style: 'medium' },
+            left: { style: 'medium' },
+            bottom: { style: 'medium' },
+            right: { style: 'medium' }
         };
         currentRow++;
 
         // Add column headers (no gap)
-        const columnHeaderRow = worksheet.addRow(['Product Code', 'QTY', 'Tracking No']);
+        const columnHeaderRow = worksheet.addRow(['Product Code', 'Ctn No', 'Tracking No']);
         columnHeaderRow.font = { bold: true };
         columnHeaderRow.alignment = {
             horizontal: 'center',
             vertical: 'middle'
         };
 
-        // Add borders to header row
+        // Add medium borders to column header row
         columnHeaderRow.eachCell((cell) => {
             cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
+                top: { style: 'medium' },
+                left: { style: 'medium' },
+                bottom: { style: 'medium' },
+                right: { style: 'medium' }
             };
         });
         currentRow++;
 
-        // Sort products by sequence number for better organization
-        const sortedProducts = pkg.products.sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+        // Sort products alphabetically by productCode (character length wise: shorter strings first, then alphabetical)
+        const sortedProducts = pkg.products.sort((a, b) => {
+            const aCode = a.productCode || '';
+            const bCode = b.productCode || '';
+
+            // First sort by length (shorter strings first)
+            if (aCode.length !== bCode.length) {
+                return aCode.length - bCode.length;
+            }
+
+            // If same length, sort alphabetically
+            return aCode.localeCompare(bCode);
+        });
 
         // Add individual product rows with styling
-        sortedProducts.forEach(product => {
+        sortedProducts.forEach((product, productIndex) => {
             const dataRow = worksheet.addRow([
                 product.productCode,
-                product.sequenceNumber, // Using sequence number as QTY
+                product.sequenceNumber, // Using sequence number as Ctn No
                 product.trackingNumber
             ]);
 
-            // Add borders and alignment to data rows
-            dataRow.eachCell((cell) => {
+            // Add borders with medium left/right borders for outer edges
+            // Make the last product row have medium bottom border
+            const isLastProduct = productIndex === sortedProducts.length - 1;
+            dataRow.eachCell((cell, colIndex) => {
                 cell.border = {
                     top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' }
+                    left: colIndex === 1 ? { style: 'medium' } : { style: 'thin' },
+                    bottom: isLastProduct ? { style: 'medium' } : { style: 'thin' },
+                    right: colIndex === 3 ? { style: 'medium' } : { style: 'thin' }
                 };
                 cell.alignment = {
                     horizontal: 'center',
@@ -108,14 +121,14 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
         // Merge first two columns for "Total No of Pieces:" text
         worksheet.mergeCells(`A${totalRowIndex}:B${totalRowIndex}`);
 
-        // Style the merged cell (first two columns)
+        // Style the merged cell (first two columns) with medium borders
         const mergedCell = worksheet.getCell(`A${totalRowIndex}`);
         mergedCell.value = 'Total No of Pieces:';
         mergedCell.font = { bold: true };
         mergedCell.border = {
             top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
+            left: { style: 'medium' },
+            bottom: { style: 'medium' },
             right: { style: 'thin' }
         };
         mergedCell.alignment = {
@@ -123,13 +136,13 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
             vertical: 'middle'
         };
 
-        // Style the third column (total number)
+        // Style the third column (total number) with medium borders
         totalRow.getCell(3).font = { bold: true, color: { argb: 'FF000000' } }; // Black text
         totalRow.getCell(3).border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
+            bottom: { style: 'medium' },
+            right: { style: 'medium' }
         };
         totalRow.getCell(3).alignment = {
             horizontal: 'center',
@@ -187,7 +200,7 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
     // Set column widths
     worksheet.columns = [
         { header: 'Product Code', key: 'productCode', width: 20 },
-        { header: 'QTY', key: 'qty', width: 10 },
+        { header: 'Ctn No', key: 'ctnNo', width: 10 },
         { header: 'Tracking No', key: 'trackingNo', width: 20 }
     ];
 
@@ -208,48 +221,61 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
             horizontal: 'center',
             vertical: 'middle'
         };
-        // Removed background color from header
+        // Medium border for package header
         packageHeaderCell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
+            top: { style: 'medium' },
+            left: { style: 'medium' },
+            bottom: { style: 'medium' },
+            right: { style: 'medium' }
         };
         currentRow++;
 
         // Add column headers (no gap)
-        const columnHeaderRow = worksheet.addRow(['Product Code', 'QTY', 'Tracking No']);
+        const columnHeaderRow = worksheet.addRow(['Product Code', 'Ctn No', 'Tracking No']);
         columnHeaderRow.font = { bold: true };
         columnHeaderRow.alignment = {
             horizontal: 'center',
             vertical: 'middle'
         };
+        // Add medium borders to column header row
         columnHeaderRow.eachCell((cell) => {
             cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
+                top: { style: 'medium' },
+                left: { style: 'medium' },
+                bottom: { style: 'medium' },
+                right: { style: 'medium' }
             };
         });
         currentRow++;
 
-        // Sort products by sequence number and add individual product rows
-        const sortedProducts = pkg.products.sort((a, b) => a.sequenceNumber - b.sequenceNumber);
+        // Sort products alphabetically by productCode (character length wise: shorter strings first, then alphabetical)
+        const sortedProducts = pkg.products.sort((a, b) => {
+            const aCode = a.productCode || '';
+            const bCode = b.productCode || '';
+
+            // First sort by length (shorter strings first)
+            if (aCode.length !== bCode.length) {
+                return aCode.length - bCode.length;
+            }
+
+            // If same length, sort alphabetically
+            return aCode.localeCompare(bCode);
+        });
 
         sortedProducts.forEach(product => {
             const dataRow = worksheet.addRow([
                 product.productCode,
-                product.sequenceNumber, // Using sequence number as displayed value
+                product.sequenceNumber, // Using sequence number as displayed value for Ctn No
                 product.trackingNumber
             ]);
 
-            dataRow.eachCell((cell) => {
+            // Add borders with medium left/right borders for outer edges
+            dataRow.eachCell((cell, colIndex) => {
                 cell.border = {
                     top: { style: 'thin' },
-                    left: { style: 'thin' },
+                    left: colIndex === 1 ? { style: 'medium' } : { style: 'thin' },
                     bottom: { style: 'thin' },
-                    right: { style: 'thin' }
+                    right: colIndex === 3 ? { style: 'medium' } : { style: 'thin' }
                 };
                 cell.alignment = {
                     horizontal: 'center',
@@ -267,7 +293,7 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
         // Merge first two columns for "Total No of Pieces:" text
         worksheet.mergeCells(`A${totalRowIndex}:B${totalRowIndex}`);
 
-        // Style the merged cell (first two columns)
+        // Style the merged cell (first two columns) with medium borders
         const mergedCell = worksheet.getCell(`A${totalRowIndex}`);
         mergedCell.value = 'Total No of Pieces:';
         mergedCell.font = { bold: true };
@@ -278,8 +304,8 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
         };
         mergedCell.border = {
             top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
+            left: { style: 'medium' },
+            bottom: { style: 'medium' },
             right: { style: 'thin' }
         };
         mergedCell.alignment = {
@@ -287,7 +313,7 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
             vertical: 'middle'
         };
 
-        // Style the third column (total number)
+        // Style the third column (total number) with medium borders
         totalRow.getCell(3).font = { bold: true, color: { argb: 'FF000000' } }; // Black text
         totalRow.getCell(3).fill = {
             type: 'pattern',
@@ -297,8 +323,8 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
         totalRow.getCell(3).border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
+            bottom: { style: 'medium' },
+            right: { style: 'medium' }
         };
         totalRow.getCell(3).alignment = {
             horizontal: 'center',
