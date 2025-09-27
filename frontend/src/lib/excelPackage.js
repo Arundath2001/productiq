@@ -115,36 +115,73 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
 
         // Add total pieces row immediately after products (no gap)
         const totalPieces = pkg.products.length;
-        const totalRow = worksheet.addRow(['Total No of Pieces:', '', totalPieces]);
-        const totalRowIndex = totalRow.number;
+        const totalPiecesRow = worksheet.addRow(['Total No of Pieces:', '', totalPieces]);
+        const totalPiecesRowIndex = totalPiecesRow.number;
 
         // Merge first two columns for "Total No of Pieces:" text
-        worksheet.mergeCells(`A${totalRowIndex}:B${totalRowIndex}`);
+        worksheet.mergeCells(`A${totalPiecesRowIndex}:B${totalPiecesRowIndex}`);
 
         // Style the merged cell (first two columns) with medium borders
-        const mergedCell = worksheet.getCell(`A${totalRowIndex}`);
-        mergedCell.value = 'Total No of Pieces:';
-        mergedCell.font = { bold: true };
-        mergedCell.border = {
+        const mergedPiecesCell = worksheet.getCell(`A${totalPiecesRowIndex}`);
+        mergedPiecesCell.value = 'Total No of Pieces:';
+        mergedPiecesCell.font = { bold: true };
+        mergedPiecesCell.border = {
             top: { style: 'thin' },
             left: { style: 'medium' },
-            bottom: { style: 'medium' },
+            bottom: { style: 'thin' },
             right: { style: 'thin' }
         };
-        mergedCell.alignment = {
+        mergedPiecesCell.alignment = {
             horizontal: 'center',
             vertical: 'middle'
         };
 
         // Style the third column (total number) with medium borders
-        totalRow.getCell(3).font = { bold: true, color: { argb: 'FF000000' } }; // Black text
-        totalRow.getCell(3).border = {
+        totalPiecesRow.getCell(3).font = { bold: true, color: { argb: 'FF000000' } }; // Black text
+        totalPiecesRow.getCell(3).border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'medium' }
+        };
+        totalPiecesRow.getCell(3).alignment = {
+            horizontal: 'center',
+            vertical: 'middle'
+        };
+        currentRow++;
+
+        // Add total weight row immediately after pieces row (no gap)
+        const totalWeight = pkg.packageWeight || 0;
+        const totalWeightRow = worksheet.addRow(['Total Weight:', '', totalWeight]);
+        const totalWeightRowIndex = totalWeightRow.number;
+
+        // Merge first two columns for "Total Weight:" text
+        worksheet.mergeCells(`A${totalWeightRowIndex}:B${totalWeightRowIndex}`);
+
+        // Style the merged cell (first two columns) with medium borders
+        const mergedWeightCell = worksheet.getCell(`A${totalWeightRowIndex}`);
+        mergedWeightCell.value = 'Total Weight:';
+        mergedWeightCell.font = { bold: true };
+        mergedWeightCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'medium' },
+            bottom: { style: 'medium' },
+            right: { style: 'thin' }
+        };
+        mergedWeightCell.alignment = {
+            horizontal: 'center',
+            vertical: 'middle'
+        };
+
+        // Style the third column (total weight) with medium borders
+        totalWeightRow.getCell(3).font = { bold: true, color: { argb: 'FF000000' } }; // Black text
+        totalWeightRow.getCell(3).border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'medium' },
             right: { style: 'medium' }
         };
-        totalRow.getCell(3).alignment = {
+        totalWeightRow.getCell(3).alignment = {
             horizontal: 'center',
             vertical: 'middle'
         };
@@ -287,46 +324,93 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
 
         // Add total pieces for this package (no gap)
         const totalPieces = pkg.products.length;
-        const totalRow = worksheet.addRow(['Total No of Pieces:', '', totalPieces]);
-        const totalRowIndex = totalRow.number;
+        const totalPiecesRow = worksheet.addRow(['Total No of Pieces:', '', totalPieces]);
+        const totalPiecesRowIndex = totalPiecesRow.number;
 
         // Merge first two columns for "Total No of Pieces:" text
-        worksheet.mergeCells(`A${totalRowIndex}:B${totalRowIndex}`);
+        worksheet.mergeCells(`A${totalPiecesRowIndex}:B${totalPiecesRowIndex}`);
 
         // Style the merged cell (first two columns) with medium borders
-        const mergedCell = worksheet.getCell(`A${totalRowIndex}`);
-        mergedCell.value = 'Total No of Pieces:';
-        mergedCell.font = { bold: true };
-        mergedCell.fill = {
+        const mergedPiecesCell = worksheet.getCell(`A${totalPiecesRowIndex}`);
+        mergedPiecesCell.value = 'Total No of Pieces:';
+        mergedPiecesCell.font = { bold: true };
+        mergedPiecesCell.fill = {
             type: 'pattern',
             pattern: 'solid',
             fgColor: { argb: 'FFD3D3D3' } // Light grey like header
         };
-        mergedCell.border = {
+        mergedPiecesCell.border = {
             top: { style: 'thin' },
             left: { style: 'medium' },
-            bottom: { style: 'medium' },
+            bottom: { style: 'thin' },
             right: { style: 'thin' }
         };
-        mergedCell.alignment = {
+        mergedPiecesCell.alignment = {
             horizontal: 'center',
             vertical: 'middle'
         };
 
         // Style the third column (total number) with medium borders
-        totalRow.getCell(3).font = { bold: true, color: { argb: 'FF000000' } }; // Black text
-        totalRow.getCell(3).fill = {
+        totalPiecesRow.getCell(3).font = { bold: true, color: { argb: 'FF000000' } }; // Black text
+        totalPiecesRow.getCell(3).fill = {
             type: 'pattern',
             pattern: 'solid',
             fgColor: { argb: 'FFD3D3D3' } // Light grey like header
         };
-        totalRow.getCell(3).border = {
+        totalPiecesRow.getCell(3).border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'medium' }
+        };
+        totalPiecesRow.getCell(3).alignment = {
+            horizontal: 'center',
+            vertical: 'middle'
+        };
+        currentRow++;
+
+        // Add total weight for this package (no gap)
+        const totalWeight = pkg.packageWeight || 0;
+        const totalWeightRow = worksheet.addRow(['Total Weight:', '', totalWeight]);
+        const totalWeightRowIndex = totalWeightRow.number;
+
+        // Merge first two columns for "Total Weight:" text
+        worksheet.mergeCells(`A${totalWeightRowIndex}:B${totalWeightRowIndex}`);
+
+        // Style the merged cell (first two columns) with medium borders
+        const mergedWeightCell = worksheet.getCell(`A${totalWeightRowIndex}`);
+        mergedWeightCell.value = 'Total Weight:';
+        mergedWeightCell.font = { bold: true };
+        mergedWeightCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFD3D3D3' } // Light grey like header
+        };
+        mergedWeightCell.border = {
+            top: { style: 'thin' },
+            left: { style: 'medium' },
+            bottom: { style: 'medium' },
+            right: { style: 'thin' }
+        };
+        mergedWeightCell.alignment = {
+            horizontal: 'center',
+            vertical: 'middle'
+        };
+
+        // Style the third column (total weight) with medium borders
+        totalWeightRow.getCell(3).font = { bold: true, color: { argb: 'FF000000' } }; // Black text
+        totalWeightRow.getCell(3).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFD3D3D3' } // Light grey like header
+        };
+        totalWeightRow.getCell(3).border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'medium' },
             right: { style: 'medium' }
         };
-        totalRow.getCell(3).alignment = {
+        totalWeightRow.getCell(3).alignment = {
             horizontal: 'center',
             vertical: 'middle'
         };

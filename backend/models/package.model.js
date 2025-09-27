@@ -16,6 +16,10 @@ const packageSchema = mongoose.Schema({
         ref: "Branch",
         required: true
     },
+    packageWeight: {
+        type: Number,
+        default: 0
+    },
     goniNumber: {
         type: Number,
         required: true

@@ -7,15 +7,23 @@ import PasswordField from "./PasswordField.jsx";
 import CheckDropdown from "./CheckDropdown.jsx";
 import Tooltip from "./Tooltip.jsx";
 import SquareButton from "./SquareButton.jsx";
+import { useBranch } from "../store/useBranchStore.js";
 
 const BranchForm = ({ setShowCreateBranch }) => {
+  const { isLoading, createBranchWithAdmins } = useBranch();
+
+  const [branchName, setBranchName] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState(null);
+
   const [showAdministrators, setShowAdministrators] = useState(false);
   const [administrators, setAdministrators] = useState([]);
 
   const handleShowAdministrators = () => {
     setShowAdministrators(true);
 
-    setAdministrators([{ id: Date.now() }]);
+    setAdministrators([
+      { id: Date.now(), username: "", password: "", adminRoles: [] },
+    ]);
   };
 
   const handleRemoveAdministrator = (id) => {
@@ -27,11 +35,29 @@ const BranchForm = ({ setShowCreateBranch }) => {
   };
 
   const handleAddAdministrator = () => {
-    setAdministrators([...administrators, { id: Date.now() }]);
+    setAdministrators([
+      ...administrators,
+      { id: Date.now(), username: "", password: "", adminRoles: [] },
+    ]);
   };
 
   const handleCloseForm = () => {
     setShowCreateBranch(false);
+  };
+
+  const updateAdministratorField = (id, field, value) => {
+    setAdministrators(
+      administrators.map((admin) =>
+        admin.id === id ? { ...admin, [field]: value } : admin
+      )
+    );
+  };
+
+  const handleSaveData = async () => {
+    const branchData = { branchName, countryCode: selectedCountry };
+    const adminsData = administrators;
+
+    await createBranchWithAdmins(branchData, adminsData);
   };
 
   return (
@@ -51,12 +77,19 @@ const BranchForm = ({ setShowCreateBranch }) => {
       <div className="border-b mb-4" />
 
       <div className="flex gap-3.5 items-center">
-        <InputLine label="Branch Name" placeholder="Branch Name" />
+        <InputLine
+          label="Branch Name"
+          placeholder="Branch Name"
+          value={branchName}
+          onChange={(e) => {
+            setBranchName(e.target.value);
+          }}
+        />
         <SearchableDropdown
           label="Country"
           placeholder="Select a country"
           options={countries}
-          onSelect={(value) => console.log("Selected:", value)}
+          onSelect={(value) => setSelectedCountry(value.code)}
         />
       </div>
 
@@ -89,12 +122,36 @@ const BranchForm = ({ setShowCreateBranch }) => {
                   </button>
                 </div>
                 <div className="flex gap-2.5 mb-1.5">
-                  <CheckDropdown label="Role" placeholder="Select Roles" />
+                  <CheckDropdown
+                    label="Role"
+                    placeholder="Select Roles"
+                    onSelectionChange={(roles) =>
+                      updateAdministratorField(admin.id, "adminRoles", roles)
+                    }
+                  />
                   <InputLine
                     label="Admin Name"
                     placeholder="Enter Admin Name"
+                    value={admin.username}
+                    onChange={(e) =>
+                      updateAdministratorField(
+                        admin.id,
+                        "username",
+                        e.target.value
+                      )
+                    }
                   />
-                  <PasswordField placeholder="Enter the Password" />
+                  <PasswordField
+                    placeholder="Enter the Password"
+                    value={admin.password}
+                    onChange={(e) =>
+                      updateAdministratorField(
+                        admin.id,
+                        "password",
+                        e.target.value
+                      )
+                    }
+                  />
                 </div>
               </div>
             ))}
@@ -117,7 +174,7 @@ const BranchForm = ({ setShowCreateBranch }) => {
           buttonName="Cancel"
           variant="cancel"
         />
-        <SquareButton buttonName="Save" />
+        <SquareButton buttonName="Save" onClick={handleSaveData} />
       </div>
     </div>
   );

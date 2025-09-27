@@ -94,7 +94,7 @@ const Voyages = () => {
         placeholder="Search by voyage name..."
       />
 
-      <div className="mt-10">
+      <div className="mt-4">
         {filteredVoyages.length > 0 ? (
           <div>
             {filteredVoyages.map((voyage, index) => (

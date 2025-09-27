@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import NormalButton from "./NormalButton";
 import { FaFilter } from "react-icons/fa";
 import SearchFields from "./SearchFields";
+import NormalSearch from "./NormalSearch";
 
 const PageHeader = ({
   mainHead,
@@ -45,8 +46,9 @@ const PageHeader = ({
           )}
         </div>
 
-        <div className="flex gap-2.5">
-          <NormalButton icon={FaFilter} onClick={toggleFilters} />
+        <div className="flex gap-2.5 items-center">
+          <NormalSearch />
+          {/* <NormalButton icon={FaFilter} onClick={toggleFilters} /> */}
           {onCreate && (
             <NormalButton
               buttonName={createButtonText || "Create Voyage"}

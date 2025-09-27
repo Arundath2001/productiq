@@ -1,7 +1,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import React, { useState } from "react";
 
-const PasswordField = ({ placeholder }) => {
+const PasswordField = ({ placeholder, value, onChange }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const togglePasswordVisibility = () => {
@@ -16,6 +16,8 @@ const PasswordField = ({ placeholder }) => {
           className="w-full outline-none border-b border-gray-500 px-4 py-2 pr-10 focus:border-black focus:border-b-2"
           placeholder={placeholder}
           type={showPassword ? "text" : "password"}
+          value={value}
+          onChange={onChange}
         />
         <button
           type="button"

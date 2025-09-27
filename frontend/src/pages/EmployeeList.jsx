@@ -65,19 +65,19 @@ const EmployeeList = () => {
         <table className="min-w-full table-auto border-separate border-spacing-y-2">
           <thead className="bg-white shadow-sm">
             <tr>
-              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
+              <th className="py-3 px-5 text-left text-xs font-semibold text-[#000435]">
                 #
               </th>
-              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
+              <th className="py-3 px-5 text-left text-xs font-semibold text-[#000435]">
                 Employee Username
               </th>
-              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
+              <th className="py-3 px-5 text-left text-xs font-semibold text-[#000435]">
                 Position
               </th>
-              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
+              <th className="py-3 px-5 text-left text-xs font-semibold text-[#000435]">
                 Created Date
               </th>
-              <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600">
+              <th className="py-3 px-5 text-left text-xs font-semibold text-[#000435]">
                 Created By
               </th>
               <th className="py-3 px-5 text-left text-xs font-semibold text-gray-600"></th>

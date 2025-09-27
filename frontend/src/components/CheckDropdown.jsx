@@ -1,28 +1,38 @@
-import { ChevronDown, X, XCircle } from "lucide-react";
+import { Check, ChevronDown, X, XCircle } from "lucide-react";
 import React, { useState } from "react";
 
-const CheckDropdown = ({ label, placeholder }) => {
+const CheckDropdown = ({ label, placeholder, onSelectionChange }) => {
   const [dropOpen, setDropOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
 
-  const options = ["hi", "bye", "koi"];
+  const options = ["air_cargo_admin", "ship_cargo_admin"];
 
   const filteredItems = options.filter((item) =>
     item.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSelectItems = (item) => {
+    let updatedItems;
+
     if (selectedItems.includes(item)) {
-      setSelectedItems(selectedItems.filter((selected) => selected !== item));
+      updatedItems = selectedItems.filter((selected) => selected !== item);
     } else {
-      setSelectedItems([...selectedItems, item]);
+      updatedItems = [...selectedItems, item];
+    }
+    setSelectedItems(updatedItems);
+    if (onSelectionChange) {
+      onSelectionChange(updatedItems);
     }
   };
 
   const removeItems = (e, itemToRemove) => {
     e.stopPropagation();
-    setSelectedItems(selectedItems.filter((item) => item !== itemToRemove));
+    const updatedItems = selectedItems.filter((item) => item !== itemToRemove);
+    setSelectedItems(updatedItems);
+    if (onSelectionChange) {
+      onSelectionChange(updatedItems);
+    }
   };
 
   const isItemSelected = (item) => {
@@ -40,7 +50,7 @@ const CheckDropdown = ({ label, placeholder }) => {
           <div className="flex gap-1">
             {selectedItems.length > 0 ? (
               selectedItems.map((item) => (
-                <div key={item.id}>
+                <div key={item}>
                   <span className="flex items-center gap-1 bg-blue-100 text-blue-600 px-1 py-0.5 rounded-md text-sm">
                     {item}
                     <X
@@ -83,10 +93,21 @@ const CheckDropdown = ({ label, placeholder }) => {
                   const selected = isItemSelected(item);
                   return (
                     <div
+                      key={index}
                       onClick={() => handleSelectItems(item)}
                       className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                     >
-                      {item}
+                      <div className="flex justify-between items-center">
+                        <span>{item}</span>
+                        {selected && (
+                          <div className="w-4 h-4 bg-blue-400 rounded-sm flex items-center justify-center">
+                            <Check
+                              className="w-3 h-3 text-white"
+                              strokeWidth={3}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })

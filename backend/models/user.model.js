@@ -150,12 +150,9 @@ const userSchema = mongoose.Schema({
     timestamps: true
 });
 
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ adminRoles: 1 });
 userSchema.index({ approvalStatus: 1 });
-userSchema.index({ companyCode: 1 });
 userSchema.index({ countryCode: 1 });
 userSchema.index({ branchId: 1 });
 

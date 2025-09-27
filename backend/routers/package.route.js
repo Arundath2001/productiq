@@ -1,5 +1,5 @@
 import express from "express";
-import { createPackage, getPackageDetails, getPackagesByGoniAndVoyage, packageDetailsByVoyageAndCompany, removeProductFromPackage, uploadToPackage } from "../controllers/package.controller.js";
+import { createPackage, getPackageDetails, getPackagesByGoniAndVoyage, packageDetailsByVoyageAndCompany, removeProductFromPackage, updatePackageWeight, uploadToPackage } from "../controllers/package.controller.js";
 import { protectRoute } from '../middleware/auth.middleware.js';
 
 
@@ -11,5 +11,6 @@ router.post("/:packageId/upload", protectRoute, uploadToPackage);
 router.get("/:packageId/get-package", protectRoute, getPackageDetails);
 router.get("/:companyId/voyage/:voyageId", protectRoute, packageDetailsByVoyageAndCompany);
 router.delete("/:packageId/remove-product", protectRoute, removeProductFromPackage);
+router.put('/:packageId/weight', protectRoute, updatePackageWeight);
 
 export default router;

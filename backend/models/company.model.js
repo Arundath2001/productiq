@@ -18,8 +18,6 @@ const companySchema = mongoose.Schema({
     timestamps: true
 });
 
-companySchema.index({ companyCode: 1 });
-
 const Company = mongoose.model("Company", companySchema);
 
 export default Company;

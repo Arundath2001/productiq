@@ -1,13 +1,21 @@
 import React from "react";
 import { FaSearch } from "react-icons/fa";
 
-const SearchFields = ({ searchQuery, setSearchQuery, showDateFilter = true, startDate, setStartDate, endDate, setEndDate, placeholder }) => {
-
+const SearchFields = ({
+  searchQuery,
+  setSearchQuery,
+  showDateFilter = true,
+  startDate,
+  setStartDate,
+  endDate,
+  setEndDate,
+  placeholder,
+}) => {
   const handleClear = () => {
     setSearchQuery("");
     setStartDate("");
     setEndDate("");
-  }
+  };
 
   return (
     <div className="mt-5">
@@ -45,7 +53,10 @@ const SearchFields = ({ searchQuery, setSearchQuery, showDateFilter = true, star
             />
           </div>
         </div>
-        <div onClick={handleClear} className="px-2.5 py-2 text-base border border-black rounded-xl cursor-pointer ml-2">
+        <div
+          onClick={handleClear}
+          className="px-2.5 py-2 text-base border border-black rounded-xl cursor-pointer ml-2"
+        >
           Clear
         </div>
       </form>

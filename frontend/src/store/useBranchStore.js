@@ -91,51 +91,19 @@ export const useBranch = create((set, get) => ({
         }
     },
 
-    createBranchWithAdmins: async (branchData) => {
-        const { branchName, admins, countryCode } = branchData;
+    createBranchWithAdmins: async (branchData, adminsData) => {
 
         set({ isLoading: true, error: null });
 
         try {
-            const usernames = admins.map(admin => admin.username);
-            const existingUsersResponse = await axiosInstance.post('/branch/check-usernames', {
-                usernames
-            });
 
-            if (existingUsersResponse.data.existingUsernames?.length > 0) {
-                const existingNames = existingUsersResponse.data.existingUsernames.join(', ');
-                const errorMessage = `Username(s) already exist: ${existingNames}`;
+            const response = await axiosInstance.post('/branch/create-with-admins', { adminsData, branchData });
 
-                set({
-                    isLoading: false,
-                    error: errorMessage
-                });
+            get().getBranches();
 
-                toast.error(errorMessage);
-                throw new Error(errorMessage);
-            }
+            set({ isLoading: false });
 
-            const response = await axiosInstance.post('/branch/create-with-admins', {
-                branchName,
-                admins,
-                countryCode
-            });
-
-            const { branch, createdAdmins } = response.data;
-
-            await get().getBranches();
-
-            set({
-                isLoading: false,
-                error: null
-            });
-
-            toast.success(
-                `Branch "${branchName}" created successfully with ${createdAdmins.length} administrator${createdAdmins.length > 1 ? 's' : ''}!`,
-                { duration: 4000 }
-            );
-
-            return { branch, admins: createdAdmins };
+            return response.data;
 
         } catch (error) {
             const errorMessage = error.response?.data?.message || error.message || "Failed to create branch with admins";
@@ -146,6 +114,35 @@ export const useBranch = create((set, get) => ({
             });
 
             toast.error(errorMessage, { duration: 4000 });
+            throw error;
+        }
+    },
+
+    addBranchAdmin: async (branchName, formData) => {
+        set({ isLoading: true, error: null });
+
+        console.log(branchName, formData, "log in branch store");
+
+
+        try {
+            const response = await axiosInstance.post(`/branch/${branchName}/add-admin`, formData);
+
+            set({ isLoading: false, error: null });
+
+            toast.success('Administrator Added Successfully!');
+
+            return response.data;
+
+        } catch (error) {
+
+            const errorMessage = error.response?.data?.message || 'Failed to Add new Admin';
+
+            set({
+                isLoading: false,
+                error: errorMessage
+            });
+
+            toast.error(errorMessage);
             throw error;
         }
     },
@@ -189,11 +186,6 @@ export const useBranch = create((set, get) => ({
         try {
             const response = await axiosInstance.delete(`branch/admin/${adminId}`);
 
-            const currentBranch = get().currentBranch;
-
-            if (currentBranch?.branchName) {
-                await get().getBranchAdmin(currentBranch.branchName);
-            }
 
             set({
                 isLoading: false,

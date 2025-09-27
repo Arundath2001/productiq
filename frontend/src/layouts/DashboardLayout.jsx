@@ -5,8 +5,8 @@ const DashboardLayout = () => {
   return (
     <div className="flex h-scree">
       <Sidebar />
-      <main className="flex-1 p-8 overflow-y-auto h-screen bg-gray-100">
-        <div className="max-w-7xl mx-auto">
+      <main className="flex-1 p-4 overflow-y-auto h-screen bg-gray-100">
+        <div>
           <Outlet />
         </div>
       </main>

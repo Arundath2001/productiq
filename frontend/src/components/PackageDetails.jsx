@@ -38,6 +38,8 @@ const PackageDetails = () => {
     getAllVoyagesByBranch(authUser.branchId);
   }, []);
 
+  console.log(packages);
+
   useEffect(() => {
     if (selectedCompany && selectedVoyage) {
       packageDetailsByVoyageAndCompany(selectedCompany.id, selectedVoyage.id);
@@ -146,9 +148,12 @@ const PackageDetails = () => {
                     Package Name : {pkg.goniId.goniName}
                   </p>
                   <p className="text-lg">Goni Number : {pkg.goniNumber}</p>
+                  <p className="text-lg">
+                    Goni Weight : {pkg.packageWeight} kg
+                  </p>
                 </div>
                 <div>
-                  <Tooltip text="Package Details">
+                  <Tooltip text="Package Details" position="left">
                     <ChevronRight
                       className="cursor-pointer"
                       onClick={() => handleNavigate(pkg._id)}

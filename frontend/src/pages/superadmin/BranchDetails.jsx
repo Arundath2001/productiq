@@ -10,18 +10,16 @@ import {
   Trash,
   Trash2Icon,
 } from "lucide-react";
-import CreateBranch from "../../components/CreateBranch.jsx";
 import ConfirmAlert from "../../components/ConfirmAlert.jsx";
-import BranchForm from "../../components/BranchForm.jsx";
+import AdminForm from "../../components/BranchAdminForm.jsx";
 
 const BranchDetails = () => {
   const { branchId } = useParams();
   const navigate = useNavigate();
-  const [showEditAdmin, setShowEditAdmin] = useState(false);
-  const [editingAdmin, setEditingAdmin] = useState(null);
+
   const [deletingAdmin, setDeletingAdmin] = useState(false);
 
-  const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [showAdminForm, setShowAdminForm] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [adminToDelete, setAdminToDelete] = useState(null);
@@ -33,7 +31,6 @@ const BranchDetails = () => {
     isLoading,
     getBranchAdmin,
     branchAdmin,
-    editBranchAdmin,
     error,
     deleteBranchAdmin,
   } = useBranch();
@@ -76,25 +73,7 @@ const BranchDetails = () => {
     navigate("/dashboard/branches");
   };
 
-  const handleEditAdmin = (admin) => {
-    setEditingAdmin(admin);
-    setShowEditAdmin(true);
-  };
-
-  const handleEditComplete = async (editData) => {
-    try {
-      await editBranchAdmin(editingAdmin._id, {
-        username: editData.admin.username,
-        adminRoles: editData.admin.adminRoles,
-        ...(editData.admin.password && { password: editData.admin.password }),
-      });
-
-      setShowEditAdmin(false);
-      setEditingAdmin(null);
-    } catch (error) {
-      console.error("Error updating admin:", error);
-    }
-  };
+  const handleEditAdmin = (admin) => {};
 
   const handleDeleteAdmin = (admin) => {
     setAdminToDelete(admin);
@@ -106,8 +85,8 @@ const BranchDetails = () => {
     setAdminToDelete(null);
   };
 
-  const handleAddAdmin = () => {
-    setShowAddAdmin(true);
+  const handleShowAdminForm = () => {
+    setShowAdminForm(true);
   };
 
   const handleDeleteConfirm = async () => {
@@ -115,6 +94,7 @@ const BranchDetails = () => {
       try {
         setDeletingAdmin(true);
         await deleteBranchAdmin(adminToDelete._id);
+        getBranchAdmin(branchId);
         setShowDeleteConfirm(false);
         setAdminToDelete(null);
       } catch (error) {
@@ -128,29 +108,7 @@ const BranchDetails = () => {
   if (isLoading && !currentBranch) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader className="size-15 animate-spin" />
-      </div>
-    );
-  }
-
-  if (showEditAdmin) {
-    return (
-      <CreateBranch
-        setShowCreateBranch={setShowEditAdmin}
-        editMode={true}
-        editData={{
-          branchName: currentBranch?.branchName,
-          admin: editingAdmin,
-        }}
-        onEditComplete={handleEditComplete}
-      />
-    );
-  }
-
-  if (showAddAdmin) {
-    return (
-      <div className="">
-        <BranchForm setShowBranchForm={setShowAddAdmin} />
+        <Loader className="size-10 animate-spin" />
       </div>
     );
   }
@@ -208,7 +166,7 @@ const BranchDetails = () => {
           </div>
           <div
             className="flex gap-1 items-center cursor-pointer"
-            onClick={handleAddAdmin}
+            onClick={handleShowAdminForm}
           >
             <Plus className="text-blue-500 size-5" />
             <p className="text-blue-500 text-sm">Add New Administrator</p>
@@ -279,6 +237,15 @@ const BranchDetails = () => {
           </tbody>
         </table>
       </div>
+      {showAdminForm && (
+        <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
+          <AdminForm
+            setShowAdminForm={setShowAdminForm}
+            branchName={currentBranch?.branchName}
+            branchId={branchId}
+          />
+        </div>
+      )}
     </div>
   );
 };

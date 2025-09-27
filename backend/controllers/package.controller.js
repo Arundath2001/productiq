@@ -164,7 +164,7 @@ export const packageDetailsByVoyageAndCompany = async (req, res) => {
                 match: { companyId: companyId },
                 select: "goniName"
             })
-            .select("goniNumber").populate('products', 'productCode sequenceNumber trackingNumber');
+            .select("goniNumber packageWeight").populate('products', 'productCode sequenceNumber trackingNumber');
 
         const filteredPackages = packages.filter(pkg => pkg.goniId !== null);
 
@@ -211,6 +211,42 @@ export const removeProductFromPackage = async (req, res) => {
 
     } catch (error) {
         console.log("Error in removeProductFromPackage controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const updatePackageWeight = async (req, res) => {
+    try {
+        const { packageId } = req.params;
+        const { packageWeight } = req.body;
+
+        console.log(packageId, packageWeight, "logggggggggggggggggggg");
+
+
+        if (!packageId) {
+            return res.status(400).json({ message: "PackageId is required to perform this action!" });
+        }
+
+        if (!packageWeight) {
+            return res.status(400).json({ message: "Package Weight is required!" });
+
+        }
+
+        const exisitngPackage = await Package.findById(packageId);
+
+        if (!exisitngPackage) {
+            return res.status(400).json({ message: "Package does not exist!" });
+        }
+
+        const weightUpdatedPackage = await Package.findByIdAndUpdate(packageId, { packageWeight: packageWeight }, { new: true, runValidator: true });
+
+        return res.status(200).json({
+            message: "Package weight updated successfully!",
+            package: weightUpdatedPackage
+        });
+
+    } catch (error) {
+        console.log("Error in updatePackageWeight controller", error.message);
         res.status(500).json({ message: "Internal server error" });
     }
 }
