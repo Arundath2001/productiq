@@ -3,6 +3,7 @@ import PageHeader from "../components/PageHeader";
 import CreatePackages from "../components/CreatePackages";
 import { useGoni } from "../store/useGoniStore";
 import PackageDetails from "../components/PackageDetails";
+import PackageByCompany from "../components/PackageByCompany";
 
 const Packages = () => {
   const [activeTab, setActiveTab] = useState("created");
