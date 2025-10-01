@@ -134,7 +134,7 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
         const totalWeight = pkg.packageWeight || 0;
         grandTotalWeight += totalWeight;
 
-        const totalWeightRow = worksheet.addRow(['Total Weight:', '', `${totalWeight} Kg`]);
+        const totalWeightRow = worksheet.addRow(['Total Weight:', '', `${Math.round(totalWeight * 100) / 100} Kg`]);
         const totalWeightRowIndex = totalWeightRow.number;
 
         worksheet.mergeCells(`A${totalWeightRowIndex}:B${totalWeightRowIndex}`);
@@ -217,7 +217,7 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
     };
     currentRow++;
 
-    const grandTotalWeightRow = worksheet.addRow(['Grand Total Weight:', '', `${grandTotalWeight} Kg`]);
+    const grandTotalWeightRow = worksheet.addRow(['Grand Total Weight:', '', `${Math.round(grandTotalWeight * 100) / 100} Kg`]);
     const grandTotalWeightRowIndex = grandTotalWeightRow.number;
 
     worksheet.mergeCells(`A${grandTotalWeightRowIndex}:B${grandTotalWeightRowIndex}`);
@@ -416,7 +416,7 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
         const totalWeight = pkg.packageWeight || 0;
         grandTotalWeight += totalWeight;
 
-        const totalWeightRow = worksheet.addRow(['Total Weight:', '', `${totalWeight} Kg`]);
+        const totalWeightRow = worksheet.addRow(['Total Weight:', '', `${Math.round(totalWeight * 100) / 100} Kg`]);
         const totalWeightRowIndex = totalWeightRow.number;
 
         worksheet.mergeCells(`A${totalWeightRowIndex}:B${totalWeightRowIndex}`);
@@ -509,7 +509,7 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
     };
     currentRow++;
 
-    const grandTotalWeightRow = worksheet.addRow(['Grand Total Weight:', '', `${grandTotalWeight} Kg`]);
+    const grandTotalWeightRow = worksheet.addRow(['Grand Total Weight:', '', `${Math.round(grandTotalWeight * 100) / 100} Kg`]);
     const grandTotalWeightRowIndex = grandTotalWeightRow.number;
 
     worksheet.mergeCells(`A${grandTotalWeightRowIndex}:B${grandTotalWeightRowIndex}`);
