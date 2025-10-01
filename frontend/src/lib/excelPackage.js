@@ -63,14 +63,9 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
         currentRow++;
 
         const sortedProducts = pkg.products.sort((a, b) => {
-            const aCode = a.productCode || '';
-            const bCode = b.productCode || '';
-
-            if (aCode.length !== bCode.length) {
-                return aCode.length - bCode.length;
-            }
-
-            return aCode.localeCompare(bCode);
+            const aSeq = a.sequenceNumber || 0;
+            const bSeq = b.sequenceNumber || 0;
+            return aSeq - bSeq;
         });
 
         sortedProducts.forEach((product, productIndex) => {
@@ -336,14 +331,9 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
         currentRow++;
 
         const sortedProducts = pkg.products.sort((a, b) => {
-            const aCode = a.productCode || '';
-            const bCode = b.productCode || '';
-
-            if (aCode.length !== bCode.length) {
-                return aCode.length - bCode.length;
-            }
-
-            return aCode.localeCompare(bCode);
+            const aSeq = a.sequenceNumber || 0;
+            const bSeq = b.sequenceNumber || 0;
+            return aSeq - bSeq;
         });
 
         sortedProducts.forEach(product => {
