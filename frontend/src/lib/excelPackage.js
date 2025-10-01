@@ -62,9 +62,23 @@ export const exportPackagesToExcel = async (packages, companyName = '', voyageNa
         });
         currentRow++;
 
+        // Sort products by product code first, then by CTN number
         const sortedProducts = pkg.products.sort((a, b) => {
-            const aSeq = a.sequenceNumber || 0;
-            const bSeq = b.sequenceNumber || 0;
+            const aCode = a.productCode || '';
+            const bCode = b.productCode || '';
+
+            // First, compare by product code
+            if (aCode !== bCode) {
+                // Sort by length first, then alphabetically
+                if (aCode.length !== bCode.length) {
+                    return aCode.length - bCode.length;
+                }
+                return aCode.localeCompare(bCode);
+            }
+
+            // If product codes are the same, sort by CTN number
+            const aSeq = parseInt(a.sequenceNumber) || 0;
+            const bSeq = parseInt(b.sequenceNumber) || 0;
             return aSeq - bSeq;
         });
 
@@ -330,9 +344,23 @@ export const exportPackagesToSingleSheet = async (packages, companyName = '', vo
         });
         currentRow++;
 
+        // Sort products by product code first, then by CTN number
         const sortedProducts = pkg.products.sort((a, b) => {
-            const aSeq = a.sequenceNumber || 0;
-            const bSeq = b.sequenceNumber || 0;
+            const aCode = a.productCode || '';
+            const bCode = b.productCode || '';
+
+            // First, compare by product code
+            if (aCode !== bCode) {
+                // Sort by length first, then alphabetically
+                if (aCode.length !== bCode.length) {
+                    return aCode.length - bCode.length;
+                }
+                return aCode.localeCompare(bCode);
+            }
+
+            // If product codes are the same, sort by CTN number
+            const aSeq = parseInt(a.sequenceNumber) || 0;
+            const bSeq = parseInt(b.sequenceNumber) || 0;
             return aSeq - bSeq;
         });
 
