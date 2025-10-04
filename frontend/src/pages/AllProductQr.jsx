@@ -82,12 +82,12 @@ const AllProductQr = () => {
                   Created: {formatDate(savedCode.createdAt)}
                 </p>
 
-                <div
+                {/* <div
                   onClick={() => handleViewClick(savedCode.productCode)}
                   className="rounded-xl border px-2.5 py-1.5 cursor-pointer hover:bg-gray-50 text-sm focus:outline-none"
                 >
                   View
-                </div>
+                </div> */}
 
                 <div
                   onClick={() => handleShowConfirm(savedCode._id)}
