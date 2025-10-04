@@ -4,6 +4,7 @@ import { useProductCodeStore } from "../store/useProductCodeStore.js";
 import { FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import ConfirmAlert from "../components/ConfirmAlert.jsx";
+import { Trash2 } from "lucide-react";
 
 const AllProductQr = () => {
   const {
@@ -78,7 +79,7 @@ const AllProductQr = () => {
               </div>
 
               <div className="flex gap-2.5 items-center">
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-600 leading-none">
                   Created: {formatDate(savedCode.createdAt)}
                 </p>
 
@@ -91,11 +92,11 @@ const AllProductQr = () => {
 
                 <div
                   onClick={() => handleShowConfirm(savedCode._id)}
-                  className="group"
+                  className="group flex items-center"
                 >
-                  <FaTrash
+                  <Trash2
                     className="cursor-pointer text-gray-500 group-hover:text-red-500 transition-colors duration-200"
-                    size={15}
+                    size={20}
                   />
                 </div>
               </div>
