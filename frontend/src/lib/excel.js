@@ -131,11 +131,24 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
     const headerRow = worksheet.getRow(1);
     headerRow.height = 60;
 
-    headerRow.eachCell((cell) => {
+    headerRow.eachCell((cell, colNumber) => {
+        let fontColor = 'FF000000'; // Default black
+
+        // Red color for price and shipping cost columns
+        if (colNumber === 9 || colNumber === 10) {
+            fontColor = 'FFFF0000'; // Red
+        }
+
+        // Green color only for TOTAL NO OF CTN (column 12)
+        if (colNumber === 12) {
+            fontColor = 'FF008000'; // Green
+        }
+
         cell.font = {
             bold: true,
             size: 10,
-            name: 'Arial'
+            name: 'Arial',
+            color: { argb: fontColor }
         };
         cell.alignment = {
             horizontal: 'center',
@@ -149,10 +162,11 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
             bottom: { style: 'thin' },
             right: { style: 'thin' }
         };
+
         cell.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FFFFFFFF' }
+            fgColor: { argb: 'FFFFFFFF' } // White background for all
         };
     });
 
@@ -203,20 +217,24 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
         const dataRow = worksheet.addRow({
             sl: serialNumber++,
             mark: item.productCode,
-            partNo: '',
+            partNo: 'PKT FROM OUTSIDE ONLINE',
             desc: '',
             qty: item.quantity,
-            bshRef: '',
-            aswaqInv: '',
+            bshRef: 'OUTSIDE',
+            aswaqInv: 'SHPNG',
             weight: item.weight,
-            pricePerKg: '',
+            pricePerKg: '$ 5.00',
             shippingCost: '',
             totalCtn: '',
             totalNoCtn: ''
         });
 
         dataRow.height = 25;
-        dataRow.eachCell((cell) => {
+
+        // Merge cells C and D (partNo and desc)
+        worksheet.mergeCells(`C${dataRow.number}:D${dataRow.number}`);
+
+        dataRow.eachCell((cell, colNumber) => {
             cell.border = {
                 top: { style: 'thin' },
                 left: { style: 'thin' },
@@ -228,9 +246,29 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
                 vertical: 'middle',
                 readingOrder: 'contextDependent'
             };
+
+            let fontSize = 10;
+            let fontColor = 'FF000000'; // Default black
+
+            // Smaller font for specific columns
+            if (colNumber === 3 || colNumber === 4 || colNumber === 6 || colNumber === 7) {
+                fontSize = 8;
+            }
+
+            // Red color for price and shipping cost columns
+            if (colNumber === 9 || colNumber === 10) {
+                fontColor = 'FFFF0000'; // Red
+            }
+
+            // Green color only for TOTAL NO OF CTN (column 12)
+            if (colNumber === 12) {
+                fontColor = 'FF008000'; // Green
+            }
+
             cell.font = {
-                size: 10,
-                name: 'Arial'
+                size: fontSize,
+                name: 'Arial',
+                color: { argb: fontColor }
             };
         });
     });
