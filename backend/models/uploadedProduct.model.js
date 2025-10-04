@@ -82,6 +82,58 @@ uploadedProductSchema.index({
 uploadedProductSchema.set('toJSON', { virtuals: true });
 uploadedProductSchema.set('toObject', { virtuals: true });
 
+uploadedProductSchema.statics.aggregateCompanySummary = async function ({ voyageId, companyName, page, limit }) {
+    const matchStage = { voyageId, status: 'pending' };
+
+    if (companyName) {
+        matchStage.clientCompany = { $regex: companyName, $options: 'i' }
+    }
+
+    const pipeline = [
+        { $match: matchStage },
+        {
+            $group: {
+                _id: '$clientCompany',
+                companyCode: '$clientCompany',
+                itemCount: { $sum: 1 },
+                totalWeight: { $sum: { $toDouble: { $ifNull: ['$weight', 0] } } },
+                latestUpload: { $max: "$uploadedDate" },
+            },
+        },
+        {
+            $addField: {
+                totalWeight: { $divide: [{ $round: [{ $multiply: ["$totalWeight", 100] }, 0] }, 100] },
+            },
+        },
+        { $sort: { companyCode: 1 } },
+    ];
+
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    const [countResult] = await this.aggregate(countPipeline);
+    const totalCompanies = countResult?.total || 0;
+
+    if (page && limit) {
+        const skip = (page - 1) * limit;
+        pipeline.push({ $skip: skip }, { $limit: limit });
+    }
+
+    const companies = await this.aggregate(pipeline);
+
+    const [totals] = await this.aggregate([
+        { $match: matchStage },
+        {
+            $group: {
+                _id: null,
+                totalItems: { $sum: 1 },
+                totalWeight: { $sum: { $toDouble: { $ifNull: ["$weight", 0] } } },
+            },
+        },
+    ]);
+
+    return { companies, totals, totalCompanies };
+
+};
+
 const UploadedProduct = mongoose.model("UploadedProduct", uploadedProductSchema);
 
 export default UploadedProduct;

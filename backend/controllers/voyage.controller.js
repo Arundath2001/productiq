@@ -1548,3 +1548,6 @@ export const getPendingVoyageDetails = async (req, res) => {
 
     }
 }
+
+// v2 - NEW OPTIMIZED CONTROLLER - For new app versions
+
