@@ -6,6 +6,7 @@ import UserForm from "../components/UserForm.jsx";
 import { FaPen, FaPlus } from "react-icons/fa";
 import { FaTrash } from "react-icons/fa";
 import ConfirmAlert from "../components/ConfirmAlert.jsx";
+import { Trash2 } from "lucide-react";
 
 const ClientInfo = () => {
   const {
@@ -282,16 +283,15 @@ const ClientInfo = () => {
                           >
                             {isRejectingClient ? "Rejecting..." : "Reject"}
                           </button>
-                          <FaTrash
-                            className="cursor-pointer hover:text-red-600 transition-colors ml-2"
-                            color="gray"
+                          {/* <Trash2
+                            className="cursor-pointer text-gray-500 hover:text-red-500 transition-colors ml-2"
                             onClick={() => handleConfirm(data._id)}
-                          />
-                          <FaPen
+                          /> */}
+                          {/* <FaPen
                             className="cursor-pointer hover:text-blue-600 transition-colors"
                             color="gray"
                             onClick={() => handleShowForm(data)}
-                          />
+                          /> */}
                         </>
                       ) : data.approvalStatus === "rejected" ? (
                         <>
@@ -304,11 +304,10 @@ const ClientInfo = () => {
                               ? "Re-approving..."
                               : "Re-approve"}
                           </button>
-                          <FaTrash
-                            className="cursor-pointer hover:text-red-600 transition-colors ml-2"
-                            color="gray"
+                          {/* <Trash2
+                            className="cursor-pointer text-gray-500 hover:text-red-500 transition-colors ml-2"
                             onClick={() => handleConfirm(data._id)}
-                          />
+                          /> */}
                         </>
                       ) : null}
                     </div>
@@ -329,12 +328,12 @@ const ClientInfo = () => {
         </table>
       </div>
 
-      <div
+      {/* <div
         onClick={() => handleShowForm()}
         className="bg-black p-3 bottom-10 right-10 rounded-full fixed cursor-pointer"
       >
         <FaPlus size={25} color="#FFFFFF" />
-      </div>
+      </div> */}
 
       {showUSerForm && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
