@@ -19,8 +19,13 @@ import Shipment from "../pages/ship-cargo/Shipment";
 import BranchDetails from "../pages/superadmin/BranchDetails";
 import Packages from "../pages/Packages";
 import PackageProducts from "../pages/PackageProducts";
+import ContactUs from "../pages/ContactUs";
 
 const router = createBrowserRouter([
+  {
+    path: "/contact",
+    element: <ContactUs />,
+  },
   {
     path: "/",
     element: <Navigate to="/dashboard" replace />,

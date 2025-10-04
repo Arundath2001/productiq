@@ -111,6 +111,12 @@ const LoginPage = () => {
                 "LOGIN"
               )}
             </button>
+            <p className="text-sm text-center text-gray-600 mt-4">
+              Forgot Password ?{" "}
+              <a className="font-semibold underline" href="/contact">
+                Contact us
+              </a>
+            </p>
           </form>
         </div>
       </div>
