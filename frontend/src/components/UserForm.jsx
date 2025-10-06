@@ -5,7 +5,7 @@ import { useAuthStore } from "../store/useAuthStore.js";
 import toast from "react-hot-toast";
 
 const UserForm = ({ formTitile, role, closeForm, userData }) => {
-  const { createUser } = useAuthStore();
+  const { createUser, authUser } = useAuthStore();
   const isEditing = Boolean(userData?.username);
 
   const [formData, setFormData] = useState({
@@ -24,32 +24,32 @@ const UserForm = ({ formTitile, role, closeForm, userData }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (!formData.username) {
       toast.error("Username is required.");
       return;
     }
-  
+
     if (!isEditing && formData.password.length < 8) {
       toast.error("Password must be at least 8 characters long.");
       return;
     }
-  
+
     if (isEditing && changePassword && formData.password.length < 8) {
       toast.error("Password must be at least 8 characters long.");
       return;
     }
-  
+
     if (role === "employee" && !formData.position) {
       toast.error("Position is required for employees.");
       return;
     }
-  
+
     if (role === "client" && (!formData.companyCode || !formData.location)) {
       toast.error("Company Code and Location are required for clients.");
       return;
     }
-  
+
     const userDataToSend = {
       username: formData.username,
       role: role,
@@ -61,20 +61,21 @@ const UserForm = ({ formTitile, role, closeForm, userData }) => {
         location: formData.location,
       }),
     };
-  
+
     try {
       if (isEditing) {
         await useAuthStore.getState().editUser(userData._id, userDataToSend);
       } else {
-        await createUser(userDataToSend);
+        await createUser(userDataToSend, authUser.branchId);
       }
-      toast.success(isEditing ? "User updated successfully!" : "User created successfully!");
+      toast.success(
+        isEditing ? "User updated successfully!" : "User created successfully!"
+      );
       closeForm(false);
     } catch (error) {
       toast.error("Something went wrong. Please try again.");
     }
   };
-  
 
   return (
     <div className="bg-white px-5 py-4 rounded-xl w-96">

@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { generateToken } from "../lib/utils.js";
 import { Expo } from 'expo-server-sdk'; // Add this import
 import { io } from "../lib/socket.js";
+import { log } from "console";
 
 // Using Map for in-memory storage (consider Redis for production)
 const otpStore = new Map();
@@ -1248,11 +1249,14 @@ export const checkVerificationStatus = async (req, res) => {
     }
 };
 
-export const createUser = async (req, res) => {
+export const createEmployee = async (req, res) => {
     try {
-        const { username, password, companyCode, role, position, location, phoneNumber, email } = req.body;
 
-        console.log(req.body);
+        const { branchId } = req.params;
+
+        const { username, password, position, role } = req.body;
+
+        console.log(req.body, branchId);
 
 
         if (!username || !password || !role) {
@@ -1290,12 +1294,9 @@ export const createUser = async (req, res) => {
         const newUser = new User({
             username,
             password: hashedPassword,
-            companyCode: role === "client" ? companyCode : undefined,
             role,
-            position: role === "employee" ? position : undefined,
-            location: role === "client" ? location : undefined,
-            phoneNumber: role === "client" ? phoneNumber : undefined,
-            email: role === "client" ? email : undefined,
+            position,
+            branchId,
             createdBy: role === "admin" ? undefined : createdBy
         });
 
@@ -1306,19 +1307,15 @@ export const createUser = async (req, res) => {
             res.status(201).json({
                 _id: newUser._id,
                 username: newUser.username,
-                companyCode: companyCode,
                 role: role,
                 position: position,
-                location: location,
-                phoneNumber: phoneNumber,
-                email: email
             })
         } else {
             return res.status(400).json({ message: "Invalid user data" })
         }
 
     } catch (error) {
-        console.log("Error in create user controller", error.message);
+        console.log("Error in createEmployee controller", error.message);
         res.status(500).json({ message: "internal server error" });
     }
 }
@@ -1548,9 +1545,13 @@ export const checkAuth = (req, res) => {
     }
 };
 
-export const getUserData = async (req, res) => {
+export const getEmployee = async (req, res) => {
     try {
-        const employees = await User.find({ role: "employee" }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });
+
+        const { branchId } = req.params;
+
+        const employees = await User.find({ role: "employee", branchId }, "-password").populate("createdBy", "username").sort({ createdAt: -1 });
+
         const clients = await User.find({ role: "client" }, "-password")
             .populate("createdBy", "username")
             .populate("approvedBy", "username")
@@ -1561,6 +1562,23 @@ export const getUserData = async (req, res) => {
             employees,
             clients
         });
+
+    } catch (error) {
+        console.log("Error in getUserData controller", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const getUserData = async (req, res) => {
+    try {
+
+        const clients = await User.find({ role: "client" }, "-password")
+            .populate("createdBy", "username")
+            .populate("approvedBy", "username")
+            .populate("rejectedBy", "username")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({ clients });
 
     } catch (error) {
         console.log("Error in getUserData controller", error.message);

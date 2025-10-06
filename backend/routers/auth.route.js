@@ -2,7 +2,6 @@ import express from "express";
 import {
     checkAuth,
     completeRegistration,
-    createUser,
     deleteUser,
     editUser,
     getUserData,
@@ -26,14 +25,16 @@ import {
     sendForgotPasswordOTP,
     adminLogin,
     employeeLogin,
-    clientLogin
+    clientLogin,
+    createEmployee,
+    getEmployee
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
 // Authentication routes
-router.post("/register", protectRoute, createUser);
+router.post("/:branchId/register", protectRoute, createEmployee);
 router.post("/login", login);
 router.post("/employee-login", employeeLogin);
 router.post("/client-login", clientLogin);
@@ -42,6 +43,7 @@ router.post("/logout", logout);
 // router.get("/companycode", protectRoute, getCompnayCode)
 router.get("/check", protectRoute, checkAuth);
 router.get('/usersdata', protectRoute, getUserData);
+router.get('/:branchId/getEmployee', protectRoute, getEmployee);
 router.delete('/delete/:userId', protectRoute, deleteUser);
 router.put("/edit/:userId", protectRoute, editUser);
 

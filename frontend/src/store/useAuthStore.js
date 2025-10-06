@@ -75,7 +75,7 @@ export const useAuthStore = create((set, get) => ({
 
     getUsersData: async () => {
         try {
-            const res = await axiosInstance.get("/auth/usersdata");
+            const res = await axiosInstance.get(`/auth/usersdata`);
             set({ usersData: res.data });
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to fetch users data");
@@ -83,12 +83,24 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
-    createUser: async (userData) => {
+    getEmployee: async (branchId) => {
+        try {
+            const res = await axiosInstance.get(`/auth/${branchId}/getEmployee`);
+            set({ usersData: res.data });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to fetch users data");
+            console.log("Error in getUsersData", error);
+        }
+    },
+
+    createUser: async (userData, branchId) => {
         set({ isSigningUp: true });
         try {
-            const res = await axiosInstance.post("/auth/register", userData);
+            console.log(userData, branchId);
 
-            await useAuthStore.getState().getUsersData();
+            const res = await axiosInstance.post(`/auth/${branchId}/register`, userData);
+
+            await useAuthStore.getState().getEmployee(branchId);
 
             return res.data;
         } catch (error) {

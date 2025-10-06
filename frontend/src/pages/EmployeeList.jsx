@@ -7,7 +7,7 @@ import { FaTrash } from "react-icons/fa";
 import ConfirmAlert from "../components/ConfirmAlert.jsx";
 
 const EmployeeList = () => {
-  const { getUsersData, usersData, deleteUser } = useAuthStore();
+  const { getEmployee, usersData, deleteUser, authUser } = useAuthStore();
   const [showUserForm, setShowUserForm] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,8 +16,8 @@ const EmployeeList = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
 
   useEffect(() => {
-    getUsersData();
-  }, []);
+    getEmployee(authUser.branchId);
+  }, [authUser.branchId]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
