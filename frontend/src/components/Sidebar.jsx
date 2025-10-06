@@ -32,7 +32,7 @@ const Sidebar = ({ setSelectedTab }) => {
       { path: "trackproduct", label: "Track Product", icon: Truck },
       { path: "allproduct", label: "All Product QR", icon: QrCode },
       { path: "employee", label: "Employee List", icon: Users },
-      { path: "clients", label: "Clients", icon: Building2 },
+      // { path: "clients", label: "Clients", icon: Building2 },
       { path: "customercode", label: "Customer Code", icon: UserPlus },
       { path: "allbill", label: "Bill of Lading(BOL)", icon: FileText },
       { path: "packages", label: "Packing List", icon: Package },

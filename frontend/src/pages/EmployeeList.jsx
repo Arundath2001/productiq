@@ -33,9 +33,10 @@ const EmployeeList = () => {
     setShowUserForm(true);
   };
 
-  const filteredEmployees = usersData.employees.filter((employee) =>
-    employee.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredEmployees =
+    usersData?.employees?.filter((employee) =>
+      employee.username.toLowerCase().includes(searchQuery.toLowerCase())
+    ) || [];
 
   const handleConfirm = (userId) => {
     setSelectedUserId(userId);

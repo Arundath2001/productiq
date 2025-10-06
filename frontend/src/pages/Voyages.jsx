@@ -101,7 +101,7 @@ const Voyages = () => {
             {filteredVoyages.map((voyage, index) => (
               <div
                 key={index}
-                className="flex rounded-xl items-center shadow-sm justify-between bg-white px-4 py-4 mb-2.5"
+                className="flex rounded-xl items-center shadow-sm justify-between hover:shadow-gray-500 bg-white px-4 py-2.5 mb-2.5"
               >
                 <p className="text-black text-sm">
                   {voyage.voyageName} | VNo {voyage.voyageNumber}/{voyage.year}
@@ -110,23 +110,26 @@ const Voyages = () => {
                 <div className="flex gap-3 items-center">
                   <p>Created Date: {formatDate(voyage.createdAt)}</p>
 
-                  {/* <div className="rounded-xl border px-2.5 py-1.5 cursor-pointer">
+                  <div
+                    onClick={() => handleViewClick(voyage._id)}
+                    className="rounded-xl border px-2.5 py-1.5 cursor-pointer"
+                  >
                     View
-                  </div> */}
+                  </div>
 
                   <div
-                    className="cursor-pointer flex gap-2.5"
+                    className="cursor-pointer items-center flex gap-2.5"
                     onClick={() => handleShowConfirm(voyage._id)}
                   >
                     <Trash2
                       size={20}
                       className="text-gray-500 hover:text-red-500"
                     />
-                    <ChevronRight
+                    {/* <ChevronRight
                       size={20}
                       className="text-gray-500 hover:text-gray-800 cursor-pointer"
                       onClick={() => handleViewClick(voyage._id)}
-                    />
+                    /> */}
                   </div>
                 </div>
               </div>
