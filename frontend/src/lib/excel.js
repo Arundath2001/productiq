@@ -221,7 +221,7 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
             desc: '',
             qty: item.quantity,
             bshRef: 'OUTSIDE',
-            aswaqInv: 'SHPNG',
+            aswaqInv: 'ONLY SHPNG',
             weight: item.weight,
             pricePerKg: '$ 5.00',
             shippingCost: '',
