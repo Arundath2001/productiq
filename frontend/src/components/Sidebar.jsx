@@ -20,6 +20,8 @@ import {
 const Sidebar = ({ setSelectedTab }) => {
   const { authUser, logout } = useAuthStore();
 
+  const isDubaiBranch = authUser?.branchName?.toLowerCase() === "dubai";
+
   const menu = {
     superadmin: [
       { path: "branches", label: "Branches", icon: LayoutDashboard },
@@ -32,13 +34,24 @@ const Sidebar = ({ setSelectedTab }) => {
       { path: "trackproduct", label: "Track Product", icon: Truck },
       { path: "allproduct", label: "All Product QR", icon: QrCode },
       { path: "employee", label: "Employee List", icon: Users },
-      // { path: "clients", label: "Clients", icon: Building2 },
+      ...(isDubaiBranch
+        ? [{ path: "clients", label: "Clients", icon: Building2 }]
+        : []),
+
       { path: "customercode", label: "Customer Code", icon: UserPlus },
       { path: "allbill", label: "Bill of Lading(BOL)", icon: FileText },
       { path: "packages", label: "Packing List", icon: Package },
     ],
     ship_cargo_admin: [
       { path: "shipment", label: "Shipments", icon: ShipIcon },
+      // { path: "completed", label: "Completed Shipments", icon: ShipIcon },
+      // { path: "clients", label: "Clients", icon: Building2 },
+      // { path: "trackproduct", label: "Track Product", icon: Truck },
+      // { path: "allproduct", label: "All Product QR", icon: QrCode },
+      // { path: "employee", label: "Employee List", icon: Users },
+      // { path: "customercode", label: "Customer Code", icon: UserPlus },
+      // { path: "allbill", label: "Bill of Lading(BOL)", icon: FileText },
+      // { path: "packages", label: "Packing List", icon: Package },
     ],
     approve: [
       { path: "clients", label: "Clients", icon: Building2 },
