@@ -109,3 +109,42 @@ export const deleteSavedCode = async (req, res) => {
     }
 }
 
+// v2 codes 
+
+export const getSavedProductCodeV2 = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const searchQuery = req.query.search || '';
+
+        console.log(page);
+
+
+        const filter = {};
+
+        if (searchQuery) {
+            filter.productCode = { $regex: searchQuery, $options: 'i' }
+        }
+
+        const totalCount = await SavedCode.countDocuments(filter);
+
+        if (totalCount === 0) {
+            return res.status(404).json({
+                message: 'No saved product codes found',
+                data: [],
+                pagination: {
+                    currentPage: page,
+                    totalPages: 0,
+                    totalItems: 0,
+                    itemsPerPage: limit
+                }
+            });
+        }
+
+        const savedCodes = await SavedCode.find(filter);
+
+    } catch (error) {
+
+    }
+}

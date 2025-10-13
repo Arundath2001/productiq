@@ -223,7 +223,7 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
             bshRef: 'OUTSIDE',
             aswaqInv: 'ONLY SHPNG',
             weight: item.weight,
-            pricePerKg: '$ 5.00',
+            pricePerKg: '',
             shippingCost: '',
             totalCtn: '',
             totalNoCtn: ''
