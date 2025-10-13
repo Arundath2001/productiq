@@ -227,9 +227,24 @@ export const sendRegistrationOTP = async (req, res) => {
 };
 
 // Step 2: Verify OTP only (separate from registration)
+
+function normalizeDigits(input) {
+    if (!input) return input;
+
+    // Replace Arabic-Indic digits with Western digits
+    const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const westernDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    return input.replace(/[٠-٩]/g, d => westernDigits[arabicDigits.indexOf(d)]);
+}
+
 export const verifyOTP = async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const { email } = req.body;
+
+        let otp = req.body.otp;
+
+        otp = normalizeDigits(otp);
 
         console.log("OTP verification request:", { email, otp });
 

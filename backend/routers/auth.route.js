@@ -40,7 +40,7 @@ router.post("/employee-login", employeeLogin);
 router.post("/client-login", clientLogin);
 router.post("/adminlogin", adminLogin);
 router.post("/logout", logout);
-// router.get("/companycode", protectRoute, getCompnayCode)
+// router.get("/companycode", protectRoute, getCompnayCode);
 router.get("/check", protectRoute, checkAuth);
 router.get('/usersdata', protectRoute, getUserData);
 router.get('/:branchId/getEmployee', protectRoute, getEmployee);

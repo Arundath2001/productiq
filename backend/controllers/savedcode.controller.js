@@ -142,7 +142,14 @@ export const getSavedProductCodeV2 = async (req, res) => {
             });
         }
 
-        const savedCodes = await SavedCode.find(filter);
+        const savedCodes = await SavedCode.find({})
+            .populate("savedBy", "username")
+            .sort({ productCode: 1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+
 
     } catch (error) {
 
