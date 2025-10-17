@@ -118,14 +118,7 @@ export const getSavedProductCodeV2 = async (req, res) => {
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
 
-        console.log(page);
-
-
-        const filter = {};
-
-        if (searchQuery) {
-            filter.productCode = { $regex: searchQuery, $options: 'i' }
-        }
+        const filter = searchQuery ? { productCode: { $regex: searchQuery, $options: 'i' } } : {}
 
         const totalCount = await SavedCode.countDocuments(filter);
 
@@ -142,16 +135,71 @@ export const getSavedProductCodeV2 = async (req, res) => {
             });
         }
 
-        const savedCodes = await SavedCode.find({})
+        const savedCodes = await SavedCode.find(filter)
             .populate("savedBy", "username")
             .sort({ productCode: 1 })
             .skip(skip)
             .limit(limit)
             .lean();
 
+        const productsCodes = savedCodes.map((code) => code.productCode);
 
+        const allVoyageSummaries = await PrintedQr.aggregate([
+            { $match: { productCode: { $in: productsCodes } } },
+            {
+                $group: {
+                    _id: {
+                        productCode: "$productCode",
+                        status: "$printStatus",
+                        voyage: "$voyageNumber",
+                    },
+                    count: { $sum: 1 },
+                },
 
+            },
+            { $sort: { "_id:productCode": 1, "_id.voyage": 1 } }
+
+        ]);
+
+        const summariesByProductCode = {};
+
+        allVoyageSummaries.forEach((item) => {
+            const { productCode, voyage, status } = item._id;
+            if (!summariesByProductCode[productCode]) summariesByProductCode[productCode] = {};
+            if (!summariesByProductCode[productCode][voyage])
+                summariesByProductCode[productCode][voyage] = {
+                    voyageNumber: voyage,
+                    generated: 0,
+                    printed: 0,
+                    failed: 0,
+                };
+
+            summariesByProductCode[productCode][voyage][status] = item.count;
+        });
+
+        const codesWithSummary = savedCodes.map((code) => ({
+            ...code,
+            voyageSummaries: summariesByProductCode[code.productCode]
+                ? Object.values(summariesByProductCode[code.productCode])
+                : [],
+        }));
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        res.status(200).json({
+            success: true,
+            data: codesWithSummary,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalItems: totalCount,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+            },
+        });
     } catch (error) {
-
+        console.log("Error in getSavedProductCodeV2 controller", error.message);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 }

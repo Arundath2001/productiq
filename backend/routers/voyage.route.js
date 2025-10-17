@@ -1,5 +1,5 @@
 import express from "express";
-import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllVoyageProducts, getAllVoyagesByBranch, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompletedCompaniesSummaryByVoyage, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyageDetails, getPendingVoyages, getProductDetails, getUploadedProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageNumber, getVoyages, updateCompletedVoyageStatus, uploadVoyage } from "../controllers/voyage.controller.js";
+import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllPendingCompaniesSummaryV2, getAllVoyageProducts, getAllVoyagesByBranch, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompletedCompaniesSummaryByVoyage, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByBranch, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyageDetails, getPendingVoyages, getProductDetails, getUploadedProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageNumber, getVoyages, updateCompletedVoyageStatus, uploadVoyage } from "../controllers/voyage.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import upload from "../lib/multer.js";
 
@@ -16,6 +16,8 @@ router.get("/voyages/:branchId", protectRoute, getVoyages);
 router.get("/pending-voyages", protectRoute, getPendingVoyages);
 
 router.get("/completed-voyages", protectRoute, getCompletedVoyages);
+
+router.get("/completed-voyages/:branchId", protectRoute, getCompletedVoyagesByBranch);
 
 router.get("/getproducts/:productCode", protectRoute, getProductDetails)
 
@@ -60,7 +62,7 @@ router.get("/:branchId/pending-voyage-details", protectRoute, getPendingVoyageDe
 
 // v2 - NEW OPTIMIZED ROUTER - For new app versions
 
-// router.get('/v2/:voyageId/companies', protectRoute, getCompaniesSummaryOptimized);
+router.get('/v2/companies/pending/:branchId', getAllPendingCompaniesSummaryV2);
 
 
 export default router; 

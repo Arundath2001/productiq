@@ -38,11 +38,11 @@ export const useVoyageStore = create((set, get) => ({
     },
 
 
-    getCompletedVoyages: async () => {
+    getCompletedVoyages: async (branchId) => {
         set({ isVoyagesLoading: true });
 
         try {
-            const res = await axiosInstance.get(`/voyage/completed-voyages`);
+            const res = await axiosInstance.get(`/voyage/completed-voyages/${branchId}`);
 
             set({ completedVoyages: res.data });
 

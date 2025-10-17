@@ -438,6 +438,100 @@ export const getCompletedVoyages = async (req, res) => {
     }
 };
 
+export const getCompletedVoyagesByBranch = async (req, res) => {
+    try {
+
+        const { branchId } = req.params;
+
+        const voyages = await Voyage.find({ status: "completed", branchId: branchId }).populate('branchId', 'branchName').sort({ createdAt: -1 });
+
+        if (!voyages.length) {
+            return res.status(200).json([]);
+        }
+
+        // Get voyage IDs for querying products
+        const voyageIds = voyages.map(voyage => voyage._id);
+
+        // Find all completed products for these voyages
+        const products = await UploadedProduct.find({
+            voyageId: { $in: voyageIds },
+            status: "completed"
+        });
+
+        // Create a map to store statistics for each voyage
+        const voyageStatsMap = new Map();
+
+        // Initialize voyage stats
+        voyages.forEach(voyage => {
+            voyageStatsMap.set(voyage._id.toString(), {
+                ...voyage.toObject(),
+                totalItems: 0,
+                totalWeight: 0,
+                totalCompanies: 0,
+                companies: new Set(),
+                exportedDate: voyage.exportedDate // Initialize with voyage's exportedDate
+            });
+        });
+
+        // Calculate statistics from products and get exportedDate
+        products.forEach(product => {
+            const voyageId = product.voyageId.toString();
+            const voyageStats = voyageStatsMap.get(voyageId);
+
+            if (voyageStats) {
+                voyageStats.totalItems += 1;
+                voyageStats.totalWeight += Number(product.weight) || 0;
+                voyageStats.companies.add(product.clientCompany);
+
+                // Get exportedDate from product if voyage doesn't have one
+                if (product.exportedDate && !voyageStats.exportedDate) {
+                    voyageStats.exportedDate = product.exportedDate;
+                }
+            }
+        });
+
+        // Format the response with calculated statistics
+        const completedVoyages = Array.from(voyageStatsMap.values()).map(voyage => ({
+            _id: voyage._id,
+            voyageName: voyage.voyageName,
+            voyageNumber: voyage.voyageNumber,
+            year: voyage.year,
+            status: voyage.status,
+            createdBy: voyage.createdBy,
+            createdAt: voyage.createdAt,
+            updatedAt: voyage.updatedAt,
+            exportedDate: voyage.exportedDate, // This now includes exportedDate from products
+            totalItems: voyage.totalItems,
+            totalWeight: Math.round(voyage.totalWeight * 100) / 100,
+            totalCompanies: voyage.companies.size,
+            dispatchDate: voyage.dispatchDate,
+            transitDate: voyage.transitDate,
+            originalExpectedDate: voyage.originalExpectedDate,
+            expectedDate: voyage.expectedDate,
+            delayDate: voyage.delayDate,
+            delayMessage: voyage.delayMessage,
+            delayDays: voyage.delayDays,
+            isDelayed: voyage.isDelayed,
+            location: voyage.location,
+            branchName: voyage.branchId?.branchName || "Unknown",
+            trackingStatus: voyage.trackingStatus,
+        }));
+
+        // Sort by exportedDate (most recent first), fallback to createdAt if no exportedDate
+        completedVoyages.sort((a, b) => {
+            const dateA = new Date(a.exportedDate || a.createdAt);
+            const dateB = new Date(b.exportedDate || b.createdAt);
+            return dateB - dateA;
+        });
+
+        return res.status(200).json(completedVoyages);
+
+    } catch (error) {
+        console.error("Error fetching getCompletedVoyages details:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 const sendPushNotificationToMultiple = async (expoPushTokens, message) => {
     let expo = new Expo();
 
@@ -1297,110 +1391,110 @@ export const getCompletedVoyagesByCompanyAndBranch = async (req, res) => {
     }
 };
 
-export const getAllPendingCompaniesSummary = async (req, res) => {
-    try {
+// export const getAllPendingCompaniesSummary = async (req, res) => {
+//     try {
 
-        const { branchId } = req.params;
+//         const { branchId } = req.params;
 
-        console.log(branchId);
+//         console.log(branchId);
 
 
-        const pendingVoyages = await Voyage.find({ status: "pending", branchId: branchId })
-            .select("_id voyageName voyageNumber year createdAt")
-            .sort({ createdAt: -1 });
+//         const pendingVoyages = await Voyage.find({ status: "pending", branchId: branchId })
+//             .select("_id voyageName voyageNumber year createdAt")
+//             .sort({ createdAt: -1 });
 
-        if (!pendingVoyages.length) {
-            return res.status(200).json({
-                voyages: [],
-                summary: {
-                    totalVoyages: 0,
-                    grandTotalItems: 0,
-                    grandTotalWeight: 0
-                }
-            });
-        }
+//         if (!pendingVoyages.length) {
+//             return res.status(200).json({
+//                 voyages: [],
+//                 summary: {
+//                     totalVoyages: 0,
+//                     grandTotalItems: 0,
+//                     grandTotalWeight: 0
+//                 }
+//             });
+//         }
 
-        const voyageIds = pendingVoyages.map(voyage => voyage._id);
+//         const voyageIds = pendingVoyages.map(voyage => voyage._id);
 
-        // Find all products from pending voyages
-        const products = await UploadedProduct.find({
-            voyageId: { $in: voyageIds },
-            status: "pending"
-        });
+//         // Find all products from pending voyages
+//         const products = await UploadedProduct.find({
+//             voyageId: { $in: voyageIds },
+//             status: "pending"
+//         });
 
-        // Group products by voyage and calculate company summaries
-        const voyageSummaries = await Promise.all(
-            pendingVoyages.map(async (voyage) => {
-                const voyageProducts = products.filter(p => p.voyageId.toString() === voyage._id.toString());
+//         // Group products by voyage and calculate company summaries
+//         const voyageSummaries = await Promise.all(
+//             pendingVoyages.map(async (voyage) => {
+//                 const voyageProducts = products.filter(p => p.voyageId.toString() === voyage._id.toString());
 
-                const companySummary = {};
+//                 const companySummary = {};
 
-                voyageProducts.forEach(product => {
-                    const company = product.clientCompany;
+//                 voyageProducts.forEach(product => {
+//                     const company = product.clientCompany;
 
-                    if (!companySummary[company]) {
-                        companySummary[company] = {
-                            companyCode: company,
-                            itemCount: 0,
-                            totalWeight: 0,
-                            latestUpload: product.uploadedDate
-                        };
-                    }
+//                     if (!companySummary[company]) {
+//                         companySummary[company] = {
+//                             companyCode: company,
+//                             itemCount: 0,
+//                             totalWeight: 0,
+//                             latestUpload: product.uploadedDate
+//                         };
+//                     }
 
-                    companySummary[company].itemCount += 1;
-                    companySummary[company].totalWeight += Number(product.weight) || 0;
+//                     companySummary[company].itemCount += 1;
+//                     companySummary[company].totalWeight += Number(product.weight) || 0;
 
-                    if (new Date(product.uploadedDate) > new Date(companySummary[company].latestUpload)) {
-                        companySummary[company].latestUpload = product.uploadedDate;
-                    }
-                });
+//                     if (new Date(product.uploadedDate) > new Date(companySummary[company].latestUpload)) {
+//                         companySummary[company].latestUpload = product.uploadedDate;
+//                     }
+//                 });
 
-                const companiesList = Object.values(companySummary)
-                    .map(company => ({
-                        ...company,
-                        totalWeight: Math.round(company.totalWeight * 100) / 100
-                    }))
-                    .sort((a, b) => a.companyCode.localeCompare(b.companyCode));
+//                 const companiesList = Object.values(companySummary)
+//                     .map(company => ({
+//                         ...company,
+//                         totalWeight: Math.round(company.totalWeight * 100) / 100
+//                     }))
+//                     .sort((a, b) => a.companyCode.localeCompare(b.companyCode));
 
-                const grandTotalWeight = Math.round(companiesList.reduce((total, company) => total + company.totalWeight, 0) * 100) / 100;
-                const grandTotalItems = companiesList.reduce((total, company) => total + company.itemCount, 0);
+//                 const grandTotalWeight = Math.round(companiesList.reduce((total, company) => total + company.totalWeight, 0) * 100) / 100;
+//                 const grandTotalItems = companiesList.reduce((total, company) => total + company.itemCount, 0);
 
-                return {
-                    voyageInfo: {
-                        voyageId: voyage._id,
-                        voyageName: voyage.voyageName,
-                        voyageNumber: voyage.voyageNumber,
-                        year: voyage.year,
-                        status: "pending"
-                    },
-                    companies: companiesList,
-                    summary: {
-                        totalCompanies: companiesList.length,
-                        grandTotalItems: grandTotalItems,
-                        grandTotalWeight: grandTotalWeight
-                    }
-                };
-            })
-        );
+//                 return {
+//                     voyageInfo: {
+//                         voyageId: voyage._id,
+//                         voyageName: voyage.voyageName,
+//                         voyageNumber: voyage.voyageNumber,
+//                         year: voyage.year,
+//                         status: "pending"
+//                     },
+//                     companies: companiesList,
+//                     summary: {
+//                         totalCompanies: companiesList.length,
+//                         grandTotalItems: grandTotalItems,
+//                         grandTotalWeight: grandTotalWeight
+//                     }
+//                 };
+//             })
+//         );
 
-        // Calculate overall totals
-        const overallTotalItems = voyageSummaries.reduce((sum, v) => sum + v.summary.grandTotalItems, 0);
-        const overallTotalWeight = Math.round(voyageSummaries.reduce((sum, v) => sum + v.summary.grandTotalWeight, 0) * 100) / 100;
+//         // Calculate overall totals
+//         const overallTotalItems = voyageSummaries.reduce((sum, v) => sum + v.summary.grandTotalItems, 0);
+//         const overallTotalWeight = Math.round(voyageSummaries.reduce((sum, v) => sum + v.summary.grandTotalWeight, 0) * 100) / 100;
 
-        res.status(200).json({
-            voyages: voyageSummaries,
-            summary: {
-                totalVoyages: pendingVoyages.length,
-                grandTotalItems: overallTotalItems,
-                grandTotalWeight: overallTotalWeight
-            }
-        });
+//         res.status(200).json({
+//             voyages: voyageSummaries,
+//             summary: {
+//                 totalVoyages: pendingVoyages.length,
+//                 grandTotalItems: overallTotalItems,
+//                 grandTotalWeight: overallTotalWeight
+//             }
+//         });
 
-    } catch (error) {
-        console.error("Error in getAllPendingCompaniesSummary controller:", error.message);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
+//     } catch (error) {
+//         console.error("Error in getAllPendingCompaniesSummary controller:", error.message);
+//         res.status(500).json({ message: "Internal server error" });
+//     }
+// };
 
 export const updateCompletedVoyageStatus = async (req, res) => {
     try {
@@ -1551,3 +1645,194 @@ export const getPendingVoyageDetails = async (req, res) => {
 
 // v2 - NEW OPTIMIZED CONTROLLER - For new app versions
 
+export const getAllPendingCompaniesSummary = async (req, res) => {
+    try {
+
+        const { branchId } = req.params;
+
+        const pendingVoyages = await Voyage.find({ status: "pending", branchId: branchId })
+            .select("_id voyageName voyageNumber year createdAt")
+            .sort({ createdAt: -1 });
+
+        if (!pendingVoyages.length) {
+            return res.status(200).json({
+                voyages: [],
+                summary: {
+                    totalVoyages: 0,
+                    grandTotalItems: 0,
+                    grandTotalWeight: 0
+                }
+            });
+        }
+
+        const voyageIds = pendingVoyages.map(voyage => voyage._id);
+
+        // Find all products from pending voyages
+        const products = await UploadedProduct.find({
+            voyageId: { $in: voyageIds },
+            status: "pending"
+        });
+
+        // Group products by voyage and calculate company summaries
+        const voyageSummaries = await Promise.all(
+            pendingVoyages.map(async (voyage) => {
+                const voyageProducts = products.filter(p => p.voyageId.toString() === voyage._id.toString());
+
+                const companySummary = {};
+
+                voyageProducts.forEach(product => {
+                    const company = product.clientCompany;
+
+                    if (!companySummary[company]) {
+                        companySummary[company] = {
+                            companyCode: company,
+                            itemCount: 0,
+                            totalWeight: 0,
+                            latestUpload: product.uploadedDate
+                        };
+                    }
+
+                    companySummary[company].itemCount += 1;
+                    companySummary[company].totalWeight += Number(product.weight) || 0;
+
+                    if (new Date(product.uploadedDate) > new Date(companySummary[company].latestUpload)) {
+                        companySummary[company].latestUpload = product.uploadedDate;
+                    }
+                });
+
+                const companiesList = Object.values(companySummary)
+                    .map(company => ({
+                        ...company,
+                        totalWeight: Math.round(company.totalWeight * 100) / 100
+                    }))
+                    .sort((a, b) => a.companyCode.localeCompare(b.companyCode));
+
+                const grandTotalWeight = Math.round(companiesList.reduce((total, company) => total + company.totalWeight, 0) * 100) / 100;
+                const grandTotalItems = companiesList.reduce((total, company) => total + company.itemCount, 0);
+
+                return {
+                    voyageInfo: {
+                        voyageId: voyage._id,
+                        voyageName: voyage.voyageName,
+                        voyageNumber: voyage.voyageNumber,
+                        year: voyage.year,
+                        status: "pending"
+                    },
+                    companies: companiesList,
+                    summary: {
+                        totalCompanies: companiesList.length,
+                        grandTotalItems: grandTotalItems,
+                        grandTotalWeight: grandTotalWeight
+                    }
+                };
+            })
+        );
+
+        // Calculate overall totals
+        const overallTotalItems = voyageSummaries.reduce((sum, v) => sum + v.summary.grandTotalItems, 0);
+        const overallTotalWeight = Math.round(voyageSummaries.reduce((sum, v) => sum + v.summary.grandTotalWeight, 0) * 100) / 100;
+
+        res.status(200).json({
+            voyages: voyageSummaries,
+            summary: {
+                totalVoyages: pendingVoyages.length,
+                grandTotalItems: overallTotalItems,
+                grandTotalWeight: overallTotalWeight
+            }
+        });
+
+    } catch (error) {
+        console.error("Error in getAllPendingCompaniesSummary controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+
+export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
+    try {
+        const { branchId } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const searchQuery = req.query.search || '';
+
+        const pendingVoyageCount = await Voyage.countDocuments({ status: "pending", branchId: branchId });
+
+        if (pendingVoyageCount === 0) {
+            return res.status(404).json({
+                message: "No pending voyages found",
+                data: [],
+                pagination: {
+                    currentPage: page,
+                    totalPages: 0,
+                    totalItems: 0,
+                    itemsPerPage: limit
+                }
+            });
+        }
+
+        const pendingVoyages = await Voyage.find({ status: "pending", branchId: branchId })
+            .select("_id voyageName voyageNumber year createdAt")
+            .sort({ createdAt: -1 }).lean();
+
+        const voyageIds = pendingVoyages.map(vId => vId._id);
+
+        const filter = { voyageId: { $in: voyageIds }, status: 'pending' };
+
+        if (searchQuery) {
+            filter.clientCompany = { $regex: searchQuery, $options: 'i' };
+        }
+
+        const results = await UploadedProduct.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: {
+                        voyageId: "$voyageId",
+                        clientCompany: "$clientCompany"
+                    },
+                    itemCount: { $sum: 1 },
+                    totalWeight: { $sum: { $toDouble: "$weight" } },
+                    latestUpload: { $max: "$uploadedDate" }
+                }
+            },
+            { $sort: { "_id.companyCode": 1 } },
+            {
+                $facet: {
+                    paginatedData: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $project: {
+                                voyageId: "$_id.voyageId",
+                                companyCode: "$_id.companyCode",
+                                itemCount: 1,
+                                totalWeight: { $round: ["$totalWeight", 2] },
+                                latestUpload: 1,
+                                _id: 0
+                            }
+                        }
+                    ],
+                    totalCount: [
+                        { $count: "count" }
+                    ]
+                }
+            }
+        ]);
+
+        const companies = results[0]?.paginatedData || [];
+        const totalCount = results[0]?.totalCount[0]?.count || 0;
+
+        const summariesByVoyage = {};
+        companies.forEach(item => {
+            const { voyageId } = item;
+            if (!summariesByVoyage[voyageId]) summariesByVoyage[voyageId] = [];
+            summariesByVoyage[voyageId].push(item);
+        });
+
+
+
+    } catch (error) {
+
+    }
+}

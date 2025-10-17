@@ -33,8 +33,8 @@ const CompletedVoyages = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getCompletedVoyages();
-  }, []);
+    getCompletedVoyages(authUser.branchId);
+  }, [authUser.branchId]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
