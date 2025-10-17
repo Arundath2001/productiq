@@ -8,6 +8,7 @@ import { Expo } from 'expo-server-sdk';
 import { io } from "../lib/socket.js";
 import cron from 'node-cron';
 import Branch from "../models/branch.model.js";
+import mongoose from "mongoose";
 
 
 export const setupVoyageAutomation = (ioInstance) => {
@@ -1750,87 +1751,36 @@ export const getAllPendingCompaniesSummary = async (req, res) => {
 
 export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
     try {
-        const { branchId } = req.params;
+        const { voyageId } = req.params;
+
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
 
-        const pendingVoyageCount = await Voyage.countDocuments({ status: "pending", branchId: branchId });
+        const filter = { voyageId: new mongoose.Types.ObjectId(voyageId), status: "pending", };
 
-        if (pendingVoyageCount === 0) {
-            return res.status(404).json({
-                message: "No pending voyages found",
-                data: [],
-                pagination: {
-                    currentPage: page,
-                    totalPages: 0,
-                    totalItems: 0,
-                    itemsPerPage: limit
-                }
-            });
-        }
-
-        const pendingVoyages = await Voyage.find({ status: "pending", branchId: branchId })
-            .select("_id voyageName voyageNumber year createdAt")
-            .sort({ createdAt: -1 }).lean();
-
-        const voyageIds = pendingVoyages.map(vId => vId._id);
-
-        const filter = { voyageId: { $in: voyageIds }, status: 'pending' };
 
         if (searchQuery) {
             filter.clientCompany = { $regex: searchQuery, $options: 'i' };
         }
 
-        const results = await UploadedProduct.aggregate([
+        const result = await UploadedProduct.aggregate([
             { $match: filter },
             {
                 $group: {
-                    _id: {
-                        voyageId: "$voyageId",
-                        clientCompany: "$clientCompany"
-                    },
+                    _id: "$clientCompany",
                     itemCount: { $sum: 1 },
-                    totalWeight: { $sum: { $toDouble: "$weight" } },
-                    latestUpload: { $max: "$uploadedDate" }
+                    totalWeight: { $sum: "$weight" },
+                    latestupload: { $max: "$uploadedDate" }
                 }
             },
-            { $sort: { "_id.companyCode": 1 } },
-            {
-                $facet: {
-                    paginatedData: [
-                        { $skip: skip },
-                        { $limit: limit },
-                        {
-                            $project: {
-                                voyageId: "$_id.voyageId",
-                                companyCode: "$_id.companyCode",
-                                itemCount: 1,
-                                totalWeight: { $round: ["$totalWeight", 2] },
-                                latestUpload: 1,
-                                _id: 0
-                            }
-                        }
-                    ],
-                    totalCount: [
-                        { $count: "count" }
-                    ]
-                }
-            }
+            { $sort: { _id: 1 } }
         ]);
 
-        const companies = results[0]?.paginatedData || [];
-        const totalCount = results[0]?.totalCount[0]?.count || 0;
-
-        const summariesByVoyage = {};
-        companies.forEach(item => {
-            const { voyageId } = item;
-            if (!summariesByVoyage[voyageId]) summariesByVoyage[voyageId] = [];
-            summariesByVoyage[voyageId].push(item);
-        });
 
 
+        res.status(200).json({ result });
 
     } catch (error) {
 

@@ -172,6 +172,7 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
 
     let currentCompany = null;
     let serialNumber = 1;
+    let dataRowCount = 1; // Track data rows for formula references
 
     filteredData.forEach((item, index) => {
         const isNewCompany = currentCompany !== item.clientCompany;
@@ -233,6 +234,13 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
 
         // Merge cells C and D (partNo and desc)
         worksheet.mergeCells(`C${dataRow.number}:D${dataRow.number}`);
+
+        // Add formula to shipping cost column (column J, which is column 10)
+        const shippingCostCell = dataRow.getCell(10);
+        shippingCostCell.value = {
+            formula: `H${dataRow.number}*I${dataRow.number}`,
+            result: 0
+        };
 
         dataRow.eachCell((cell, colNumber) => {
             cell.border = {

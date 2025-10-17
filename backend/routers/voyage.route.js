@@ -62,7 +62,7 @@ router.get("/:branchId/pending-voyage-details", protectRoute, getPendingVoyageDe
 
 // v2 - NEW OPTIMIZED ROUTER - For new app versions
 
-router.get('/v2/companies/pending/:branchId', getAllPendingCompaniesSummaryV2);
+router.get('/v2/companies/pending/:voyageId', getAllPendingCompaniesSummaryV2);
 
 
 export default router; 
