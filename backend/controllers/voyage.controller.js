@@ -1765,6 +1765,22 @@ export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
             filter.clientCompany = { $regex: searchQuery, $options: 'i' };
         }
 
+        const totalCount = await UploadedProduct.countDocuments(filter);
+
+        if (totalCount === 0) {
+            return res.status(404).json({
+                voyageId,
+                message: "No uploaded data in this voyage",
+                companies: [],
+                pagination: {
+                    currentPage: page,
+                    totalPages: 0,
+                    totalItems: 0,
+                    itemsPerPage: limit,
+                },
+            });
+        }
+
         const result = await UploadedProduct.aggregate([
             { $match: filter },
             {
@@ -1772,17 +1788,49 @@ export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
                     _id: "$clientCompany",
                     itemCount: { $sum: 1 },
                     totalWeight: { $sum: "$weight" },
-                    latestupload: { $max: "$uploadedDate" }
+                    latestUpload: { $max: "$uploadedDate" }
                 }
             },
-            { $sort: { _id: 1 } }
+            { $sort: { _id: 1 } },
+            {
+                $facet: {
+                    paginatedData: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $project: {
+                                company: "$_id",
+                                itemCount: 1,
+                                totalWeight: { $round: ["$totalWeight", 2] },
+                                latestUpload: 1,
+                                _id: 0,
+                            }
+                        }
+                    ],
+                    totalCount: [{ $count: "count" }],
+                }
+            }
         ]);
 
+        const companies = result[0]?.paginatedData || [];
+        const totalCompanies = result[0]?.totalCount[0]?.count || 0;
+        const totalPages = Math.ceil(totalCount / limit);
 
-
-        res.status(200).json({ result });
-
-    } catch (error) {
-
+        res.status(200).json({
+            voyageId,
+            totalCompanies,
+            companies,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: totalPages,
+                totalItems: totalCount,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+            },
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server Error", error: err.message });
     }
 }

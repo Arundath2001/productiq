@@ -242,6 +242,13 @@ export const exportVoyageData = async (data, voyageName = null, voyageId = null)
             result: 0
         };
 
+        // Add currency format to price per kg column (column I, which is column 9)
+        const pricePerKgCell = dataRow.getCell(9);
+        pricePerKgCell.numFmt = '$#,##0.00';
+
+        // Add currency format to shipping cost column (column J, which is column 10)
+        shippingCostCell.numFmt = '$#,##0.00';
+
         dataRow.eachCell((cell, colNumber) => {
             cell.border = {
                 top: { style: 'thin' },
