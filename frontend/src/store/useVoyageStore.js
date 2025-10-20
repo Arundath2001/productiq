@@ -138,7 +138,7 @@ export const useVoyageStore = create((set, get) => ({
         set({ isCompanyDetailsLoading: true });
 
         try {
-            const res = await axiosInstance.get(`/voyage/${voyageId}/companies/${companyCode}`);
+            const res = await axiosInstance.get(`/voyage/${voyageId}/companies/${companyCode}?status=pending`);
 
             set({ companyDetails: res.data });
 

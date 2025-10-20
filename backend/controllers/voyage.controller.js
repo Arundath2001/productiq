@@ -347,97 +347,6 @@ export const getVoyages = async (req, res) => {
     }
 };
 
-export const getCompletedVoyages = async (req, res) => {
-    try {
-
-        const voyages = await Voyage.find({ status: "completed" }).populate('branchId', 'branchName').sort({ createdAt: -1 });
-
-        if (!voyages.length) {
-            return res.status(200).json([]);
-        }
-
-        // Get voyage IDs for querying products
-        const voyageIds = voyages.map(voyage => voyage._id);
-
-        // Find all completed products for these voyages
-        const products = await UploadedProduct.find({
-            voyageId: { $in: voyageIds },
-            status: "completed"
-        });
-
-        // Create a map to store statistics for each voyage
-        const voyageStatsMap = new Map();
-
-        // Initialize voyage stats
-        voyages.forEach(voyage => {
-            voyageStatsMap.set(voyage._id.toString(), {
-                ...voyage.toObject(),
-                totalItems: 0,
-                totalWeight: 0,
-                totalCompanies: 0,
-                companies: new Set(),
-                exportedDate: voyage.exportedDate // Initialize with voyage's exportedDate
-            });
-        });
-
-        // Calculate statistics from products and get exportedDate
-        products.forEach(product => {
-            const voyageId = product.voyageId.toString();
-            const voyageStats = voyageStatsMap.get(voyageId);
-
-            if (voyageStats) {
-                voyageStats.totalItems += 1;
-                voyageStats.totalWeight += Number(product.weight) || 0;
-                voyageStats.companies.add(product.clientCompany);
-
-                // Get exportedDate from product if voyage doesn't have one
-                if (product.exportedDate && !voyageStats.exportedDate) {
-                    voyageStats.exportedDate = product.exportedDate;
-                }
-            }
-        });
-
-        // Format the response with calculated statistics
-        const completedVoyages = Array.from(voyageStatsMap.values()).map(voyage => ({
-            _id: voyage._id,
-            voyageName: voyage.voyageName,
-            voyageNumber: voyage.voyageNumber,
-            year: voyage.year,
-            status: voyage.status,
-            createdBy: voyage.createdBy,
-            createdAt: voyage.createdAt,
-            updatedAt: voyage.updatedAt,
-            exportedDate: voyage.exportedDate, // This now includes exportedDate from products
-            totalItems: voyage.totalItems,
-            totalWeight: Math.round(voyage.totalWeight * 100) / 100,
-            totalCompanies: voyage.companies.size,
-            dispatchDate: voyage.dispatchDate,
-            transitDate: voyage.transitDate,
-            originalExpectedDate: voyage.originalExpectedDate,
-            expectedDate: voyage.expectedDate,
-            delayDate: voyage.delayDate,
-            delayMessage: voyage.delayMessage,
-            delayDays: voyage.delayDays,
-            isDelayed: voyage.isDelayed,
-            location: voyage.location,
-            branchName: voyage.branchId?.branchName || "Unknown",
-            trackingStatus: voyage.trackingStatus,
-        }));
-
-        // Sort by exportedDate (most recent first), fallback to createdAt if no exportedDate
-        completedVoyages.sort((a, b) => {
-            const dateA = new Date(a.exportedDate || a.createdAt);
-            const dateB = new Date(b.exportedDate || b.createdAt);
-            return dateB - dateA;
-        });
-
-        return res.status(200).json(completedVoyages);
-
-    } catch (error) {
-        console.error("Error fetching getCompletedVoyages details:", error.message);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
 
 export const getCompletedVoyagesByBranch = async (req, res) => {
     try {
@@ -902,76 +811,6 @@ export const getCompaniesSummaryByVoyage = async (req, res) => {
     }
 };
 
-
-export const getCompanyDetailsByVoyage = async (req, res) => {
-    try {
-        const { voyageId, companyCode } = req.params;
-        const { status = "pending" } = req.query;
-
-        if (status !== "pending" && status !== "completed") {
-            return res.status(400).json({
-                message: "Invalid status. Use 'pending' or 'completed'"
-            });
-        }
-
-        const voyage = await Voyage.findById(voyageId)
-            .select("voyageName voyageNumber year status");
-
-        if (!voyage) {
-            return res.status(404).json({ message: "Voyage not found" });
-        }
-
-        const query = {
-            voyageId: voyageId,
-            clientCompany: companyCode,
-            status: status
-        };
-
-        const companyProducts = await UploadedProduct.find(query)
-            .populate("uploadedBy", "username");
-
-        const companyData = companyProducts.map(product => ({
-            ...product.toObject(),
-            voyageName: voyage.voyageName,
-            voyageNumber: voyage.voyageNumber,
-            voyageYear: voyage.year,
-            voyageId: voyage._id,
-            compositeCode: product.compositeCode
-        }));
-
-        const totalWeight = Math.round(companyData.reduce((total, item) => total + (item.weight || 0), 0) * 100) / 100;
-
-        companyData.sort((a, b) => {
-            const productCodeCompare = a.productCode.localeCompare(b.productCode);
-            if (productCodeCompare !== 0) return productCodeCompare;
-
-            const sequenceCompare = a.sequenceNumber - b.sequenceNumber;
-            if (sequenceCompare !== 0) return sequenceCompare;
-
-            return a.voyageNumber - b.voyageNumber;
-        });
-
-        res.status(200).json({
-            voyageInfo: {
-                voyageId: voyage._id,
-                voyageName: voyage.voyageName,
-                voyageNumber: voyage.voyageNumber,
-                year: voyage.year,
-                status: voyage.status
-            },
-            companyCode,
-            status: status, // Include the status filter in response
-            items: companyData,
-            totalItems: companyData.length,
-            totalWeight: totalWeight
-        });
-
-    } catch (error) {
-        console.error("Error in getCompanyDetailsByVoyage controller:", error.message);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-
 export const getAllVoyageProducts = async (req, res) => {
     try {
         const { voyageId } = req.params;
@@ -1033,81 +872,6 @@ export const getAllVoyageProducts = async (req, res) => {
     }
 };
 
-// Add this controller to your voyage controller file
-
-export const getCompletedCompaniesSummaryByVoyage = async (req, res) => {
-    try {
-        const { voyageId } = req.params;
-
-        const voyage = await Voyage.findById(voyageId)
-            .select("voyageName voyageNumber year status");
-
-        if (!voyage) {
-            return res.status(404).json({ message: "Voyage not found" });
-        }
-
-        if (voyage.status !== "completed") {
-            return res.status(400).json({ message: "Voyage is not completed yet" });
-        }
-
-        const products = await UploadedProduct.find({
-            voyageId: voyageId,
-            status: "completed"
-        });
-
-        const companySummary = {};
-
-        products.forEach(data => {
-            const company = data.clientCompany;
-
-            if (!companySummary[company]) {
-                companySummary[company] = {
-                    companyCode: company,
-                    itemCount: 0,
-                    totalWeight: 0,
-                    latestUpload: data.uploadedDate
-                };
-            }
-
-            companySummary[company].itemCount += 1;
-            companySummary[company].totalWeight += Number(data.weight) || 0;
-
-            if (new Date(data.uploadedDate) > new Date(companySummary[company].latestUpload)) {
-                companySummary[company].latestUpload = data.uploadedDate;
-            }
-        });
-
-        const companiesList = Object.values(companySummary)
-            .map(company => ({
-                ...company,
-                totalWeight: Math.round(company.totalWeight * 100) / 100
-            }))
-            .sort((a, b) => a.companyCode.localeCompare(b.companyCode));
-
-        const grandTotalWeight = Math.round(companiesList.reduce((total, company) => total + company.totalWeight, 0) * 100) / 100;
-        const grandTotalItems = companiesList.reduce((total, company) => total + company.itemCount, 0);
-
-        res.status(200).json({
-            voyageInfo: {
-                voyageId: voyage._id,
-                voyageName: voyage.voyageName,
-                voyageNumber: voyage.voyageNumber,
-                year: voyage.year,
-                status: voyage.status
-            },
-            companies: companiesList,
-            summary: {
-                totalCompanies: companiesList.length,
-                grandTotalItems: grandTotalItems,
-                grandTotalWeight: grandTotalWeight
-            }
-        });
-
-    } catch (error) {
-        console.error("Error in getCompletedCompaniesSummaryByVoyage controller:", error.message);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
 
 export const getCompletedCompanyDetailsByVoyage = async (req, res) => {
     try {
@@ -1644,8 +1408,6 @@ export const getPendingVoyageDetails = async (req, res) => {
     }
 }
 
-// v2 - NEW OPTIMIZED CONTROLLER - For new app versions
-
 export const getAllPendingCompaniesSummary = async (req, res) => {
     try {
 
@@ -1748,6 +1510,243 @@ export const getAllPendingCompaniesSummary = async (req, res) => {
     }
 };
 
+export const getCompletedVoyages = async (req, res) => {
+    try {
+
+        const voyages = await Voyage.find({ status: "completed" }).populate('branchId', 'branchName').sort({ createdAt: -1 });
+
+        if (!voyages.length) {
+            return res.status(200).json([]);
+        }
+
+        // Get voyage IDs for querying products
+        const voyageIds = voyages.map(voyage => voyage._id);
+
+        // Find all completed products for these voyages
+        const products = await UploadedProduct.find({
+            voyageId: { $in: voyageIds },
+            status: "completed"
+        });
+
+        // Create a map to store statistics for each voyage
+        const voyageStatsMap = new Map();
+
+        // Initialize voyage stats
+        voyages.forEach(voyage => {
+            voyageStatsMap.set(voyage._id.toString(), {
+                ...voyage.toObject(),
+                totalItems: 0,
+                totalWeight: 0,
+                totalCompanies: 0,
+                companies: new Set(),
+                exportedDate: voyage.exportedDate // Initialize with voyage's exportedDate
+            });
+        });
+
+        // Calculate statistics from products and get exportedDate
+        products.forEach(product => {
+            const voyageId = product.voyageId.toString();
+            const voyageStats = voyageStatsMap.get(voyageId);
+
+            if (voyageStats) {
+                voyageStats.totalItems += 1;
+                voyageStats.totalWeight += Number(product.weight) || 0;
+                voyageStats.companies.add(product.clientCompany);
+
+                // Get exportedDate from product if voyage doesn't have one
+                if (product.exportedDate && !voyageStats.exportedDate) {
+                    voyageStats.exportedDate = product.exportedDate;
+                }
+            }
+        });
+
+        // Format the response with calculated statistics
+        const completedVoyages = Array.from(voyageStatsMap.values()).map(voyage => ({
+            _id: voyage._id,
+            voyageName: voyage.voyageName,
+            voyageNumber: voyage.voyageNumber,
+            year: voyage.year,
+            status: voyage.status,
+            createdBy: voyage.createdBy,
+            createdAt: voyage.createdAt,
+            updatedAt: voyage.updatedAt,
+            exportedDate: voyage.exportedDate, // This now includes exportedDate from products
+            totalItems: voyage.totalItems,
+            totalWeight: Math.round(voyage.totalWeight * 100) / 100,
+            totalCompanies: voyage.companies.size,
+            dispatchDate: voyage.dispatchDate,
+            transitDate: voyage.transitDate,
+            originalExpectedDate: voyage.originalExpectedDate,
+            expectedDate: voyage.expectedDate,
+            delayDate: voyage.delayDate,
+            delayMessage: voyage.delayMessage,
+            delayDays: voyage.delayDays,
+            isDelayed: voyage.isDelayed,
+            location: voyage.location,
+            branchName: voyage.branchId?.branchName || "Unknown",
+            trackingStatus: voyage.trackingStatus,
+        }));
+
+        // Sort by exportedDate (most recent first), fallback to createdAt if no exportedDate
+        completedVoyages.sort((a, b) => {
+            const dateA = new Date(a.exportedDate || a.createdAt);
+            const dateB = new Date(b.exportedDate || b.createdAt);
+            return dateB - dateA;
+        });
+
+        return res.status(200).json(completedVoyages);
+
+    } catch (error) {
+        console.error("Error fetching getCompletedVoyages details:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const getCompletedCompaniesSummaryByVoyage = async (req, res) => {
+    try {
+        const { voyageId } = req.params;
+
+        const voyage = await Voyage.findById(voyageId)
+            .select("voyageName voyageNumber year status");
+
+        if (!voyage) {
+            return res.status(404).json({ message: "Voyage not found" });
+        }
+
+        if (voyage.status !== "completed") {
+            return res.status(400).json({ message: "Voyage is not completed yet" });
+        }
+
+        const products = await UploadedProduct.find({
+            voyageId: voyageId,
+            status: "completed"
+        });
+
+        const companySummary = {};
+
+        products.forEach(data => {
+            const company = data.clientCompany;
+
+            if (!companySummary[company]) {
+                companySummary[company] = {
+                    companyCode: company,
+                    itemCount: 0,
+                    totalWeight: 0,
+                    latestUpload: data.uploadedDate
+                };
+            }
+
+            companySummary[company].itemCount += 1;
+            companySummary[company].totalWeight += Number(data.weight) || 0;
+
+            if (new Date(data.uploadedDate) > new Date(companySummary[company].latestUpload)) {
+                companySummary[company].latestUpload = data.uploadedDate;
+            }
+        });
+
+        const companiesList = Object.values(companySummary)
+            .map(company => ({
+                ...company,
+                totalWeight: Math.round(company.totalWeight * 100) / 100
+            }))
+            .sort((a, b) => a.companyCode.localeCompare(b.companyCode));
+
+        const grandTotalWeight = Math.round(companiesList.reduce((total, company) => total + company.totalWeight, 0) * 100) / 100;
+        const grandTotalItems = companiesList.reduce((total, company) => total + company.itemCount, 0);
+
+        res.status(200).json({
+            voyageInfo: {
+                voyageId: voyage._id,
+                voyageName: voyage.voyageName,
+                voyageNumber: voyage.voyageNumber,
+                year: voyage.year,
+                status: voyage.status
+            },
+            companies: companiesList,
+            summary: {
+                totalCompanies: companiesList.length,
+                grandTotalItems: grandTotalItems,
+                grandTotalWeight: grandTotalWeight
+            }
+        });
+
+    } catch (error) {
+        console.error("Error in getCompletedCompaniesSummaryByVoyage controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const getCompanyDetailsByVoyage = async (req, res) => {
+    try {
+        const { voyageId, companyCode } = req.params;
+        const { status } = req.query;
+
+        if (status !== "pending" && status !== "completed") {
+            return res.status(400).json({
+                message: "Invalid status. Use 'pending' or 'completed'"
+            });
+        }
+
+        const voyage = await Voyage.findById(voyageId)
+            .select("voyageName voyageNumber year status");
+
+        if (!voyage) {
+            return res.status(404).json({ message: "Voyage not found" });
+        }
+
+        const query = {
+            voyageId: voyageId,
+            clientCompany: companyCode,
+            status: status
+        };
+
+        const companyProducts = await UploadedProduct.find(query)
+            .populate("uploadedBy", "username");
+
+        const companyData = companyProducts.map(product => ({
+            ...product.toObject(),
+            voyageName: voyage.voyageName,
+            voyageNumber: voyage.voyageNumber,
+            voyageYear: voyage.year,
+            voyageId: voyage._id,
+            compositeCode: product.compositeCode
+        }));
+
+        const totalWeight = Math.round(companyData.reduce((total, item) => total + (item.weight || 0), 0) * 100) / 100;
+
+        companyData.sort((a, b) => {
+            const productCodeCompare = a.productCode.localeCompare(b.productCode);
+            if (productCodeCompare !== 0) return productCodeCompare;
+
+            const sequenceCompare = a.sequenceNumber - b.sequenceNumber;
+            if (sequenceCompare !== 0) return sequenceCompare;
+
+            return a.voyageNumber - b.voyageNumber;
+        });
+
+        res.status(200).json({
+            voyageInfo: {
+                voyageId: voyage._id,
+                voyageName: voyage.voyageName,
+                voyageNumber: voyage.voyageNumber,
+                year: voyage.year,
+                status: voyage.status
+            },
+            companyCode,
+            status: status, // Include the status filter in response
+            items: companyData,
+            totalItems: companyData.length,
+            totalWeight: totalWeight
+        });
+
+    } catch (error) {
+        console.error("Error in getCompanyDetailsByVoyage controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// v2 - NEW OPTIMIZED CONTROLLER - For new app versions
+
 
 export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
     try {
@@ -1832,5 +1831,295 @@ export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Server Error", error: err.message });
+    }
+}
+
+export const getCompletedVoyagesByBranchV2 = async (req, res) => {
+    try {
+        const { branchId } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const page = parseInt(req.query.limit) || 1;
+        const skip = (page - 1) * limit;
+        const searchQuery = req.query.search || "";
+
+        const filter = { branchId: new mongoose.Types.ObjectId(branchId), status: "completed" }
+
+        if (searchQuery) {
+            filter.$or = [
+                { voyageNumber: { $regex: searchQuery, $options: 'i' } },
+                { voyageName: { $regex: searchQuery, $options: 'i' } }
+            ];
+        }
+
+        const totalCount = await Voyage.countDocuments(filter);
+
+        if (totalCount === 0) {
+            return res.status(404).json({
+                message: "Completed voyages not found",
+                voyage: [],
+                pagination: {
+                    currentPage: page,
+                    totalPages: 0,
+                    totalItems: 0,
+                    itemsPerPage: limit
+                }
+            });
+        }
+
+        const voyages = await Voyage.aggregate([
+            { $match: filter },
+            { $sort: { createdAt: -1 } },
+            {
+                $lookup: {
+                    from: 'uploadedproducts',
+                    let: { voyageId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$voyageId", "$$voyageId"] },
+                                        { $eq: ["$status", "completed"] },
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: null,
+                                totalItems: { $sum: 1 },
+                                companies: { $addToSet: "$clientCompany" }
+                            }
+                        }
+                    ],
+                    as: "productStats"
+                }
+            }, {
+                $addFields: {
+                    totalItems: { $ifNull: [{ $arrayElemAt: ["$productStats.totalItems", 0] }, 0] },
+                    totalCompanies: { $size: { $ifNull: [{ $arrayElemAt: ["$productStats.companies", 0] }, []] } }
+                }
+            },
+            {
+                $lookup: {
+                    from: "branches",
+                    localField: "branchId",
+                    foreignField: "_id",
+                    as: "branchInfo"
+                }
+            },
+            {
+                $addFields: {
+                    branchName: { $ifNull: [{ $arrayElemAt: ["$branchInfo.branchName", 0] }, "Unknown"] }
+                }
+            },
+            { $project: { productStats: 0, branchInfo: 0 } },
+            { $skip: skip },
+            { $limit: limit }
+        ]);
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        res.status(200).json({
+            voyages,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalItems: totalCount,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        });
+
+    } catch (error) {
+        console.error("Error fetching completed voyages by branch:", error.message);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+}
+
+export const getCompletedCompaniesSummaryByVoyageV2 = async (req, res) => {
+    try {
+        const { voyageId } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const page = parseInt(req.query.page) || 1;
+        const skip = (page - 1) * limit;
+        const searchQuery = req.query.search || "";
+
+        const voyage = await Voyage.findById(voyageId)
+            .select("voyageName voyageNumber year status")
+            .lean();
+
+        if (!voyage) {
+            return res.status(404).json({ message: "Voyage not found" });
+        }
+
+        if (voyage.status !== 'completed') {
+            return res.status(400).json({ message: "Voyage not completed yet" })
+        }
+
+        const filter = { voyageId: voyage._id, status: 'completed' }
+
+        if (searchQuery) {
+            filter.clientCompany = { $regex: searchQuery, $options: 'i' }
+        }
+
+        const totalItems = await UploadedProduct.countDocuments(filter);
+
+        if (totalItems === 0) {
+            return res.status(404).json({
+                message: "Companies does not exisit on this voyage",
+                voyageInfo: voyage,
+                companies: [],
+                pagination: {
+                    currentPage: page,
+                    totalItems: 0,
+                    totalPages: 0,
+                    itemsPerPage: limit
+                }
+            });
+        }
+
+        const result = await UploadedProduct.aggregate([
+            { $match: filter },
+            {
+                $group: {
+                    _id: "$clientCompany",
+                    itemCount: { $sum: 1 },
+                    totalWeight: { $sum: { $toDouble: "$weight" } },
+                    latestUpload: { $max: "$uploadedDate" }
+                },
+            },
+            {
+                $sort: { _id: 1 },
+            },
+            {
+                $facet: {
+                    paginatedData: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $project: {
+                                company: '$_id',
+                                itemCount: 1,
+                                totalWeight: { $round: ['$totalWeight', 2] },
+                                latestupload: 1,
+                                _id: 0,
+                            },
+                        },
+                    ],
+                    totalCount: [{ $count: "count" }],
+                }
+            },
+        ]);
+
+        const companies = result[0]?.paginatedData || [];
+        const totalCompanies = result[0]?.totalCount?.[0]?.count || 0;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        res.status(200).json({
+            voyageInfo: voyage,
+            totalCompanies,
+            companies,
+            pagination: {
+                currentPage: page,
+                totalItems: totalCompanies,
+                totalPages,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        });
+
+    } catch (error) {
+        console.error("Error in getCompletedCompaniesSummaryByVoyageV2 controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const getCompanyDetailsByVoyageV2 = async (req, res) => {
+    try {
+        const { voyageId, companyCode } = req.params;
+        const { status } = req.query;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const searchQuery = req.query.search || "";
+
+        if (status !== "pending" && status !== "completed") {
+            return res.status(400).json({
+                message: "Invalid status. Use 'pending' or 'completed'"
+            });
+        }
+
+        const voyage = await Voyage.findById(voyageId)
+            .select("voyageName voyageNumber year status").lean();
+
+        if (!voyage) {
+            return res.status(404).json({ message: "Voyage not found" });
+        }
+
+        const filter = { voyageId: voyage._id, status, clientCompany: companyCode };
+
+
+        if (searchQuery) {
+            filter.trackingNumber = { $regex: searchQuery, $options: 'i' }
+        }
+
+        const totalItems = await UploadedProduct.countDocuments(filter);
+
+
+        if (totalItems === 0) {
+            return res.status(404).json({
+                message: "Uploaded data does not exisit",
+                voyage,
+                products: [],
+                pagination: {
+                    currentPage: page,
+                    totalItems: 0,
+                    itemsPerPage: limit,
+                    totalPages: 0
+                }
+            });
+        }
+
+        const products = await UploadedProduct.aggregate([
+            { $match: filter },
+            { $sort: { uploadedDate: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $project: {
+                    _id: 0,
+                    productCode: 1,
+                    weight: 1,
+                    trackingNumber: 1,
+                    exportedDate: 1,
+                    uploadedDate: 1,
+                    sequenceNumber: 1
+                }
+            }
+        ]);
+
+        const totalPages = Math.ceil(totalItems / limit);
+
+
+        return res.json({
+            message: "Uploaded products fetched successfully",
+            voyage,
+            products,
+            pagination: {
+                currentPage: page,
+                totalItems,
+                itemsPerPage: limit,
+                totalPages: totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        });
+
+    } catch (error) {
+        console.error("Error in getCompanyDetailsByVoyageV2 controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
     }
 }

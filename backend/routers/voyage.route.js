@@ -1,5 +1,5 @@
 import express from "express";
-import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllPendingCompaniesSummaryV2, getAllVoyageProducts, getAllVoyagesByBranch, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompletedCompaniesSummaryByVoyage, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByBranch, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyageDetails, getPendingVoyages, getProductDetails, getUploadedProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageNumber, getVoyages, updateCompletedVoyageStatus, uploadVoyage } from "../controllers/voyage.controller.js";
+import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllPendingCompaniesSummaryV2, getAllVoyageProducts, getAllVoyagesByBranch, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompanyDetailsByVoyageV2, getCompletedCompaniesSummaryByVoyage, getCompletedCompaniesSummaryByVoyageV2, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByBranch, getCompletedVoyagesByBranchV2, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyageDetails, getPendingVoyages, getProductDetails, getUploadedProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageNumber, getVoyages, updateCompletedVoyageStatus, uploadVoyage } from "../controllers/voyage.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import upload from "../lib/multer.js";
 
@@ -63,6 +63,13 @@ router.get("/:branchId/pending-voyage-details", protectRoute, getPendingVoyageDe
 // v2 - NEW OPTIMIZED ROUTER - For new app versions
 
 router.get('/v2/companies/pending/:voyageId', getAllPendingCompaniesSummaryV2);
+
+router.get("/v2/completed-voyages/:branchId", getCompletedVoyagesByBranchV2);
+
+router.get("/v2/:voyageId/completed-companies", getCompletedCompaniesSummaryByVoyageV2);
+
+router.get('/v2/:voyageId/companies/:companyCode', getCompanyDetailsByVoyageV2);
+
 
 
 export default router; 
