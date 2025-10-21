@@ -1834,16 +1834,17 @@ export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
     }
 }
 
-export const getCompletedVoyagesByBranchV2 = async (req, res) => {
+export const getVoyageDetailsByBranch = async (req, res) => {
     try {
         const { branchId } = req.params;
 
+        const status = req.query.status || "pending";
         const limit = parseInt(req.query.limit) || 10;
         const page = parseInt(req.query.page) || 1;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || "";
 
-        const filter = { branchId: new mongoose.Types.ObjectId(branchId), status: "completed" }
+        const filter = { branchId: new mongoose.Types.ObjectId(branchId), status }
 
 
         if (searchQuery) {
@@ -1863,7 +1864,9 @@ export const getCompletedVoyagesByBranchV2 = async (req, res) => {
                     currentPage: page,
                     totalPages: 0,
                     totalItems: 0,
-                    itemsPerPage: limit
+                    itemsPerPage: limit,
+                    hasNextPage: false,
+                    hasPrevPage: false
                 }
             });
         }
