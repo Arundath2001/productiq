@@ -1807,7 +1807,7 @@ export const getCompanyDetailsByVoyageId = async (req, res) => {
                         { $limit: limit },
                         {
                             $project: {
-                                company: "$_id",
+                                companyCode: "$_id",
                                 itemCount: 1,
                                 totalWeight: { $round: ["$totalWeight", 2] },
                                 latestUpload: 1,
