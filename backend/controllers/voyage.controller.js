@@ -2112,7 +2112,8 @@ export const getCompanyDetailsByVoyageV2 = async (req, res) => {
                     trackingNumber: 1,
                     exportedDate: 1,
                     uploadedDate: 1,
-                    sequenceNumber: 1
+                    sequenceNumber: 1,
+                    status: 1,
                 }
             }
         ]);
