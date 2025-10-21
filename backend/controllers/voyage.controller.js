@@ -1837,12 +1837,14 @@ export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
 export const getCompletedVoyagesByBranchV2 = async (req, res) => {
     try {
         const { branchId } = req.params;
+
         const limit = parseInt(req.query.limit) || 10;
         const page = parseInt(req.query.limit) || 1;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || "";
 
         const filter = { branchId: new mongoose.Types.ObjectId(branchId), status: "completed" }
+
 
         if (searchQuery) {
             filter.$or = [
@@ -2040,6 +2042,8 @@ export const getCompletedCompaniesSummaryByVoyageV2 = async (req, res) => {
 export const getCompanyDetailsByVoyageV2 = async (req, res) => {
     try {
         const { voyageId, companyCode } = req.params;
+        console.log(voyageId, companyCode, "getCompanyDetailsByVoyageV2");
+
         const { status } = req.query;
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
@@ -2120,6 +2124,43 @@ export const getCompanyDetailsByVoyageV2 = async (req, res) => {
 
     } catch (error) {
         console.error("Error in getCompanyDetailsByVoyageV2 controller:", error.message);
+        res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const getPendingVoyagesByBranch = async (req, res) => {
+    try {
+        const { branchId } = req.params;
+        const searchQuery = req.query.search || "";
+
+        if (!branchId) {
+            return res.status(404).json({
+                message: "You have no branch assigned!",
+            });
+        }
+
+        const filter = { branchId: branchId, status: "pending" };
+
+        if (searchQuery) {
+            filter.voyageNumber = { $regex: searchQuery, $options: 'i' }
+        }
+
+        const pendingVoyages = await Voyage.find(filter).select("voyageName voyageNumber year status").lean();
+
+        if (!pendingVoyages) {
+            return res.status(404).json({
+                message: "Pending voyage does not exisit",
+                pendingVoyages: [],
+            });
+        }
+
+        res.status(200).json({
+            message: "Pending voyages fetched successfully",
+            pendingVoyages,
+        })
+
+    } catch (error) {
+        console.error("Error in getPendingVoyagesByBranch controller:", error.message);
         res.status(500).json({ message: "Internal server error" });
     }
 }

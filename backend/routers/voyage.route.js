@@ -1,5 +1,5 @@
 import express from "express";
-import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllPendingCompaniesSummaryV2, getAllVoyageProducts, getAllVoyagesByBranch, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompanyDetailsByVoyageV2, getCompletedCompaniesSummaryByVoyage, getCompletedCompaniesSummaryByVoyageV2, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByBranch, getCompletedVoyagesByBranchV2, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyageDetails, getPendingVoyages, getProductDetails, getUploadedProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageNumber, getVoyages, updateCompletedVoyageStatus, uploadVoyage } from "../controllers/voyage.controller.js";
+import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllPendingCompaniesSummaryV2, getAllVoyageProducts, getAllVoyagesByBranch, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompanyDetailsByVoyageV2, getCompletedCompaniesSummaryByVoyage, getCompletedCompaniesSummaryByVoyageV2, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByBranch, getCompletedVoyagesByBranchV2, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyageDetails, getPendingVoyages, getPendingVoyagesByBranch, getProductDetails, getUploadedProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageNumber, getVoyages, updateCompletedVoyageStatus, uploadVoyage } from "../controllers/voyage.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import upload from "../lib/multer.js";
 
@@ -70,6 +70,6 @@ router.get("/v2/:voyageId/completed-companies", getCompletedCompaniesSummaryByVo
 
 router.get('/v2/:voyageId/companies/:companyCode', getCompanyDetailsByVoyageV2);
 
-
+router.get('/v2/pending-voyages/:branchId', getPendingVoyagesByBranch);
 
 export default router; 
