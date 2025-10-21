@@ -1748,16 +1748,25 @@ export const getCompanyDetailsByVoyage = async (req, res) => {
 // v2 - NEW OPTIMIZED CONTROLLER - For new app versions
 
 
-export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
+export const getCompanyDetailsByVoyageId = async (req, res) => {
     try {
         const { voyageId } = req.params;
 
+        const status = req.query.status || 'pending';
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
 
-        const filter = { voyageId: new mongoose.Types.ObjectId(voyageId), status: "pending", };
+        const voyage = await Voyage.findById(voyageId)
+            .select("voyageName voyageNumber year status")
+            .lean();
+
+        if (!voyage) {
+            return res.status(404).json({ message: "Voyage not found" });
+        }
+
+        const filter = { voyageId: new mongoose.Types.ObjectId(voyageId), status };
 
 
         if (searchQuery) {
@@ -1816,7 +1825,7 @@ export const getAllPendingCompaniesSummaryV2 = async (req, res) => {
         const totalPages = Math.ceil(totalCount / limit);
 
         res.status(200).json({
-            voyageId,
+            voyage,
             totalCompanies,
             companies,
             pagination: {
