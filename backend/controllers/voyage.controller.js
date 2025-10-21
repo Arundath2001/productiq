@@ -2114,6 +2114,7 @@ export const getCompanyDetailsByVoyageV2 = async (req, res) => {
                     uploadedDate: 1,
                     sequenceNumber: 1,
                     status: 1,
+                    image: 1,
                 }
             }
         ]);
