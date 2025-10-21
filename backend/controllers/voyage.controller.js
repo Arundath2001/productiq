@@ -1839,7 +1839,7 @@ export const getCompletedVoyagesByBranchV2 = async (req, res) => {
         const { branchId } = req.params;
 
         const limit = parseInt(req.query.limit) || 10;
-        const page = parseInt(req.query.limit) || 1;
+        const page = parseInt(req.query.page) || 1;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || "";
 
