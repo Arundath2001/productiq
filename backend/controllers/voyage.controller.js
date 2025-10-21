@@ -1884,7 +1884,7 @@ export const getVoyageDetailsByBranch = async (req, res) => {
                                 $expr: {
                                     $and: [
                                         { $eq: ["$voyageId", "$$voyageId"] },
-                                        { $eq: ["$status", "completed"] },
+                                        { $eq: ["$status", "$status"] },
                                     ]
                                 }
                             }
