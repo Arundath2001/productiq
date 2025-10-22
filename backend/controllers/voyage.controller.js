@@ -1824,7 +1824,7 @@ export const getCompanyDetailsByVoyageId = async (req, res) => {
 
         const companies = result[0]?.paginatedData || [];
         const totalCompanies = result[0]?.totalCount[0]?.count || 0;
-        const totalPages = Math.ceil(totalCount / limit);
+        const totalPages = Math.ceil(totalCompanies / limit);
 
         res.status(200).json({
             voyage,
