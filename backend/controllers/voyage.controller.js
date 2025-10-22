@@ -1785,6 +1785,8 @@ export const getCompanyDetailsByVoyageId = async (req, res) => {
                     totalPages: 0,
                     totalItems: 0,
                     itemsPerPage: limit,
+                    hasNextPage: false,
+                    hasPrevPage: false
                 },
             });
         }
@@ -2094,7 +2096,9 @@ export const getCompanyDetailsByVoyageV2 = async (req, res) => {
                     currentPage: page,
                     totalItems: 0,
                     itemsPerPage: limit,
-                    totalPages: 0
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPrevPage: false
                 }
             });
         }
