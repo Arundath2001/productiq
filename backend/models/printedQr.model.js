@@ -23,6 +23,11 @@ const printedQrSchema = mongoose.Schema({
         enum: ["generated", "printed", "failed"],
         default: "generated"
     },
+    branchId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Branch',
+        required: true
+    },
     printAttempts: {
         type: Number,
         default: 1
@@ -43,7 +48,7 @@ const printedQrSchema = mongoose.Schema({
     timestamps: true
 });
 
-printedQrSchema.virtual('qrData').get(function() {
+printedQrSchema.virtual('qrData').get(function () {
     const sequenceNumber = this.quantity.toString().padStart(2, "0");
     return `${this.productCode}|${sequenceNumber}|${this.voyageNumber}`;
 });

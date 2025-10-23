@@ -1758,6 +1758,9 @@ export const getCompanyDetailsByVoyageId = async (req, res) => {
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
 
+        console.log(req.user.branchId._id, "loggggggg");
+
+
         const voyage = await Voyage.findById(voyageId)
             .select("voyageName voyageNumber year status")
             .lean();

@@ -7,7 +7,7 @@ const printBatchSchema = mongoose.Schema({
         unique: true
     },
     productCode: {
-        type: String, 
+        type: String,
         required: true
     },
     voyageNumber: {

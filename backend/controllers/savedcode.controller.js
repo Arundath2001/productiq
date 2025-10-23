@@ -117,6 +117,7 @@ export const getSavedProductCodeV2 = async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
+        const userBranchId = req.user.branchId._id;
 
         const filter = searchQuery ? { productCode: { $regex: searchQuery, $options: 'i' } } : {}
 
@@ -145,7 +146,12 @@ export const getSavedProductCodeV2 = async (req, res) => {
         const productsCodes = savedCodes.map((code) => code.productCode);
 
         const allVoyageSummaries = await PrintedQr.aggregate([
-            { $match: { productCode: { $in: productsCodes } } },
+            {
+                $match: {
+                    productCode: { $in: productsCodes },
+                    branchId: userBranchId
+                }
+            },
             {
                 $group: {
                     _id: {

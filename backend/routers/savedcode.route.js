@@ -12,7 +12,7 @@ router.delete("/:codeId", protectRoute, deleteSavedCode);
 
 //v2 codes
 
-router.get("/V2", getSavedProductCodeV2);
+router.get("/V2", protectRoute, getSavedProductCodeV2);
 
 
 export default router;

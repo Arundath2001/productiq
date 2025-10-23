@@ -83,7 +83,8 @@ export const generatePrintedQrBatch = async (req, res) => {
             quantity: lastCount,
             printedBy: req.user.id,
             printStatus: "generated",
-            batchId: newBatch._id // Link to batch
+            batchId: newBatch._id,
+            branchId: req.user.branchId._id
           });
 
           await printedQr.save({ session });
@@ -243,6 +244,7 @@ export const getFailedPrints = async (req, res) => {
 export const getBatchesByProductCode = async (req, res) => {
   try {
     const { productCode } = req.params;
+    const userBranchId = req.user.branchId._id;
     console.log(`[PRODUCT-BATCHES] Retrieving batches for product code: ${productCode}`);
 
     if (!productCode) {
@@ -260,7 +262,7 @@ export const getBatchesByProductCode = async (req, res) => {
     const batchIds = batches.map(batch => batch._id);
     console.log(`[PRODUCT-BATCHES] Fetching QR codes for ${batchIds.length} batches`);
     const qrCodes = await PrintedQr.find({
-      batchId: { $in: batchIds }
+      batchId: { $in: batchIds }, branchId: userBranchId
     }).sort({ createdAt: 1 }); // Sort by creation time to ensure proper order
     console.log(`[PRODUCT-BATCHES] Retrieved ${qrCodes.length} QR codes`);
 
