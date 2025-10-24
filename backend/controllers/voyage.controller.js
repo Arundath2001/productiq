@@ -2110,7 +2110,12 @@ export const getCompanyDetailsByVoyageV2 = async (req, res) => {
 
         const products = await UploadedProduct.aggregate([
             { $match: filter },
-            { $sort: { productCode: 1 } },
+            {
+                $sort: {
+                    productCode: 1,
+                    sequenceNumber: 1
+                }
+            },
             { $skip: skip },
             { $limit: limit },
             {
