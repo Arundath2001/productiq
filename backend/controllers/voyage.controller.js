@@ -2195,16 +2195,169 @@ export const getPendingVoyagesByBranch = async (req, res) => {
 
 export const getCompanyCodeVoyage = async (req, res) => {
     try {
-        const { branchId, companyCode, status } = req.params;
+        const { branchId, companyCode } = req.params;
+        const { status } = req.query;
+
+        console.log(branchId, companyCode, status);
+
 
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || "";
 
-        const voyageIds = await "";
+        if (!companyCode || typeof companyCode !== 'string' || companyCode.trim() === '') {
+            return res.status(400).json({
+                message: "Invalid companyCode parameter"
+            });
+        }
+
+        if (!branchId) {
+            return res.status(400).json({
+                message: "Missing required parameter: branchId"
+            });
+        }
+
+        const voyageIds = await UploadedProduct.distinct("voyageId", {
+            branchId: branchId,
+            clientCompany: companyCode,
+            status
+        });
+
+        if (voyageIds.length === 0) {
+            return res.status(404).json({
+                message: `No ${status} voyages found for company ${companyCode} in this branch`,
+                voyages: [],
+                pagination: {
+                    currentPage: page,
+                    totalPages: 0,
+                    totalItems: 0,
+                    itemsPerPage: limit,
+                    hasNextPage: false,
+                    hasPrevPage: false
+                }
+            });
+        }
+
+        const filter = {
+            _id: { $in: voyageIds },
+            branchId: new mongoose.Types.ObjectId(branchId),
+            status: status
+        }
+
+        if (searchQuery) {
+            filter.$or = [
+                { voyageNumber: { $regex: searchQuery, $options: 'i' } },
+                { voyageName: { $regex: searchQuery, $options: 'i' } },
+            ]
+        }
+
+        const voyages = await Voyage.aggregate([
+            { $match: filter },
+            { $sort: { createdAt: -1 } },
+
+            {
+                $facet: {
+                    metadata: [{ $count: 'totalCount' }],
+                    data: [
+                        { $skip: skip },
+                        { $limit: limit },
+                        {
+                            $lookup: {
+                                from: 'uploadedproducts',
+                                let: { voyageId: '$_id' },
+                                pipeline: [
+                                    {
+                                        $match: {
+                                            $expr: {
+                                                $and: [
+                                                    { $eq: ["$voyageId", "$$voyageId"] },
+                                                    { $eq: ["$branchId", new mongoose.Types.ObjectId(branchId)] },
+                                                    { $eq: ["$status", status] },
+                                                    { $eq: ["$clientCompany", companyCode] }
+                                                ]
+
+                                            }
+                                        }
+                                    }, {
+                                        $group: {
+                                            _id: null,
+                                            totalItems: { $sum: 1 },
+                                            totalWeight: { $sum: { $toDouble: { $ifNull: ["$weight", 0] } } }
+                                        }
+                                    }
+                                ],
+                                as: "productStats"
+                            }
+                        }, {
+                            $addFields: {
+                                totalItems: { $ifNull: [{ $arrayElemAt: ["$productStats.totalItems", 0] }, 0] },
+                                totalWeight: {
+                                    $round: [
+                                        { $ifNull: [{ $arrayElemAt: ["$productStats.totalWeight", 0] }, 0] },
+                                        2
+                                    ]
+                                }
+                            }
+                        }, {
+                            $lookup: {
+                                from: "branches",
+                                localField: "branchId",
+                                foreignField: "_id",
+                                as: "branchInfo"
+                            }
+                        },
+                        {
+                            $addFields: {
+                                branchName: { $ifNull: [{ $arrayElemAt: ["$branchInfo.branchName", 0] }, "Unknown"] }
+                            }
+                        },
+                        {
+                            $project: { productStats: 0, branchInfo: 0 }
+                        }
+                    ]
+                }
+            }
+
+        ]);
+
+        const voyageData = voyages[0]?.data || [];
+        const totalCount = voyages[0]?.metadata[0]?.totalCount || 0;
+
+        if (totalCount === 0) {
+            return res.status(404).json({
+                message: `No ${status} voyages found matching search criteria`,
+                voyages: [],
+                pagination: {
+                    currentPage: page,
+                    totalPages: 0,
+                    totalItems: 0,
+                    itemsPerPage: limit,
+                    hasNextPage: false,
+                    hasPrevPage: false
+                }
+            });
+        }
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        res.status(200).json({
+            companyCode,
+            branchId,
+            voyages: voyageData,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalItems: totalCount,
+                itemsPerPage: limit,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1
+            }
+        });
+
 
     } catch (error) {
-
+        console.error("Error fetching voyages by company and branch:", error.message);
+        res.status(500).json({ message: "Internal server error", error: error.message });
     }
 }
