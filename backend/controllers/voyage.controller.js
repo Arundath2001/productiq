@@ -2059,7 +2059,6 @@ export const getCompletedCompaniesSummaryByVoyageV2 = async (req, res) => {
 export const getCompanyDetailsByVoyageV2 = async (req, res) => {
     try {
         const { voyageId, companyCode } = req.params;
-        console.log(voyageId, companyCode, "getCompanyDetailsByVoyageV2");
 
         const { status } = req.query;
         const page = parseInt(req.query.page) || 1;
@@ -2084,7 +2083,10 @@ export const getCompanyDetailsByVoyageV2 = async (req, res) => {
 
 
         if (searchQuery) {
-            filter.trackingNumber = { $regex: searchQuery, $options: 'i' }
+            filter.$or = [
+                { trackingNumber: { $regex: searchQuery, $options: 'i' } },
+                { productCode: { $regex: searchQuery, $options: 'i' } }
+            ]
         }
 
         const totalItems = await UploadedProduct.countDocuments(filter);
@@ -2108,7 +2110,7 @@ export const getCompanyDetailsByVoyageV2 = async (req, res) => {
 
         const products = await UploadedProduct.aggregate([
             { $match: filter },
-            { $sort: { uploadedDate: -1 } },
+            { $sort: { productCode: 1 } },
             { $skip: skip },
             { $limit: limit },
             {
@@ -2183,5 +2185,21 @@ export const getPendingVoyagesByBranch = async (req, res) => {
     } catch (error) {
         console.error("Error in getPendingVoyagesByBranch controller:", error.message);
         res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const getCompanyCodeVoyage = async (req, res) => {
+    try {
+        const { branchId, companyCode, status } = req.params;
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const searchQuery = req.query.search || "";
+
+        const voyageIds = await "";
+
+    } catch (error) {
+
     }
 }

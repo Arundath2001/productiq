@@ -1,5 +1,5 @@
 import express from "express";
-import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllVoyageProducts, getAllVoyagesByBranch, getCompaniesSummaryByVoyage, getCompanyDetailsByVoyage, getCompanyDetailsByVoyageId, getCompanyDetailsByVoyageV2, getCompletedCompaniesSummaryByVoyage, getCompletedCompaniesSummaryByVoyageV2, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByBranch, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyageDetails, getPendingVoyages, getPendingVoyagesByBranch, getProductDetails, getUploadedProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageDetailsByBranch, getVoyageNumber, getVoyages, updateCompletedVoyageStatus, uploadVoyage } from "../controllers/voyage.controller.js";
+import { closeVoyage, createVoyage, deleteVoyage, deleteVoyageData, exportVoyageData, getAllPendingCompaniesSummary, getAllVoyageProducts, getAllVoyagesByBranch, getCompaniesSummaryByVoyage, getCompanyCodeVoyage, getCompanyDetailsByVoyage, getCompanyDetailsByVoyageId, getCompanyDetailsByVoyageV2, getCompletedCompaniesSummaryByVoyage, getCompletedCompaniesSummaryByVoyageV2, getCompletedCompanyDetailsByVoyage, getCompletedVoyages, getCompletedVoyagesByBranch, getCompletedVoyagesByCompany, getCompletedVoyagesByCompanyAndBranch, getPendingVoyageDetails, getPendingVoyages, getPendingVoyagesByBranch, getProductDetails, getUploadedProductDetails, getVoyage, getVoyageByCompany, getVoyageByCompanyAndBranch, getVoyageDetailsByBranch, getVoyageNumber, getVoyages, updateCompletedVoyageStatus, uploadVoyage } from "../controllers/voyage.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import upload from "../lib/multer.js";
 
@@ -71,5 +71,7 @@ router.get("/v2/:voyageId/completed-companies", getCompletedCompaniesSummaryByVo
 router.get('/v2/:voyageId/companies/:companyCode', getCompanyDetailsByVoyageV2);
 
 router.get('/v2/pending-voyages/:branchId', getPendingVoyagesByBranch);
+
+router.get('/v2/company-voyage/:branchId/:companyCode', getCompanyCodeVoyage);
 
 export default router; 

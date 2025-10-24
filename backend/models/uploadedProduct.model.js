@@ -79,6 +79,14 @@ uploadedProductSchema.index({
     voyageNumber: 1
 }, { unique: true });
 
+uploadedProductSchema.index({
+    branchId: 1,
+    clientCompany: 1,
+    status: 1,
+    voyageId: 1
+});
+
+
 uploadedProductSchema.set('toJSON', { virtuals: true });
 uploadedProductSchema.set('toObject', { virtuals: true });
 

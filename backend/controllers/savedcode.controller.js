@@ -209,3 +209,46 @@ export const getSavedProductCodeV2 = async (req, res) => {
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 }
+
+export const getCompanyCode = async (req, res) => {
+    try {
+        const productCode = decodeURIComponent(req.params.productCode);
+
+        console.log(productCode);
+
+        const baseProductCode = productCode.split('|')[0];
+
+        if (!baseProductCode) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid product code format"
+            });
+        }
+
+        const savedCode = await SavedCode.findOne({
+            productCode: { $regex: `^${baseProductCode}`, $options: 'i' }
+        }).sort({ createdAt: -1 }).lean();
+
+        if (!savedCode) {
+            return res.status(404).json({
+                success: false,
+                message: "No company code found for this product code"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                companyCode: savedCode.companyCode,
+                productCode: savedCode.productCode
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching company code:', error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+}

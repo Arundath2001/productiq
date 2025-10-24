@@ -1,6 +1,6 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { deleteSavedCode, getSavedProductCode, getSavedProductCodeV2, saveProductCode } from "../controllers/savedcode.controller.js";
+import { deleteSavedCode, getCompanyCode, getSavedProductCode, getSavedProductCodeV2, saveProductCode } from "../controllers/savedcode.controller.js";
 
 const router = express.Router();
 
@@ -14,5 +14,6 @@ router.delete("/:codeId", protectRoute, deleteSavedCode);
 
 router.get("/V2", protectRoute, getSavedProductCodeV2);
 
+router.get('/company-code/:productCode', getCompanyCode);
 
 export default router;
