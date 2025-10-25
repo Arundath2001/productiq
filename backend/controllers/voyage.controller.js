@@ -200,6 +200,7 @@ export const uploadVoyage = async (req, res) => {
 
         io.emit("voyage-data-updated", {
             voyageNumber,
+            branchId,
             newProduct: {
                 productCode,
                 sequenceNumber,
