@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import InputLine from "../components/InputLine";
 import SolidButton from "./SolidButton";
-import { useVoyageStore } from "../store/useVoyageStore.js";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../store/useAuthStore.js";
+import { Loader } from "lucide-react";
 
-const CreateVoyage = ({ setShowCreateVoyage }) => {
-  const { createVoyage } = useVoyageStore();
-
+const CreateVoyage = ({ setShowCreateVoyage, onCreateVoyage, isCreating }) => {
   const { authUser } = useAuthStore();
 
   const [voyageData, setVoyageData] = useState({
@@ -33,8 +31,10 @@ const CreateVoyage = ({ setShowCreateVoyage }) => {
     const success = validateForm();
 
     if (success === true) {
-      await createVoyage(voyageData);
-      setShowCreateVoyage(false);
+      try {
+        await onCreateVoyage(voyageData);
+        setShowCreateVoyage(false);
+      } catch (error) {}
     }
   };
 
@@ -79,8 +79,14 @@ const CreateVoyage = ({ setShowCreateVoyage }) => {
             buttonName="Cancel"
             variant="outlined"
             onClick={() => setShowCreateVoyage(false)}
+            disabled={isCreating}
           />
-          <SolidButton buttonName="Save" type="submit" />
+          <SolidButton
+            buttonName="Save"
+            type="submit"
+            disabled={isCreating}
+            isLoading={isCreating}
+          />
         </div>
       </form>
     </div>

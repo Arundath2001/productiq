@@ -55,7 +55,7 @@ const ProtectedRoute = ({
     }
 
     if (userRoles.includes("ship_cargo_admin")) {
-      return <Navigate to="/dashboard/shipment" replace />;
+      return <Navigate to="/dashboard/sea-voyage" replace />;
     }
 
     if (userRoles.includes("approve")) {

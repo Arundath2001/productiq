@@ -107,9 +107,9 @@ export const createVoyage = async (req, res) => {
             return res.status(400).json({ message: "Only admin can create voyages" })
         }
 
-        const exisitngVoyage = await Voyage.findOne({ voyageNumber });
+        const exisitingVoyage = await Voyage.findOne({ voyageNumber });
 
-        if (exisitngVoyage) return res.status(400).json({ message: "Voyage number already exisits" })
+        if (exisitingVoyage) return res.status(400).json({ message: "Voyage number already exisits" })
 
         const newVoyage = new Voyage({
             voyageName,
@@ -2220,7 +2220,7 @@ export const getCompanyCodeVoyage = async (req, res) => {
         }
 
         const voyageIds = await UploadedProduct.distinct("voyageId", {
-            branchId: branchId,
+            branchId: new mongoose.Types.ObjectId(branchId),
             clientCompany: companyCode,
             status
         });

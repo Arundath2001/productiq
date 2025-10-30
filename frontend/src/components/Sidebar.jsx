@@ -43,7 +43,7 @@ const Sidebar = ({ setSelectedTab }) => {
       { path: "packages", label: "Packing List", icon: Package },
     ],
     ship_cargo_admin: [
-      { path: "shipment", label: "Shipments", icon: ShipIcon },
+      { path: "sea-voyage", label: "Sea Voyages", icon: ShipIcon },
       // { path: "completed", label: "Completed Shipments", icon: ShipIcon },
       // { path: "clients", label: "Clients", icon: Building2 },
       // { path: "trackproduct", label: "Track Product", icon: Truck },

@@ -1,11 +1,9 @@
 import { Search, X, XCircle } from "lucide-react";
 import React, { useState } from "react";
 
-const NormalSearch = () => {
-  const [searchText, setSearchText] = useState("");
-
+const NormalSearch = ({ searchQuery, setSearchQuery }) => {
   const clearSearchField = () => {
-    setSearchText("");
+    setSearchQuery("");
   };
 
   return (
@@ -14,11 +12,11 @@ const NormalSearch = () => {
       <input
         type="text"
         placeholder="search"
-        value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
         className="w-full outline-none text-sm"
       />
-      {searchText && (
+      {searchQuery && (
         <button
           onClick={clearSearchField}
           className="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors"

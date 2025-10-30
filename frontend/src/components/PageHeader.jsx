@@ -47,7 +47,10 @@ const PageHeader = ({
         </div>
 
         <div className="flex gap-2.5 items-center">
-          <NormalSearch />
+          <NormalSearch
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
           {/* <NormalButton icon={FaFilter} onClick={toggleFilters} /> */}
           {onCreate && (
             <NormalButton

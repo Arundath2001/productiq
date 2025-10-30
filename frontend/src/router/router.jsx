@@ -20,6 +20,7 @@ import BranchDetails from "../pages/superadmin/BranchDetails";
 import Packages from "../pages/Packages";
 import PackageProducts from "../pages/PackageProducts";
 import ContactUs from "../pages/ContactUs";
+import Containers from "../pages/ship-cargo/Containers";
 
 const router = createBrowserRouter([
   {
@@ -57,7 +58,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "shipment",
+        path: "sea-voyage",
         element: (
           <ProtectedRoute allowedRoles={["ship_cargo_admin"]}>
             <Shipment />
@@ -181,6 +182,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <PackageProducts />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "sea-voyage/:seaVoyageId/container",
+        element: (
+          <ProtectedRoute>
+            <Containers />
           </ProtectedRoute>
         ),
       },

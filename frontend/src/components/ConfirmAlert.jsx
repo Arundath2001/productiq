@@ -1,3 +1,4 @@
+import { Loader } from "lucide-react";
 import React, { useState } from "react";
 
 const ConfirmAlert = ({
@@ -8,6 +9,7 @@ const ConfirmAlert = ({
   dateLabel = "Destination arrival date",
   datePlaceholder = "Select arrival date",
   onDateChange = null,
+  isDeleting,
 }) => {
   const [selectedDate, setSelectedDate] = useState("");
   const [error, setError] = useState("");
@@ -76,9 +78,10 @@ const ConfirmAlert = ({
             onChange={handleDateInputChange}
             placeholder={datePlaceholder}
             min={getTodayString()}
+            disabled={isDeleting}
             className={`w-full px-3 py-2 border rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500 ${
               error ? "border-red-500" : "border-gray-300"
-            }`}
+            } ${isDeleting ? "opacity-50 cursor-not-allowed" : ""}`}
           />
           {error && (
             <p className="text-red-500 text-xs text-center mt-1">{error}</p>
@@ -88,16 +91,22 @@ const ConfirmAlert = ({
 
       <div className="flex justify-center gap-7">
         <div
-          onClick={handleClose}
-          className="w-20 text-white bg-red-500 px-3.5 py-2 rounded-xl text-center cursor-pointer hover:bg-red-600 transition-colors"
+          onClick={isDeleting ? undefined : handleClose}
+          className={`w-20 text-white bg-red-500 px-3.5 py-2 rounded-xl text-center cursor-pointer hover:bg-red-600 transition-colors ${
+            isDeleting ? "opacity-50 cursor-not-allowed" : ""
+          }`}
         >
           No
         </div>
         <div
-          onClick={handleSubmitClick}
-          className="w-20 text-white bg-green-500 px-3.5 py-2 rounded-xl text-center cursor-pointer hover:bg-green-600 transition-colors"
+          onClick={isDeleting ? undefined : handleSubmitClick}
+          className={`w-20 text-white bg-green-500 px-3.5 py-2 rounded-xl text-center flex items-center justify-center transition-colors ${
+            isDeleting
+              ? "opacity-50 cursor-not-allowed"
+              : "cursor-pointer hover:bg-green-600"
+          }`}
         >
-          Yes
+          {isDeleting ? <Loader className="size-4 animate-spin" /> : "Yes"}
         </div>
       </div>
     </div>

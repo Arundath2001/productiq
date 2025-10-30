@@ -10,7 +10,7 @@ import { useAuthStore } from "../store/useAuthStore.js";
 import { ChevronRight, Trash, Trash2 } from "lucide-react";
 
 const Voyages = () => {
-  const { isVoyagesLoading, voyages, getVoyages, deleteVoyage } =
+  const { isVoyagesLoading, voyages, getVoyages, deleteVoyage, createVoyage } =
     useVoyageStore();
 
   const { authUser } = useAuthStore();
@@ -82,7 +82,7 @@ const Voyages = () => {
   return (
     <div>
       <PageHeader
-        mainHead="Created Voyages"
+        mainHead="Created air-voyages"
         subText={`${voyages.length} voyages`}
         onCreate={handleCreateVoyage}
         searchQuery={searchQuery}
@@ -104,7 +104,7 @@ const Voyages = () => {
                 className="flex rounded-xl items-center shadow-sm justify-between hover:shadow-gray-500 bg-white px-4 py-2.5 mb-2.5"
               >
                 <p className="text-black text-sm">
-                  {voyage.voyageName} | VNo {voyage.voyageNumber}/{voyage.year}
+                  {voyage.voyageName} | VNo {voyage.voyageNumber}
                 </p>
 
                 <div className="flex gap-3 items-center">
@@ -152,7 +152,10 @@ const Voyages = () => {
       {showCreateVoyage && (
         <div className="fixed inset-0 flex items-center justify-center bg-[#B9B9B969] bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-xl shadow-lg w-96 relative">
-            <CreateVoyage setShowCreateVoyage={setShowCreateVoyage} />
+            <CreateVoyage
+              setShowCreateVoyage={setShowCreateVoyage}
+              onCreateVoyage={createVoyage}
+            />
           </div>
         </div>
       )}
