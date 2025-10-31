@@ -16,6 +16,8 @@ import packageRoutes from "./routers/package.route.js";
 import appControlRoutes from "./routers/appControl.route.js";
 import seaVoyageRoutes from "./routers/seaVoyage.route.js";
 import seaContainerRoutes from "./routers/seaContainer.router.js";
+import lineRoutes from "./routers/line.route.js";
+import containerCompanyRoutes from "./routers/containerCompany.route.js";
 import cors from "cors";
 import path from "path";
 import { app, server, io } from "./lib/socket.js";
@@ -64,6 +66,8 @@ app.use("/api/package", packageRoutes);
 app.use("/api/app", appControlRoutes);
 app.use("/api/sea-voyage", seaVoyageRoutes);
 app.use("/api/sea-container", seaContainerRoutes);
+app.use("/api/line", lineRoutes);
+app.use("/api/container-company", containerCompanyRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

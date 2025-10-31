@@ -1,21 +1,48 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import InputLine from "./InputLine";
 import { useAuthStore } from "../store/useAuthStore";
 import SolidButton from "./SolidButton";
+import SearchableDropdown from "./SearchableDropdown ";
+import { useContainerCompanyStore } from "../store/useContainerCompany";
 
 const CreateContainer = ({
   onCreateContainer,
   setShowCreateContainer,
   isCreating,
   seaVoyageId,
+  lineId,
 }) => {
   const { authUser } = useAuthStore();
+
+  const { containerCompanies, getContainerCompanies } =
+    useContainerCompanyStore();
+
+  useEffect(() => {
+    getContainerCompanies(authUser.branchId, lineId);
+  }, [authUser.branchId, lineId]);
 
   const [containerData, setContainerData] = useState({
     containerNumber: "",
     seaVoyageId: seaVoyageId,
     branchId: authUser.branchId,
+    containerCompanyId: "",
   });
+
+  const containerCompanyOptions = containerCompanies.map((cntrCmpny) => ({
+    _id: cntrCmpny._id,
+    name: cntrCmpny.containerCompanyName,
+  }));
+
+  const handleLineSelect = (selectedContainerCompany) => {
+    console.log(selectedContainerCompany, "testttttttt");
+
+    setContainerData({
+      ...containerData,
+      containerCompanyId: selectedContainerCompany._id,
+    });
+  };
+
+  console.log(containerData);
 
   const handleChange = (e) => {
     setContainerData({ ...containerData, [e.target.name]: e.target.value });
@@ -45,6 +72,13 @@ const CreateContainer = ({
             name="containerNumber"
             value={containerData.containerNumber}
             onChange={handleChange}
+          />
+
+          <SearchableDropdown
+            label="Select Container-Company"
+            placeholder="Container-Company"
+            options={containerCompanyOptions}
+            onSelect={handleLineSelect}
           />
 
           <div className="flex gap-4 justify-center mt-4">

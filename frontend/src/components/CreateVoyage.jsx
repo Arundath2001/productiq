@@ -1,19 +1,42 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import InputLine from "../components/InputLine";
 import SolidButton from "./SolidButton";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../store/useAuthStore.js";
 import { Loader } from "lucide-react";
+import SearchableDropdown from "./SearchableDropdown .jsx";
+import { useLineStore } from "../store/useLineStore.js";
 
-const CreateVoyage = ({ setShowCreateVoyage, onCreateVoyage, isCreating }) => {
+const CreateVoyage = ({
+  setShowCreateVoyage,
+  onCreateVoyage,
+  isCreating,
+  voyageType = "sea",
+}) => {
   const { authUser } = useAuthStore();
+
+  const { lines, lineLoading, getLines } = useLineStore();
+
+  useEffect(() => {
+    getLines(authUser.branchId);
+  }, [authUser.branchId]);
 
   const [voyageData, setVoyageData] = useState({
     voyageName: "",
     voyageNumber: "",
     year: new Date().getFullYear(),
     branchId: authUser.branchId,
+    ...(voyageType === "sea" && { lineId: "" }),
   });
+
+  const lineOptions = lines.map((line) => ({
+    _id: line._id,
+    name: line.lineName,
+  }));
+
+  const handleLineSelect = (selectedLine) => {
+    setVoyageData({ ...voyageData, lineId: selectedLine._id });
+  };
 
   const validateForm = () => {
     if (!voyageData.voyageName.trim())
@@ -73,6 +96,15 @@ const CreateVoyage = ({ setShowCreateVoyage, onCreateVoyage, isCreating }) => {
           value={voyageData.year}
           onChange={handleChange}
         />
+
+        {voyageType === "sea" && (
+          <SearchableDropdown
+            label="Line Name"
+            placeholder="Line Name"
+            options={lineOptions}
+            onSelect={handleLineSelect}
+          />
+        )}
 
         <div className="flex gap-4 justify-center mt-6">
           <SolidButton

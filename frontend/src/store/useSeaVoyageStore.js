@@ -59,6 +59,7 @@ export const useSeaVoyageStore = create((set, get) => ({
                 seaVoyageName: voyageData.voyageName,
                 seaVoyageNumber: voyageData.voyageNumber,
                 branchId: voyageData.branchId,
+                lineId: voyageData.lineId,
                 year: voyageData.year
             }
 

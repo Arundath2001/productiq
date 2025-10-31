@@ -36,7 +36,7 @@ const SearchableDropdown = ({
 
   return (
     <div className="w-full flex flex-col" ref={dropdownRef}>
-      <div className="flex items-center gap-2 font-medium text-sm text-gray-500">
+      <div className="flex items-center gap-2 font-medium text-gray-400 text-[12px]">
         {LabelIcon && <LabelIcon className="w-4 h-4 text-blue-500" />}
         {label}
       </div>

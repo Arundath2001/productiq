@@ -8,7 +8,7 @@ import ConfirmAlert from "../../components/ConfirmAlert";
 import CreateContainer from "../../components/CreateContainer";
 
 const Containers = () => {
-  const { seaVoyageId } = useParams();
+  const { seaVoyageId, lineId } = useParams();
 
   const {
     getSeaContainers,
@@ -94,6 +94,9 @@ const Containers = () => {
                 <p className="text-sm font-semibold text-gray-800">
                   Container No : {container.containerNumber}
                 </p>
+                <p className="text-xs text-gray-500">
+                  Company : {container.containerCompanyId.containerCompanyName}
+                </p>
               </div>
             </div>
 
@@ -146,6 +149,7 @@ const Containers = () => {
           onCreateContainer={createSeaContainer}
           isCreating={isCreating}
           seaVoyageId={seaVoyageId}
+          lineId={lineId}
         />
       )}
 

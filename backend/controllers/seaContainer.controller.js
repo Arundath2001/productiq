@@ -2,7 +2,10 @@ import SeaContainer from "../models/seaContainer.model.js";
 
 export const createSeaContainer = async (req, res) => {
     try {
-        const { containerNumber, seaVoyageId, branchId } = req.body;
+        const { containerNumber, seaVoyageId, branchId, containerCompanyId } = req.body;
+
+        console.log(containerCompanyId);
+
 
         if (!containerNumber || containerNumber.trim() === '') {
             return res.status(404).json({
@@ -22,7 +25,8 @@ export const createSeaContainer = async (req, res) => {
             containerNumber,
             seaVoyageId,
             branchId,
-            createdBy: req.user._id
+            createdBy: req.user._id,
+            containerCompanyId
         });
 
         await newSeaContainer.save();
@@ -69,7 +73,7 @@ export const getSeaContainerByBranchAndVoyage = async (req, res) => {
         const totalSeaContainers = await SeaContainer(filter);
         const totalPages = Math.ceil(totalSeaContainers / limit);
 
-        const seaContainers = await SeaContainer.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+        const seaContainers = await SeaContainer.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate('containerCompanyId', 'containerCompanyName').lean();
 
         res.status(200).json({
             success: true,

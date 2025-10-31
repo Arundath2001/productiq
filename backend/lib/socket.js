@@ -7,8 +7,9 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: ["http://localhost:5173", "https://aswaqforwarder.com"],
         methods: ["GET", "POST"],
+        credentials: true,
     }
 });
 
@@ -21,8 +22,8 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("A user disconnected", socket.id);
     });
-    
-    
-} )
 
-export {io, server, app }
+
+})
+
+export { io, server, app }

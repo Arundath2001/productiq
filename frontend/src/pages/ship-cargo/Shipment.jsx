@@ -66,8 +66,8 @@ const Shipment = () => {
     } catch (error) {}
   };
 
-  const handleViewClick = (seaVoageId) => {
-    navigate(`/dashboard/sea-voyage/${seaVoageId}/container`);
+  const handleViewClick = (seaVoageId, lineId) => {
+    navigate(`/dashboard/sea-voyage/${seaVoageId}/container/${lineId}`);
   };
 
   const renderContent = () => {
@@ -92,10 +92,10 @@ const Shipment = () => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-800">
-                  {voyage.seaVoyageName}
+                  Sea voyage No: {voyage.seaVoyageNumber}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Sea voyage No: {voyage.seaVoyageNumber}
+                  Line : {voyage.lineId.lineName}
                 </p>
               </div>
             </div>
@@ -106,7 +106,7 @@ const Shipment = () => {
               </p>
 
               <div
-                onClick={() => handleViewClick(voyage._id)}
+                onClick={() => handleViewClick(voyage._id, voyage.lineId._id)}
                 className="flex text-sm items-center gap-1.5 rounded-xl border px-2 py-1.5 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-600 transition-all duration-200 cursor-pointer"
               >
                 <Eye size={16} />
@@ -149,6 +149,7 @@ const Shipment = () => {
               setShowCreateVoyage={setShowCreateSeaVoyage}
               onCreateVoyage={createSeaVoyage}
               isCreating={isCreating}
+              voyageType="sea"
             />
           </div>
         </div>

@@ -2,7 +2,7 @@ import SeaVoyage from "../models/seaVoyage.model.js";
 
 export const createSeaVoyage = async (req, res) => {
     try {
-        const { seaVoyageName, seaVoyageNumber, branchId, year } = req.body;
+        const { seaVoyageName, seaVoyageNumber, branchId, year, lineId } = req.body;
 
         if (!seaVoyageName || seaVoyageName.trim() === "") {
             return res.status(404).json({
@@ -25,9 +25,9 @@ export const createSeaVoyage = async (req, res) => {
             });
         }
 
-        const exisitingSeaVoyage = await SeaVoyage.findOne({ seaVoyageNumber }).lean();
+        const existingSeaVoyage = await SeaVoyage.findOne({ seaVoyageNumber }).lean();
 
-        if (exisitingSeaVoyage) {
+        if (existingSeaVoyage) {
             return res.status(400).json({
                 success: false,
                 message: `Sea voyage ${seaVoyageNumber} already exist!`
@@ -38,6 +38,7 @@ export const createSeaVoyage = async (req, res) => {
             seaVoyageName,
             seaVoyageNumber,
             branchId,
+            lineId,
             year,
             createdBy: req.user.id,
         });
@@ -90,7 +91,7 @@ export const getSeaVoyagesByBranchId = async (req, res) => {
         const totalSeaVoyages = await SeaVoyage.countDocuments(filter);
         const totalPages = Math.ceil(totalSeaVoyages / limit);
 
-        const seaVoyages = await SeaVoyage.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).lean();
+        const seaVoyages = await SeaVoyage.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate('lineId', 'lineName').lean();
 
         res.status(200).json({
             success: true,

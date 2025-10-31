@@ -21,6 +21,8 @@ import Packages from "../pages/Packages";
 import PackageProducts from "../pages/PackageProducts";
 import ContactUs from "../pages/ContactUs";
 import Containers from "../pages/ship-cargo/Containers";
+import Lines from "../pages/ship-cargo/Lines";
+import ContainerCompanies from "../pages/ship-cargo/ContainerCompanies";
 
 const router = createBrowserRouter([
   {
@@ -186,10 +188,26 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "sea-voyage/:seaVoyageId/container",
+        path: "sea-voyage/:seaVoyageId/container/:lineId",
         element: (
           <ProtectedRoute>
             <Containers />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "lines",
+        element: (
+          <ProtectedRoute>
+            <Lines />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "lines/:lineId/container-company",
+        element: (
+          <ProtectedRoute>
+            <ContainerCompanies />
           </ProtectedRoute>
         ),
       },

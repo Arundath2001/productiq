@@ -15,6 +15,7 @@ import {
   ShipIcon,
   User,
   Package,
+  Route,
 } from "lucide-react";
 
 const Sidebar = ({ setSelectedTab }) => {
@@ -44,6 +45,7 @@ const Sidebar = ({ setSelectedTab }) => {
     ],
     ship_cargo_admin: [
       { path: "sea-voyage", label: "Sea Voyages", icon: ShipIcon },
+      { path: "lines", label: "Lines", icon: Route },
       // { path: "completed", label: "Completed Shipments", icon: ShipIcon },
       // { path: "clients", label: "Clients", icon: Building2 },
       // { path: "trackproduct", label: "Track Product", icon: Truck },

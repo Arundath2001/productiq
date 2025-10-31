@@ -15,6 +15,11 @@ const seaVoyageSchema = mongoose.Schema({
         ref: "Branch",
         required: true
     },
+    lineId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Line",
+        required: true
+    },
     year: {
         type: Number,
         required: true

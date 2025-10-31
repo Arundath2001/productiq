@@ -15,6 +15,11 @@ const seaContainerSchema = mongoose.Schema({
         ref: "Branch",
         required: true
     },
+    containerCompanyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ContainerCompany",
+        required: true
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
